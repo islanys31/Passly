@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passly - Panel de Control</title>
+  <link rel="stylesheet" href="/css/index.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --sidebar-width: 260px;
+    }
+
+    body {
+      display: block;
+      overflow: hidden;
+      background: var(--bg-primary);
+    }
+
+    /* Layout */
+    .dashboard-container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Sidebar con Glassmorphism */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: 30px 20px;
+      z-index: 100;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-header {
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .sidebar-header h1 {
+      font-size: 24px;
+      margin-bottom: 0;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-menu {
+      flex-grow: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: rgba(46, 125, 50, 0.1);
+      color: var(--accent-green);
+      transform: translateX(5px);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(46, 125, 50, 0.2), rgba(41, 121, 255, 0.1));
+      border: 1px solid var(--border-color);
+    }
+
+    .nav-item i {
+      margin-right: 12px;
+      font-size: 18px;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+
+    /* Main Content */
+    .main-view {
+      flex-grow: 1;
+      padding: 40px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: var(--card-bg);
+      padding: 8px 20px;
+      border-radius: 50px;
+      border: 1px solid var(--border-color);
+    }
+
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    /* Dashboard Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-green);
+    }
+
+    .stat-card h3 {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Tables */
+    .data-table-container {
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      animation: fadeInUp 0.6s ease;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 18px 25px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 15px 25px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(46, 125, 50, 0.03);
+      color: var(--text-primary);
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-success {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .badge-info {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+
+    /* Actions */
+    .btn-table {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-table:hover {
+      background: var(--accent-green);
+      color: white;
+      border-color: var(--accent-green);
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+      background: var(--bg-primary);
+      width: 100%;
+      max-width: 500px;
+      padding: 40px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Responsividade Sidebar mobile */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: -100%;
+      }
+
+      .sidebar.open {
+        left: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Passly</h1>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-item active" onclick="loadView('overview')">
+          <i>📊</i> Inicio
+        </div>
+        <div class="nav-item" onclick="loadView('usuarios')">
+          <i>👥</i> Usuarios
+        </div>
+        <div class="nav-item" onclick="loadView('dispositivos')">
+          <i>📱</i> Dispositivos
+        </div>
+        <div class="nav-item" onclick="loadView('accesos')">
+          <i>🚪</i> Control de Accesos
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="nav-item" style="color: var(--error-color)" onclick="handleLogout()">
+          <i>🚪</i> Cerrar Sesión
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-view">
+      <div class="top-bar">
+        <h2 id="view-title">Resumen General</h2>
+
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <button class="theme-toggle" id="themeToggle" style="position: static;">
+            <span id="themeIcon">🌙</span>
+          </button>
+
+          <div class="user-profile">
+            <div class="user-avatar" id="userInitial">U</div>
+            <div style="text-align: left;">
+              <div id="userName" style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Usuario</div>
+              <div id="userRole" style="font-size: 11px; color: var(--text-muted);">Administrador</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-content">
+        <!-- El contenido se cargará dinámicamente -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Base -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <h2 id="modalTitle" style="margin-bottom: 25px;">Título Modal</h2>
+      <div id="modalBody"></div>
+      <div style="display: flex; gap: 15px; margin-top: 30px;">
+        <button class="btn-table" style="flex: 1;" onclick="closeModal()">Cancelar</button>
+        <button id="btnSave" style="flex: 1; margin-top: 0;">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "/api";
+    let token = localStorage.getItem('auth_token');
+    let userData = JSON.parse(localStorage.getItem('usuario_activo'));
+
+    // ============================================
+    // SEGURIDAD Y SESIÓN
+    // ============================================
+
+    function checkAuth() {
+      if (!token || !userData) {
+        window.location.href = "index.html";
+        return;
+      }
+      // Poblar UI con datos de usuario
+      document.getElementById('userName').textContent = userData.nombre + ' ' + (userData.apellido || '');
+      document.getElementById('userInitial').textContent = userData.nombre.charAt(0).toUpperCase();
+      document.getElementById('userRole').textContent = userData.rol_id === 1 ? 'Administrador' : 'Vigilante';
+    }
+
+    function handleLogout() {
+      if (confirm('¿Deseas cerrar sesión?')) {
+        localStorage.clear();
+        window.location.href = "index.html";
+      }
+    }
+
+    async function apiRequest(endpoint, method = 'GET', body = null) {
+      try {
+        const options = {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        };
+        if (body) options.body = JSON.stringify(body);
+
+        const response = await fetch(API_BASE + endpoint, options);
+
+        if (response.status === 401) {
+          alert('Sesión expirada. Por favor, inicia sesión de nuevo.');
+          handleLogout();
+          return null;
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('API Error:', error);
+        return null;
+      }
+    }
+
+    // ============================================
+    // VISTAS
+    // ============================================
+
+    async function loadView(view) {
+      const content = document.getElementById('view-content');
+      const title = document.getElementById('view-title');
+
+      // UI Update
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.textContent.toLowerCase().includes(view === 'overview' ? 'inicio' : view)) {
+          item.classList.add('active');
+        }
+      });
+
+      content.innerHTML = '<div class="loading">Cargando datos...</div>';
+
+      switch (view) {
+        case 'overview':
+          title.textContent = "Resumen General";
+          await renderOverview(content);
+          break;
+        case 'usuarios':
+          title.textContent = "Gestión de Usuarios";
+          await renderUsuarios(content);
+          break;
+        case 'dispositivos':
+          title.textContent = "Dispositivos Registrados";
+          await renderDispositivos(content);
+          break;
+        case 'accesos':
+          title.textContent = "Control de Accesos";
+          await renderAccesos(content);
+          break;
+      }
+    }
+
+    async function renderOverview(container) {
+      const data = await apiRequest('/stats');
+      const statsData = data?.stats || {
+        usuariosActivos: '0',
+        accesosHoy: '0',
+        dispositivosActivos: '0',
+        alertas: '0'
+      };
+
+      const stats = [
+        { label: 'Usuarios Activos', value: statsData.usuariosActivos, icon: '👥' },
+        { label: 'Accesos Hoy', value: statsData.accesosHoy, icon: '🚪' },
+        { label: 'Dispositivos', value: statsData.dispositivosActivos, icon: '📱' },
+        { label: 'Alertas', value: statsData.alertas, icon: '⚠️' }
+      ];
+
+      let html = '<div class="stats-grid">';
+      stats.forEach(s => {
+        html += `
+                    <div class="stat-card">
+                        <h3>${s.label}</h3>
+                        <div class="value">${s.value}</div>
+                        <div style="font-size: 24px; margin-top: 10px;">${s.icon}</div>
+                    </div>
+                `;
+      });
+      html += '</div>';
+
+      html += `
+                <div class="card" style="max-width: 100%; text-align: left; margin-top: 20px;">
+                    <h3>Bienvenido al Panel de Control de Passly</h3>
+                    <p style="color: var(--text-secondary); margin-top: 10px;">
+                        Desde aquí puedes gestionar el acceso del personal, registro de vehículos y control de dispositivos vinculados. 
+                        Usa el menú lateral para navegar por las diferentes secciones.
+                    </p>
+                </div>
+            `;
+      container.innerHTML = html;
+    }
+
+    async function renderUsuarios(container) {
+      const data = await apiRequest('/usuarios');
+      if (!data) return;
+
+      let html = `
+                <div class="data-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+      data.forEach(user => {
+        html += `
+                    <tr>
+                        <td><strong>${user.nombre} ${user.apellido || ''}</strong></td>
+                        <td>${user.email}</td>
+                        <td><span class="badge badge-info">${user.rol_id === 1 ? 'Admin' : 'Personal'}</span></td>
+                        <td><span class="badge ${user.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${user.estado_id === 1 ? 'Activo' : 'Inactivo'}</span></td>
+                        <td>
+                            <button class="btn-table" onclick="alert('Editar ID: ${user.id}')">✏️</button>
+                            <button class="btn-table" onclick="alert('Borrar ID: ${user.id}')" style="color: var(--error-color)">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+      });
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    async function renderDispositivos(container) {
+      const data = await apiRequest('/dispositivos');
+      if (!data) return;
+
+      let html = `
+                <div style="margin-bottom: 20px; text-align: right;">
+                    <button class="btn-primary" onclick="showAddDevice()" style="width: auto; padding: 10px 20px;">+ Nuevo Dispositivo</button>
+                </div>
+                <div class="data-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Dispositivo</th>
+                                <th>Usuario Cargo</th>
+                                <th>ID Único</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+      data.forEach(d => {
+        html += `
+                    <tr>
+                        <td><strong>${d.nombre}</strong><br><small style="color: var(--text-muted)">${d.medio_transporte}</small></td>
+                        <td>${d.usuario_nombre}</td>
+                        <td><code>${d.identificador_unico}</code></td>
+                        <td><span class="badge ${d.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${d.estado_id === 1 ? 'Activo' : 'Inactivo'}</span></td>
+                    </tr>
+                `;
+      });
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    async function renderAccesos(container) {
+      const data = await apiRequest('/accesos');
+      if (!data) return;
+
+      let html = `
+                <div style="margin-bottom: 20px; text-align: right;">
+                    <button class="btn-primary" onclick="showAddAccess()" style="width: auto; padding: 10px 20px;">+ Registrar Acceso</button>
+                </div>
+                <div class="data-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Usuario</th>
+                                <th>Tipo</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+      data.forEach(log => {
+        const date = new Date(log.fecha_hora).toLocaleString();
+        html += `
+                    <tr>
+                        <td>${date}</td>
+                        <td><strong>${log.usuario_nombre} ${log.usuario_apellido}</strong></td>
+                        <td><span class="badge ${log.tipo.toLowerCase() === 'entrada' ? 'badge-success' : 'badge-info'}">${log.tipo}</span></td>
+                        <td>${log.dispositivo_nombre || 'Peatonal'}</td>
+                    </tr>
+                `;
+      });
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    // ============================================
+    // MODALES (SIMPLIFICADO)
+    // ============================================
+
+    function showAddAccess() {
+      const overlay = document.getElementById('modalOverlay');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      const saveBtn = document.getElementById('btnSave');
+
+      title.textContent = "Registrar Nuevo Acceso";
+      body.innerHTML = `
+                <input type="number" id="accUserId" placeholder="ID del Usuario">
+                <select id="accType">
+                    <option value="Entrada">Entrada</option>
+                    <option value="Salida">Salida</option>
+                </select>
+                <textarea id="accObs" placeholder="Observaciones..." style="width:100%; min-height:100px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 10px; padding: 10px; margin-top: 10px;"></textarea>
+            `;
+
+      saveBtn.onclick = async () => {
+        const payload = {
+          usuario_id: document.getElementById('accUserId').value,
+          tipo: document.getElementById('accType').value,
+          observaciones: document.getElementById('accObs').value
+        };
+        const res = await apiRequest('/accesos', 'POST', payload);
+        if (res) {
+          closeModal();
+          loadView('accesos');
+        }
+      };
+
+      overlay.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    // ============================================
+    // TEMA
+    // ============================================
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeUI(newTheme);
+    }
+
+    function updateThemeUI(theme) {
+      const icon = document.getElementById('themeIcon');
+      if (theme === 'light') {
+        icon.textContent = '☀️';
+      } else {
+        icon.textContent = '🌙';
+      }
+    }
+
+    // ============================================
+    // INIT
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeUI(savedTheme);
+      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+      loadView('overview');
+
+      // Inicializar WebSockets
+      const socket = io();
+      socket.on('connect', () => console.log('✅ Conectado al servidor de tiempo real'));
+
+      socket.on('new_access', (data) => {
+        console.log('🚪 Nuevo acceso detectado:', data);
+
+        // Si estamos en la vista de resumen, actualizar estadísticas
+        const currentViewTitle = document.getElementById('view-title').textContent;
+        if (currentViewTitle === "Resumen General") {
+          renderOverview(document.getElementById('view-content'));
+        }
+
+        // Si estamos en la vista de accesos, actualizar tabla
+        if (currentViewTitle === "Control de Accesos") {
+          renderAccesos(document.getElementById('view-content'));
+        }
+
+        // Mostrar notificación simple
+        showNotification(`Nuevo acceso: ${data.usuario_nombre} (${data.tipo})`);
+      });
+    });
+
+    function showNotification(message) {
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--accent-green);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+      `;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Estilos para la animación de notificación
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    `;
+    document.head.appendChild(style);
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,494 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Roboto:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ============================================
+   VARIABLES CSS - TEMA OSCURO Y CLARO
+   ============================================ */
+
+:root {
+  /* Tema Oscuro (Por defecto) */
+  --bg-primary: #2E2E2E;
+  --bg-secondary: #1a1a1a;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --text-primary: #FFFFFF;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  /* Acentos Oscuros */
+  --accent-green: #2E7D32;
+  --accent-blue: #2979FF;
+  --accent-lavender: #B39DDB;
+  --accent-emerald: #66BB6A;
+
+  /* Estados */
+  --error-color: #ef4444;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+
+  /* Bordes y sombras */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  /* Tipografía */
+  --font-primary: 'Poppins', sans-serif;
+  --font-secondary: 'Roboto', sans-serif;
+  --font-metrics: 'Inter', sans-serif;
+}
+
+/* Tema Claro */
+[data-theme="light"] {
+  --bg-primary: #FAFAF5;
+  --bg-secondary: #FFFFFF;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --text-primary: #212121;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  /* Acentos Claros */
+  --accent-green: #66BB6A;
+  --accent-blue: #42A5F5;
+  --accent-lavender: #B39DDB;
+  --accent-emerald: #66BB6A;
+
+  /* Bordes y sombras */
+  --border-color: rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================
+   ESTILOS GLOBALES
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-primary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Fondo con patrón geométrico sutil */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(46, 125, 50, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(41, 121, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(179, 157, 219, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   TOGGLE DE MODO OSCURO/CLARO
+   ============================================ */
+
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 50px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.theme-toggle-icon {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover .theme-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.theme-toggle-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   TARJETA PRINCIPAL
+   ============================================ */
+
+.card {
+  position: relative;
+  z-index: 1;
+  background: var(--card-bg);
+  padding: 40px;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+  animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   TIPOGRAFÍA
+   ============================================ */
+
+h1 {
+  margin-bottom: 30px;
+  font-weight: 600;
+  font-size: 28px;
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   INPUTS Y SELECTS
+   ============================================ */
+
+input,
+select {
+  width: 100%;
+  padding: 14px 16px;
+  margin: 10px 0;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: var(--font-secondary);
+  transition: all 0.3s ease;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+  transform: translateY(-2px);
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+/* ============================================
+   BOTONES
+   ============================================ */
+
+button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-emerald));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-lavender));
+  transition: left 0.3s ease;
+}
+
+button:hover::before {
+  left: 0;
+}
+
+button span {
+  position: relative;
+  z-index: 1;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(46, 125, 50, 0.3);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+button:disabled::before {
+  display: none;
+}
+
+/* ============================================
+   TOGGLE LINKS
+   ============================================ */
+
+.toggle {
+  display: block;
+  margin-top: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.toggle:hover {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
+/* ============================================
+   ESTADOS Y ERRORES
+   ============================================ */
+
+.hidden {
+  display: none !important;
+}
+
+.field-error {
+  color: var(--error-color);
+  font-size: 12px;
+  text-align: left;
+  display: none;
+  margin-top: -5px;
+  margin-bottom: 10px;
+  padding-left: 4px;
+  font-weight: 500;
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 13px;
+  display: block;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid var(--error-color);
+}
+
+.input-error {
+  border-color: var(--error-color) !important;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* ============================================
+   CHECKBOX
+   ============================================ */
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  justify-content: flex-start;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--accent-green);
+}
+
+.checkbox-row label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ============================================
+   PASSWORD REQUIREMENTS
+   ============================================ */
+
+.password-requirements {
+  list-style: none;
+  padding: 15px;
+  margin: 15px 0;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.password-requirements li {
+  padding: 6px 0;
+  transition: all 0.3s ease;
+}
+
+.password-requirements li::before {
+  content: "✖ ";
+  color: var(--error-color);
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.password-requirements li.valid::before {
+  content: "✔ ";
+  color: var(--success-color);
+}
+
+.password-requirements li.valid {
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.instruction-message {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: left;
+  display: block;
+  margin-top: -8px;
+  margin-bottom: 8px;
+  padding-left: 4px;
+  font-style: italic;
+}
+
+/* ============================================
+   SCROLLBAR PERSONALIZADO
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-green);
+  border-radius: 10px;
+  border: 2px solid var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-blue);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 480px) {
+  .card {
+    padding: 30px 20px;
+    max-width: 90%;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .theme-toggle {
+    top: 10px;
+    right: 10px;
+    padding: 6px 12px;
+  }
+}
+
+/* ============================================
+   ANIMACIONES ADICIONALES
+   ============================================ */
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}

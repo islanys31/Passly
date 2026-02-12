@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: passly-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: passly
+      MYSQL_ROOT_PASSWORD: root_password # Cambiar en prod
+      MYSQL_USER: passly_user
+      MYSQL_PASSWORD: passly_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/passly.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+
+  api:
+    build: ./backend
+    container_name: passly-api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=root_password
+      - DB_NAME=passly
+      - JWT_SECRET=super_secret_key_passly_2026
+      - JWT_EXPIRES_IN=24h
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:

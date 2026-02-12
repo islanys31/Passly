@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Establecer Nueva Contraseña - Passly</title>
+  <link rel="stylesheet" href="/css/index.css">
+</head>
+
+<body>
+  <!-- Toggle de Modo Oscuro/Claro -->
+  <div class="theme-toggle" id="themeToggle">
+    <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+    <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+  </div>
+
+  <div class="card">
+    <h1>Restablecer Contraseña</h1>
+    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+      Ingresa el token recibido y tu nueva contraseña segura.
+    </p>
+
+    <input id="token" type="text" placeholder="Pegar token de recuperación" oninput="clearError()">
+    <input id="nuevaPass" type="password" placeholder="Nueva contraseña" oninput="clearError()">
+    <input id="confirmPass" type="password" placeholder="Confirmar contraseña" oninput="clearError()">
+
+    <span id="errorMsg" class="field-error"></span>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="showPass">
+      <label for="showPass">Mostrar contraseñas</label>
+    </div>
+
+    <button id="btnReset" onclick="handleReset()">
+      <span>Actualizar contraseña</span>
+    </button>
+
+    <a href="index.html" class="toggle">Volver al inicio de sesión</a>
+  </div>
+
+  <script>
+    // Mostrar/Ocultar Pass
+    document.getElementById('showPass').addEventListener('change', (e) => {
+      const type = e.target.checked ? 'text' : 'password';
+      document.getElementById('nuevaPass').type = type;
+      document.getElementById('confirmPass').type = type;
+    });
+
+    function clearError() {
+      document.getElementById('errorMsg').style.display = 'none';
+      const inputs = ['token', 'nuevaPass', 'confirmPass'];
+      inputs.forEach(id => document.getElementById(id).classList.remove('input-error'));
+    }
+
+    async function handleReset() {
+      const token = document.getElementById("token").value.trim();
+      const nuevaPass = document.getElementById("nuevaPass").value;
+      const confirmPass = document.getElementById("confirmPass").value;
+      const btn = document.getElementById("btnReset");
+      const errorMsg = document.getElementById("errorMsg");
+
+      // Validaciones básicas
+      if (!token || !nuevaPass || !confirmPass) {
+        errorMsg.textContent = "Todos los campos son obligatorios.";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      if (nuevaPass !== confirmPass) {
+        errorMsg.textContent = "Las contraseñas no coinciden.";
+        errorMsg.style.display = "block";
+        document.getElementById('confirmPass').classList.add('input-error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.add('loading');
+
+      try {
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, newPassword: nuevaPass })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("¡Éxito! Tu contraseña ha sido actualizada. Ingresa con tus nuevas credenciales.");
+          window.location.href = "index.html";
+        } else {
+          errorMsg.textContent = data.error || "Error al restablecer la contraseña.";
+          errorMsg.style.display = "block";
+        }
+      } catch (err) {
+        errorMsg.textContent = "Error de conexión con el servidor.";
+        errorMsg.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+      }
+    }
+
+    // Lógica de Tema
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeUI(newTheme);
+    }
+
+    function updateThemeUI(theme) {
+      const icon = document.getElementById('themeIcon');
+      const text = document.getElementById('themeText');
+      if (theme === 'light') {
+        icon.textContent = '☀️';
+        text.textContent = 'Modo Oscuro';
+      } else {
+        icon.textContent = '🌙';
+        text.textContent = 'Modo Claro';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeUI(savedTheme);
+      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    });
+  </script>
+</body>
+
+</html>
