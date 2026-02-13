@@ -4,16 +4,16 @@ exports.getGeneralStats = async (req, res) => {
     try {
         // Usuarios activos
         const [users] = await db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 1');
-        
+
         // Accesos hoy
         const [accesos] = await db.query('SELECT COUNT(*) as total FROM accesos WHERE DATE(fecha_hora) = CURDATE()');
-        
+
         // Dispositivos activos
         const [dispositivos] = await db.query('SELECT COUNT(*) as total FROM dispositivos WHERE estado_id = 1');
-        
-        // Alertas (por ejemplo, accesos denegados o fallidos - asumimos una lógica por ahora)
-        // Si no hay tabla de alertas, podemos simular o contar accesos "sospechosos"
-        const alerts = 0; // Placeholder o lógica personalizada
+
+        // Alertas: Usuarios bloqueados (estado_id = 4)
+        const [bloqueados] = await db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 4');
+        const alerts = bloqueados[0].total;
 
         res.json({
             success: true,

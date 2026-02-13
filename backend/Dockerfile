@@ -4,6 +4,9 @@ FROM node:20-alpine
 # Crear directorio de trabajo
 WORKDIR /app
 
+# Instalar dependencias del sistema (incluye mysql-client para backups)
+RUN apk add --no-initial-user --no-cache mysql-client
+
 # Copiar archivos de dependencias
 COPY package*.json ./
 
@@ -11,7 +14,10 @@ COPY package*.json ./
 RUN npm install --production
 
 # Copiar el resto del código del backend
-COPY . .
+COPY --chown=node:node . .
+
+# Usar usuario no privilegiado
+USER node
 
 # Exponer el puerto
 EXPOSE 3000

@@ -521,8 +521,8 @@
                         <td><span class="badge badge-info">${user.rol_id === 1 ? 'Admin' : 'Personal'}</span></td>
                         <td><span class="badge ${user.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${user.estado_id === 1 ? 'Activo' : 'Inactivo'}</span></td>
                         <td>
-                            <button class="btn-table" onclick="alert('Editar ID: ${user.id}')">✏️</button>
-                            <button class="btn-table" onclick="alert('Borrar ID: ${user.id}')" style="color: var(--error-color)">🗑️</button>
+                            <button class="btn-table" onclick="showEditUser(${JSON.stringify(user).replace(/"/g, '&quot;')})">✏️</button>
+                            <button class="btn-table" onclick="deleteUser(${user.id})" style="color: var(--error-color)">🗑️</button>
                         </td>
                     </tr>
                 `;
@@ -530,6 +530,52 @@
 
       html += '</tbody></table></div>';
       container.innerHTML = html;
+    }
+
+    async function showEditUser(user) {
+      const overlay = document.getElementById('modalOverlay');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      const saveBtn = document.getElementById('btnSave');
+
+      title.textContent = `Editar Usuario: ${user.nombre}`;
+      body.innerHTML = `
+                <input type="text" id="editUserName" value="${user.nombre}" placeholder="Nombre">
+                <input type="text" id="editUserLastName" value="${user.apellido || ''}" placeholder="Apellido">
+                <input type="email" id="editUserEmail" value="${user.email}" placeholder="Email">
+                <select id="editUserRole">
+                    <option value="1" ${user.rol_id === 1 ? 'selected' : ''}>Administrador</option>
+                    <option value="2" ${user.rol_id === 2 ? 'selected' : ''}>Usuario Regular</option>
+                    <option value="3" ${user.rol_id === 3 ? 'selected' : ''}>Seguridad</option>
+                </select>
+                <select id="editUserStatus">
+                    <option value="1" ${user.estado_id === 1 ? 'selected' : ''}>Activo</option>
+                    <option value="2" ${user.estado_id === 2 ? 'selected' : ''}>Inactivo</option>
+                </select>
+            `;
+
+      saveBtn.onclick = async () => {
+        const payload = {
+          nombre: document.getElementById('editUserName').value,
+          apellido: document.getElementById('editUserLastName').value,
+          email: document.getElementById('editUserEmail').value,
+          rol_id: parseInt(document.getElementById('editUserRole').value),
+          estado_id: parseInt(document.getElementById('editUserStatus').value)
+        };
+        const res = await apiRequest(`/usuarios/${user.id}`, 'PUT', payload);
+        if (res) {
+          closeModal();
+          loadView('usuarios');
+        }
+      };
+      overlay.style.display = 'flex';
+    }
+
+    async function deleteUser(id) {
+      if (confirm('¿Estás seguro de desactivar este usuario?')) {
+        const res = await apiRequest(`/usuarios/${id}`, 'DELETE');
+        if (res) loadView('usuarios');
+      }
     }
 
     async function renderDispositivos(container) {
@@ -560,12 +606,93 @@
                         <td>${d.usuario_nombre}</td>
                         <td><code>${d.identificador_unico}</code></td>
                         <td><span class="badge ${d.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${d.estado_id === 1 ? 'Activo' : 'Inactivo'}</span></td>
+                        <td>
+                            <button class="btn-table" onclick="showEditDevice(${JSON.stringify(d).replace(/"/g, '&quot;')})">✏️</button>
+                            <button class="btn-table" onclick="deleteDevice(${d.id})" style="color: var(--error-color)">🗑️</button>
+                        </td>
                     </tr>
                 `;
       });
 
       html += '</tbody></table></div>';
       container.innerHTML = html;
+    }
+
+    async function showAddDevice() {
+      const overlay = document.getElementById('modalOverlay');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      const saveBtn = document.getElementById('btnSave');
+
+      const medios = await apiRequest('/medios-transporte');
+      const usuarios = await apiRequest('/usuarios');
+
+      title.textContent = "Registrar Nuevo Dispositivo";
+      body.innerHTML = `
+                <input type="text" id="devName" placeholder="Nombre Dispositivo (Ejem: Mazda 3)">
+                <input type="text" id="devUid" placeholder="Identificador Único (Placa o Serial)">
+                <select id="devUser">
+                    <option value="">Seleccionar Usuario Cargo</option>
+                    ${usuarios.map(u => `<option value="${u.id}">${u.nombre} ${u.apellido || ''}</option>`).join('')}
+                </select>
+                <select id="devMedio">
+                    <option value="">Medio de Transporte</option>
+                    ${medios.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')}
+                </select>
+            `;
+
+      saveBtn.onclick = async () => {
+        const payload = {
+          nombre: document.getElementById('devName').value,
+          identificador_unico: document.getElementById('devUid').value,
+          usuario_id: parseInt(document.getElementById('devUser').value),
+          medio_transporte_id: parseInt(document.getElementById('devMedio').value)
+        };
+        const res = await apiRequest('/dispositivos', 'POST', payload);
+        if (res) {
+          closeModal();
+          loadView('dispositivos');
+        }
+      };
+      overlay.style.display = 'flex';
+    }
+
+    async function showEditDevice(device) {
+      const overlay = document.getElementById('modalOverlay');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      const saveBtn = document.getElementById('btnSave');
+
+      title.textContent = `Editar Dispositivo: ${device.nombre}`;
+      body.innerHTML = `
+                <input type="text" id="editDevName" value="${device.nombre}" placeholder="Nombre">
+                <input type="text" id="editDevUid" value="${device.identificador_unico}" placeholder="Identificador">
+                <select id="editDevStatus">
+                    <option value="1" ${device.estado_id === 1 ? 'selected' : ''}>Activo</option>
+                    <option value="2" ${device.estado_id === 2 ? 'selected' : ''}>Inactivo</option>
+                </select>
+            `;
+
+      saveBtn.onclick = async () => {
+        const payload = {
+          nombre: document.getElementById('editDevName').value,
+          identificador_unico: document.getElementById('editDevUid').value,
+          estado_id: parseInt(document.getElementById('editDevStatus').value)
+        };
+        const res = await apiRequest(`/dispositivos/${device.id}`, 'PUT', payload);
+        if (res) {
+          closeModal();
+          loadView('dispositivos');
+        }
+      };
+      overlay.style.display = 'flex';
+    }
+
+    async function deleteDevice(id) {
+      if (confirm('¿Deseas desactivar este dispositivo?')) {
+        const res = await apiRequest(`/dispositivos/${id}`, 'DELETE');
+        if (res) loadView('dispositivos');
+      }
     }
 
     async function renderAccesos(container) {
@@ -609,15 +736,25 @@
     // MODALES (SIMPLIFICADO)
     // ============================================
 
-    function showAddAccess() {
+    async function showAddAccess() {
       const overlay = document.getElementById('modalOverlay');
       const title = document.getElementById('modalTitle');
       const body = document.getElementById('modalBody');
       const saveBtn = document.getElementById('btnSave');
 
+      const usuarios = await apiRequest('/usuarios');
+      const dispositivos = await apiRequest('/dispositivos');
+
       title.textContent = "Registrar Nuevo Acceso";
       body.innerHTML = `
-                <input type="number" id="accUserId" placeholder="ID del Usuario">
+                <select id="accUserId">
+                    <option value="">Seleccionar Usuario</option>
+                    ${usuarios.map(u => `<option value="${u.id}">${u.nombre} ${u.apellido || ''}</option>`).join('')}
+                </select>
+                <select id="accDeviceId">
+                    <option value="">Peatonal (Sin dispositivo)</option>
+                    ${dispositivos.map(d => `<option value="${d.id}">${d.nombre} (${d.identificador_unico})</option>`).join('')}
+                </select>
                 <select id="accType">
                     <option value="Entrada">Entrada</option>
                     <option value="Salida">Salida</option>
@@ -627,7 +764,8 @@
 
       saveBtn.onclick = async () => {
         const payload = {
-          usuario_id: document.getElementById('accUserId').value,
+          usuario_id: parseInt(document.getElementById('accUserId').value),
+          dispositivo_id: document.getElementById('accDeviceId').value ? parseInt(document.getElementById('accDeviceId').value) : null,
           tipo: document.getElementById('accType').value,
           observaciones: document.getElementById('accObs').value
         };

@@ -62,13 +62,13 @@
                     <li id="reqSpecial">Al menos **1 carácter especial** permitido (**!@#$%^* **).</li>
                 </ul>
 
-            <select id="rolRegistro" onblur="validateLive('rolRegistro', 'select', 'registro')"
+        <select id="rolRegistro" onblur="validateLive('rolRegistro', 'select', 'registro')"
             oninput="clearFormError(this);">
-                  <option value="" disabled selected>Selecciona tu rol</option>
-                  <option value="administrador">Administrador</option>
-                  <option value="empleado">Empleado</option>
-                  <option value="invitado">Invitado</option>
-                </select>
+            <option value="" disabled selected>Selecciona tu rol</option>
+            <option value="1">Administrador</option>
+            <option value="2">Usuario regular</option>
+            <option value="3">Personal de Seguridad</option>
+        </select>
         <span id="rolRegistroError" class="field-error"></span>
            
             <div class="checkbox-row">
@@ -148,8 +148,8 @@
         }
 
         function validarTextoSinEspacios(texto) {
-            // Solo permite letras (mayúsculas, minúsculas, tildes, ñ)
-            const regexTexto = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/;
+            // Requisito: Sin caracteres especiales ni acentos (Hardened)
+            const regexTexto = /^[a-zA-Z\s]+$/;
             return regexTexto.test(texto);
         }
 
@@ -351,6 +351,8 @@
         // =================================================================
         // --- BLOQUE 5: CONEXIÓN AL BACKEND Y LÓGICA DE RUTAS ---
         // =================================================================
+        const API_BASE = "/api";
+        let intentos = 0;
 
         // --- 5.1. Registro (/api/register) ---
         document.getElementById("btnRegistrar").onclick = async function () {
@@ -364,7 +366,6 @@
 
             // IDs de prueba para el registro
             const CLIENTE_PRUEBA_ID = 1;
-            const ROL_PRUEBA_ID = 1;
 
             btn.disabled = true;
 
@@ -378,7 +379,7 @@
                         email: document.getElementById("emailRegistro").value.trim(),
                         password: document.getElementById("passRegistro").value,
                         cliente_id: CLIENTE_PRUEBA_ID,
-                        rol_id: ROL_PRUEBA_ID
+                        rol_id: parseInt(document.getElementById("rolRegistro").value)
                     })
                 });
 

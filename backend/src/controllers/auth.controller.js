@@ -108,11 +108,12 @@ exports.forgotPassword = async (req, res) => {
         );
 
         // EN PRODUCCIÓN: Enviar resetToken por email
-        // AQUÍ: Lo devolvemos para poder probar la integración
+        // Por seguridad, no devolvemos el token al cliente
+        console.log(`[DEV ONLY] Reset Token para ${email}: ${resetToken}`);
+
         res.json({
-            message: 'Instrucciones enviadas',
-            resetToken, // Solo para desarrollo/testeo
-            instructions: 'Usa este token en la página de reset.html'
+            success: true,
+            message: 'Si el correo está registrado, recibirás un enlace de recuperación pronto.'
         });
 
     } catch (error) {

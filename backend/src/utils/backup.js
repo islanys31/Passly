@@ -11,12 +11,12 @@ if (!fs.existsSync(backupDir)) {
 const fileName = `passly_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.sql`;
 const filePath = path.join(backupDir, fileName);
 
-// Note: This requires mysqldump to be in the PATH
-// In local XAMPP environment, we point to the full path if needed
-const mysqlPath = 'C:\\xampp\\mysql\\bin\\mysqldump.exe';
-const command = `"${mysqlPath}" -u ${process.env.DB_USER} ${process.env.DB_PASSWORD ? `-p${process.env.DB_PASSWORD}` : ''} ${process.env.DB_NAME} > "${filePath}"`;
+// Docker/Linux: use 'mysqldump' from PATH
+// Windows: needs mysqldump in PATH or specify environment variable MYSQL_PATH
+const mysqlBin = process.env.MYSQL_PATH || 'mysqldump';
+const command = `${mysqlBin} -h ${process.env.DB_HOST} -u ${process.env.DB_USER} ${process.env.DB_PASSWORD ? `-p${process.env.DB_PASSWORD}` : ''} ${process.env.DB_NAME} > "${filePath}"`;
 
-console.log('Starting automated backup...');
+console.log(`Starting automated backup on host ${process.env.DB_HOST}...`);
 
 exec(command, (error, stdout, stderr) => {
     if (error) {

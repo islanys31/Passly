@@ -62,7 +62,7 @@
         const data = await res.json();
 
         if (res.ok) {
-          alert(data.message + (data.resetToken ? "\n\nSimulación de Token: " + data.resetToken : ""));
+          alert("Solicitud recibida. Si el correo existe, se han enviado las instrucciones.\n\n[INFO DESARROLLO]: El token de recuperación ha sido impreso en la consola del servidor backend para fines de prueba.");
           // Redirigir a la página de reset o inicio
           window.location.href = "reset.html";
         } else {

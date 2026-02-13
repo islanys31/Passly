@@ -4,6 +4,7 @@ const authController = require('../controllers/auth.controller');
 const {
     registerLimiter,
     loginLimiter,
+    forgotPasswordLimiter,
     validateRegister,
     validateLogin,
     handleValidationErrors
@@ -57,7 +58,7 @@ router.post('/register', [registerLimiter, ...validateRegister, handleValidation
 router.post('/login', [loginLimiter, ...validateLogin, handleValidationErrors], authController.login);
 
 // Recuperación de contraseña
-router.post('/forgot-password', authController.forgotPassword);
+router.post('/forgot-password', [forgotPasswordLimiter], authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
 module.exports = router;

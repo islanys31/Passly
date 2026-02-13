@@ -17,6 +17,12 @@ const registerLimiter = rateLimit({
     message: 'Demasiados registros desde esta IP. Por favor, intenta de nuevo más tarde.',
 });
 
+const forgotPasswordLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 3, // Máximo 3 solicitudes por hora
+    message: 'Has alcanzado el límite de 3 solicitudes de recuperación por hora. Por favor, intenta más tarde.',
+});
+
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // 100 requests por IP
@@ -47,8 +53,15 @@ const validateRegister = [
         .trim()
         .isLength({ min: 2, max: 50 })
         .withMessage('El nombre debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
-        .withMessage('El nombre solo puede contener letras'),
+        .matches(/^[a-zA-Z\s]+$/)
+        .withMessage('El nombre no puede contener caracteres especiales ni acentos'),
+
+    body('apellido')
+        .trim()
+        .isLength({ min: 2, max: 50 })
+        .withMessage('El apellido debe tener entre 2 y 50 caracteres')
+        .matches(/^[a-zA-Z\s]+$/)
+        .withMessage('El apellido no puede contener caracteres especiales ni acentos'),
 
     body('email')
         .trim()
@@ -62,10 +75,10 @@ const validateRegister = [
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
         .withMessage('La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial'),
 
-    body('rol')
-        .optional()
-        .isIn(['admin', 'usuario'])
-        .withMessage('Rol inválido'),
+    body('rol_id')
+        .notEmpty()
+        .isInt()
+        .withMessage('ID de rol inválido'),
 ];
 
 const validateLogin = [
@@ -84,7 +97,9 @@ const validateDevice = [
     body('nombre')
         .trim()
         .isLength({ min: 2, max: 100 })
-        .withMessage('El nombre debe tener entre 2 y 100 caracteres'),
+        .withMessage('El nombre debe tener entre 2 y 100 caracteres')
+        .matches(/^[a-zA-Z0-9\s]+$/)
+        .withMessage('El nombre del dispositivo no puede contener caracteres especiales'),
 
     body('tipo')
         .trim()
@@ -157,6 +172,7 @@ const sanitizeInput = (req, res, next) => {
 module.exports = {
     loginLimiter,
     registerLimiter,
+    forgotPasswordLimiter,
     apiLimiter,
     helmetConfig,
     validateRegister,

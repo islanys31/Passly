@@ -23,6 +23,9 @@ const app = express();
 // Optimización - Compresión
 app.use(compression());
 
+// Seguridad - Headers de seguridad
+app.use(helmetConfig);
+
 // Documentación de API
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
@@ -48,8 +51,11 @@ app.use('/api', apiLimiter);
 // SERVIR FRONTEND
 // ============================================
 
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '../../frontend')));
+// Servir archivos estáticos del frontend con caché optimizada
+app.use(express.static(path.join(__dirname, '../../frontend'), {
+    maxAge: '7d', // Cache de 7 días para assets estáticos
+    etag: true
+}));
 
 // ============================================
 // RUTAS API
