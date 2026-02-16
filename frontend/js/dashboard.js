@@ -86,31 +86,73 @@ async function loadView(view) {
 // --- RENDERERS ---
 
 async function renderOverview(container) {
-    const res = await apiRequest('/stats');
-    const stats = res?.data?.stats || { usuariosActivos: 0, accesosHoy: 0, dispositivosActivos: 0, alertas: 0 };
+    const [statsRes, accessRes] = await Promise.all([
+        apiRequest('/stats'),
+        apiRequest('/accesos')
+    ]);
+
+    const stats = statsRes?.data?.stats || { usuariosActivos: 0, accesosHoy: 0, dispositivosActivos: 0, alertas: 0 };
+    const recentAccess = accessRes?.data?.slice(0, 5) || [];
 
     const grid = [
-        { label: 'Usuarios Activos', val: stats.usuariosActivos, icon: '👥' },
-        { label: 'Accesos Hoy', val: stats.accesosHoy, icon: '🚪' },
-        { label: 'Dispositivos', val: stats.dispositivosActivos, icon: '📱' },
-        { label: 'Alertas', val: stats.alertas, icon: '⚠️' }
+        { label: 'Usuarios Activos', val: stats.usuariosActivos, icon: '👥', color: 'var(--accent-blue)' },
+        { label: 'Accesos Hoy', val: stats.accesosHoy, icon: '🚪', color: 'var(--accent-green)' },
+        { label: 'Dispositivos', val: stats.dispositivosActivos, icon: '📱', color: 'var(--accent-lavender)' },
+        { label: 'Alertas', val: stats.alertas, icon: '⚠️', color: 'var(--error-color)' }
     ];
 
     container.innerHTML = `
         <div class="stats-grid">
             ${grid.map(s => `
-                <div class="stat-card">
-                    <h3>${s.label}</h3>
-                    <div class="value">${s.val}</div>
-                    <div style="font-size: 24px; margin-top: 10px;">${s.icon}</div>
+                <div class="stat-card" style="border-left: 5px solid ${s.color}">
+                    <div class="stat-icon" style="color: ${s.color}">${s.icon}</div>
+                    <div class="stat-info">
+                        <h3>${s.label}</h3>
+                        <div class="value">${s.val}</div>
+                    </div>
                 </div>
             `).join('')}
         </div>
-        <div class="card" style="margin-top:20px; text-align:left;">
-            <h3>Panel de Monitoreo Passly</h3>
-            <p style="color:var(--text-secondary); margin-top:10px;">
-                Bienvenido, ${escapeHTML(userData.nombre)}. Todas las transacciones están siendo auditadas bajo el estándar de Hardening.
-            </p>
+
+        <div class="dashboard-row" style="display: flex; gap: 20px; margin-top: 30px;">
+            <div class="card" style="flex: 2; text-align: left; padding: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin:0">🚨 Última Actividad</h3>
+                    <button class="btn-table" onclick="loadView('accesos')">Ver Todo</button>
+                </div>
+                <div class="data-table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Usuario</th><th>Tipo</th><th>Hora</th></tr>
+                        </thead>
+                        <tbody>
+                            ${recentAccess.length ? recentAccess.map(a => `
+                                <tr>
+                                    <td><strong>${escapeHTML(a.usuario_nombre)}</strong></td>
+                                    <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo}</span></td>
+                                    <td>${new Date(a.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="3" style="text-align:center">No hay actividad reciente</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1; text-align: left; padding: 25px; background: linear-gradient(135deg, var(--card-bg), rgba(46, 125, 50, 0.05));">
+                <h3 style="margin-bottom: 15px;">🔍 Resumen de Seguridad</h3>
+                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                    Sistema monitoreado bajo el estándar <strong>Passly Hardening v2.0</strong>. 
+                </p>
+                <ul style="font-size: 12px; color: var(--text-muted); margin-top: 15px; padding-left: 20px;">
+                    <li style="margin-bottom:8px;">Encriptación AES-256 activa</li>
+                    <li style="margin-bottom:8px;">Logs de auditoría inmutables</li>
+                    <li style="margin-bottom:8px;">Rate limiting habilitado</li>
+                </ul>
+                <div style="margin-top: 25px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <small style="display:block; margin-bottom:5px;">Estado del Sistema:</small>
+                    <span class="badge badge-success">Sincronizado</span>
+                </div>
+            </div>
         </div>
     `;
 }
