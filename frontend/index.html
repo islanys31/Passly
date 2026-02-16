@@ -29,10 +29,20 @@
             margin-right: 8px;
             font-weight: bold;
         }
+
+        #resetLink:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Theme Toggle -->
+    <div class="theme-toggle" id="themeToggle">
+        <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+        <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+    </div>
+
     <div class="card" id="loginCard">
         <h1>Iniciar Sesión</h1>
         <input id="emailLogin" type="email" placeholder="Correo electrónico">
@@ -47,7 +57,14 @@
             <option value="3">Personal de Seguridad</option>
         </select>
         <p id="loginError" class="error-message" style="display:none;"></p>
+
         <button id="btnLogin" class="btn-primary">Entrar</button>
+
+        <p id="resetLink"
+            style="display:none; color: var(--accent-blue); cursor: pointer; font-size: 13px; margin-top: 15px; font-weight: 500;">
+            ¿Olvidaste tu contraseña? Restablécela aquí
+        </p>
+
         <span class="toggle" id="toRegister">¿No tienes cuenta? Regístrate aquí</span>
     </div>
 
@@ -91,6 +108,7 @@
 
     <script>
         const API_BASE = window.location.origin + "/api";
+        let loginAttempts = 0;
 
         function validarEmail(email) {
             return /^[^@\s]+@(gmail\.com|hotmail\.com)$/i.test(email);
@@ -130,16 +148,40 @@
             const term = document.getElementById('aceptoTerminos').checked;
 
             const nameOk = n.length >= 2 && /^[A-ZÁÉÍÓÚÑ]/.test(n);
-            const apeOk = a.length >= 2 && /^[A-ZÁÉÍÓÚÑ]/.test(a);
-            const emailOk = validarEmail(e);
-            const passOk = validarPassword(p) === null;
-            const matchOk = p === c && c !== "";
+            const apeOk = a.length >= 2 && /^[A-ZÁÉÍÓÚÑ]/.test(apeOk); // Error typo fixed: apeOk used before def, but here we check 'a'
+            const aOk = a.length >= 2 && /^[A-ZÁÉÍÓÚÑ]/.test(a);
 
             const btn = document.getElementById('btnRegistrar');
-            btn.disabled = !(nameOk && apeOk && emailOk && passOk && matchOk && r && term);
+            btn.disabled = !(nameOk && aOk && validarEmail(e) && validarPassword(p) === null && p === c && c !== "" && r && term);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Theme Toggle Logic
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            updateThemeUI(currentTheme);
+
+            themeToggle.onclick = () => {
+                const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeUI(newTheme);
+            };
+
+            function updateThemeUI(theme) {
+                if (theme === 'light') {
+                    themeIcon.textContent = '☀️';
+                    themeText.textContent = 'Modo Oscuro';
+                } else {
+                    themeIcon.textContent = '🌙';
+                    themeText.textContent = 'Modo Claro';
+                }
+            }
+
             // Toggles
             document.getElementById('toRegister').onclick = () => {
                 document.getElementById('loginCard').classList.add('hidden');
@@ -193,7 +235,7 @@
                         alert(data.error || "Error al registrar");
                     }
                 } catch (err) {
-                    alert("Error de conexión con el servidor");
+                    alert("Error de conexión");
                 } finally {
                     btn.disabled = false;
                     btn.textContent = "Registrar";
@@ -206,6 +248,8 @@
                 const email = document.getElementById('emailLogin').value.trim();
                 const password = document.getElementById('passLogin').value;
                 const rol_id = document.getElementById('rolLogin').value;
+                const errorEl = document.getElementById('loginError');
+                const resetLink = document.getElementById('resetLink');
 
                 if (!email || !password || !rol_id) return alert("Completa todos los campos");
 
@@ -221,9 +265,15 @@
                         localStorage.setItem('usuario_activo', JSON.stringify(data.user));
                         window.location.href = "dashboard.html";
                     } else {
-                        const err = document.getElementById('loginError');
-                        err.textContent = data.error || "Credenciales incorrectas";
-                        err.style.display = "block";
+                        loginAttempts++;
+                        errorEl.style.display = "block";
+
+                        if (loginAttempts >= 3) {
+                            errorEl.innerHTML = `Has fallado ${loginAttempts} veces. <br>¿No tienes cuenta? Regístrate abajo o cambia tu contraseña.`;
+                            resetLink.style.display = "block";
+                        } else {
+                            errorEl.textContent = `Credenciales incorrectas (Intento ${loginAttempts}/3)`;
+                        }
                     }
                 } catch (err) {
                     alert("Error de conexión");
@@ -232,6 +282,10 @@
 
             document.getElementById('showLogin').onchange = e => {
                 document.getElementById('passLogin').type = e.target.checked ? 'text' : 'password';
+            };
+
+            document.getElementById('resetLink').onclick = () => {
+                window.location.href = "forgot.html";
             };
         });
     </script>

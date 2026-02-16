@@ -103,16 +103,16 @@ body::before {
 
 .theme-toggle {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 15px;
+  right: 15px;
   z-index: 1000;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 50px;
-  padding: 8px 16px;
+  padding: 5px 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-md);
@@ -125,7 +125,7 @@ body::before {
 }
 
 .theme-toggle-icon {
-  font-size: 20px;
+  font-size: 16px;
   transition: transform 0.3s ease;
 }
 
@@ -134,7 +134,7 @@ body::before {
 }
 
 .theme-toggle-text {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
 }
@@ -522,9 +522,17 @@ button:disabled::before {
   position: relative;
 }
 
-.toast-success { border-left: 4px solid var(--accent-green); }
-.toast-error { border-left: 4px solid var(--error-color); }
-.toast-info { border-left: 4px solid var(--accent-blue); }
+.toast-success {
+  border-left: 4px solid var(--accent-green);
+}
+
+.toast-error {
+  border-left: 4px solid var(--error-color);
+}
+
+.toast-info {
+  border-left: 4px solid var(--accent-blue);
+}
 
 .toast-content {
   font-size: 14px;
@@ -552,13 +560,25 @@ button:disabled::before {
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes progress {
-  from { width: 100%; }
-  to { width: 0%; }
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
 }
 
 .fade-out {
@@ -571,6 +591,7 @@ button:disabled::before {
   border-color: var(--error-color) !important;
   background-color: rgba(239, 68, 68, 0.05) !important;
 }
+
 /* Spinner */
 .loading-spinner {
   display: inline-block;
@@ -585,7 +606,9 @@ button:disabled::before {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .shake {
@@ -593,8 +616,21 @@ button:disabled::before {
 }
 
 @keyframes shake_custom {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  50% { transform: translateX(10px); }
-  75% { transform: translateX(-10px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  50% {
+    transform: translateX(10px);
+  }
+
+  75% {
+    transform: translateX(-10px);
+  }
 }
