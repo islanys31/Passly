@@ -27,6 +27,10 @@ exports.register = async (req, res) => {
             [nombre, apellido, email, hashedPassword, cliente_id || null, rol_id]
         );
 
+        // ...
+        const { getIO } = require('../config/socket');
+        getIO().emit('stats_update');
+
         res.status(201).json({ message: 'Usuario registrado exitosamente', userId: result.insertId });
     } catch (error) {
         console.error(error);

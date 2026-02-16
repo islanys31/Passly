@@ -1,4 +1,5 @@
 const { pool: db } = require('../config/db');
+const { getIO } = require('../config/socket');
 
 exports.getAllDevices = async (req, res) => {
     try {
@@ -21,6 +22,7 @@ exports.createDevice = async (req, res) => {
             'INSERT INTO dispositivos (usuario_id, medio_transporte_id, nombre, identificador_unico, estado_id) VALUES (?, ?, ?, ?, 1)',
             [usuario_id, medio_transporte_id, nombre, identificador_unico]
         );
+        getIO().emit('stats_update');
         res.status(201).json({ id: result.insertId, message: 'Dispositivo registrado' });
     } catch (error) {
         res.status(500).json({ error: 'Error al registrar dispositivo' });
@@ -34,6 +36,7 @@ exports.updateDevice = async (req, res) => {
             'UPDATE dispositivos SET nombre = ?, identificador_unico = ?, estado_id = ? WHERE id = ?',
             [nombre, identificador_unico, estado_id, req.params.id]
         );
+        getIO().emit('stats_update');
         res.json({ message: 'Dispositivo actualizado' });
     } catch (error) {
         res.status(500).json({ error: 'Error al actualizar dispositivo' });
@@ -43,6 +46,7 @@ exports.updateDevice = async (req, res) => {
 exports.deleteDevice = async (req, res) => {
     try {
         await db.query('UPDATE dispositivos SET estado_id = 2 WHERE id = ?', [req.params.id]);
+        getIO().emit('stats_update');
         res.json({ message: 'Dispositivo desactivado' });
     } catch (error) {
         res.status(500).json({ error: 'Error al desactivar dispositivo' });

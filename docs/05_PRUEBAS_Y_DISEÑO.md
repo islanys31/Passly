@@ -30,6 +30,22 @@ El sistema cumple estrictamente con los mockups aprobados, manteniendo una relac
 *   **Capacidad**: El contenedor Nginx está configurado con `worker_connections 1024`, permitiendo ráfagas de tráfico de hasta 1000 usuarios concurrentes sin degradación de servicio.
 *   **Disponibilidad**: Failover simulado apagando el contenedor de API; Docker lo reinicia en menos de 5 segundos.
 
+### 2.4 Pruebas de Hardening (Seguridad)
+| Vector de Ataque | Medida de Mitigación | Estado |
+| :--- | :--- | :--- |
+| **Fuerza Bruta** | Límite de 3 intentos con bloqueo y mensaje disuasivo | ✅ ACTIVO |
+| **XSS / Inyección** | Sanitización de inputs y Content Security Policy (Helmet) | ✅ ACTIVO |
+| **DOS / Scraping** | Rate Limiting por IP (100 req / 15 min) | ✅ ACTIVO |
+| **Secuestro de Sesión** | HTTPOnly (Simulado), JWT con expiración corta | ✅ ACTIVO |
+
+---
+
+## 🎨 DISEÑO Y EXPERIENCIA (UX)
+*   **Modo Oscuro Dinámico:** Implementación nativa con variables CSS y persistencia en `localStorage`.
+*   **Dashboard Visual:** Tarjetas de estadísticas con indicadores visuales de estado (verde/azul/amarillo/rojo).
+*   **Feedback Inmediato:** Sistema de "Toasts" para notificaciones no intrusivas.
+*   **Carga Optimizada:** Skeleton screens y spinners de carga para mejorar la percepción de velocidad.
+
 ---
 
 ## 🚀 ROADMAP (MEJORAS FUTURAS)

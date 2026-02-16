@@ -1,5 +1,6 @@
 const { executeQuery } = require('../utils/db.utils');
 const bcrypt = require('bcrypt');
+const { getIO } = require('../config/socket');
 
 // GetAll
 exports.getAllUsers = async (req, res) => {
@@ -26,7 +27,10 @@ exports.createUser = async (req, res) => {
         [nombre, apellido, email, hashedPassword, cliente_id, rol_id],
         res
     );
-    if (result) res.status(201).json({ id: result.insertId, message: 'Usuario creado' });
+    if (result) {
+        getIO().emit('stats_update');
+        res.status(201).json({ id: result.insertId, message: 'Usuario creado' });
+    }
 };
 
 // Update
@@ -37,11 +41,17 @@ exports.updateUser = async (req, res) => {
         [nombre, apellido, email, rol_id, estado_id, req.params.id],
         res
     );
-    if (result) res.json({ message: 'Usuario actualizado' });
+    if (result) {
+        getIO().emit('stats_update');
+        res.json({ message: 'Usuario actualizado' });
+    }
 };
 
 // Delete
 exports.deleteUser = async (req, res) => {
     const result = await executeQuery('UPDATE usuarios SET estado_id = 2 WHERE id = ?', [req.params.id], res);
-    if (result) res.json({ message: 'Usuario desactivado' });
+    if (result) {
+        getIO().emit('stats_update');
+        res.json({ message: 'Usuario desactivado' });
+    }
 };

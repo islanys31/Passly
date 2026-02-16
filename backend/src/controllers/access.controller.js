@@ -36,6 +36,7 @@ exports.registerAccess = async (req, res) => {
         // Emitir evento en tiempo real
         const io = getIO();
         io.emit('new_access', newLog[0]);
+        io.emit('stats_update');
 
         res.status(201).json({ id: result.insertId, message: 'Acceso registrado', data: newLog[0] });
     } catch (error) {
