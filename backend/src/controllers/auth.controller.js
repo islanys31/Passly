@@ -36,10 +36,10 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, rol_id } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
+        if (!email || !password || !rol_id) {
+            return res.status(400).json({ error: 'Correo, contraseña y rol son obligatorios' });
         }
 
         // Buscar usuario
@@ -50,6 +50,11 @@ exports.login = async (req, res) => {
         }
 
         const user = users[0];
+
+        // Verificar rol (3ra credencial)
+        if (user.rol_id !== parseInt(rol_id)) {
+            return res.status(401).json({ error: 'El rol seleccionado no coincide con su cuenta' });
+        }
 
         // Verificar estado
         if (user.estado_id !== 1) { // 1 = Activo
@@ -82,8 +87,11 @@ exports.login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error en el servidor al iniciar sesión' });
+        console.error('Login Error:', error);
+        if (error.code === 'ECONNREFUSED' || error.message.includes('connect')) {
+            return res.status(503).json({ error: 'La base de datos no está disponible. Por favor, asegúrate de que el servicio MySQL esté activo.' });
+        }
+        res.status(500).json({ error: 'Error interno del servidor al iniciar sesión' });
     }
 };
 

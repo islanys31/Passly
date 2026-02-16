@@ -5,7 +5,7 @@ const { body, validationResult } = require('express-validator');
 // Rate Limiting - Prevenir ataques de fuerza bruta
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5, // 5 intentos por IP
+    max: 100, // Aumentado para pruebas (era 5)
     message: 'Demasiados intentos de inicio de sesión. Por favor, intenta de nuevo en 15 minutos.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -13,7 +13,7 @@ const loginLimiter = rateLimit({
 
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hora
-    max: 3, // 3 registros por IP por hora
+    max: 50, // Aumentado para pruebas (era 3)
     message: 'Demasiados registros desde esta IP. Por favor, intenta de nuevo más tarde.',
 });
 
@@ -36,7 +36,7 @@ const helmetConfig = helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
         },
     },
@@ -53,27 +53,31 @@ const validateRegister = [
         .trim()
         .isLength({ min: 2, max: 50 })
         .withMessage('El nombre debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-Z\s]+$/)
-        .withMessage('El nombre no puede contener caracteres especiales ni acentos'),
+        .matches(/^[a-zA-ZÁÉÍÓÚÑáéíóúñ\s]+$/)
+        .withMessage('El nombre contiene caracteres no permitidos'),
 
     body('apellido')
         .trim()
         .isLength({ min: 2, max: 50 })
         .withMessage('El apellido debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-Z\s]+$/)
-        .withMessage('El apellido no puede contener caracteres especiales ni acentos'),
+        .matches(/^[a-zA-ZÁÉÍÓÚÑáéíóúñ\s]+$/)
+        .withMessage('El apellido contiene caracteres no permitidos'),
 
     body('email')
         .trim()
-        .isEmail()
-        .withMessage('Email inválido')
-        .normalizeEmail(),
+        .toLowerCase()
+        .custom(value => {
+            if (/[A-Z]/.test(value)) throw new Error('El correo debe estar en minúsculas');
+            const regex = /^[a-z0-9._%+-]+@(gmail|hotmail)\.[a-z]{2,}(\.[a-z]{2,})?$/;
+            if (!regex.test(value)) throw new Error('Solo se permiten correos @gmail.com o @hotmail.com');
+            return true;
+        }),
 
     body('password')
-        .isLength({ min: 8 })
-        .withMessage('La contraseña debe tener al menos 8 caracteres')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-        .withMessage('La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial'),
+        .isLength({ min: 8, max: 12 })
+        .withMessage('La contraseña debe tener entre 8 y 12 caracteres')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^*/_.])[A-Za-z\d!@#$%^*/_.]+$/)
+        .withMessage('La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial (!@#$%^*/_.)'),
 
     body('rol_id')
         .notEmpty()
@@ -91,6 +95,12 @@ const validateLogin = [
     body('password')
         .notEmpty()
         .withMessage('La contraseña es requerida'),
+
+    body('rol_id')
+        .notEmpty()
+        .withMessage('El rol es obligatorio')
+        .isInt()
+        .withMessage('ID de rol inválido'),
 ];
 
 const validateDevice = [
