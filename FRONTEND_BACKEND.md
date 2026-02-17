@@ -1,27 +1,19 @@
-# 🎯 SOLUCIÓN: Frontend + Backend en un Solo Servidor
+# 🎯 Frontend + Backend en un Solo Servidor - PASSLY
 
-## ❌ Problema Original
+## ✅ Arquitectura Actual
 
-Al acceder a `http://localhost:3000`, solo se veía JSON:
-```json
-{"message": "Welcome to Passly API"}
-```
+**Express sirve el frontend automáticamente** desde el mismo puerto 3000, eliminando problemas de CORS y simplificando el deployment.
 
-Esto ocurría porque el backend solo era una API REST, no servía archivos HTML.
-
----
-
-## ✅ Solución Implementada
-
-Ahora **Express sirve el frontend automáticamente** desde el mismo puerto 3000.
-
-### Cambios realizados en `backend/src/app.js`:
+### Configuración en `backend/src/app.js`:
 
 ```javascript
 const path = require('path');
 
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '../../frontend')));
+// Servir archivos estáticos del frontend con caché optimizada
+app.use(express.static(path.join(__dirname, '../../frontend'), {
+    maxAge: '7d', // Cache de 7 días para assets estáticos
+    etag: true
+}));
 
 // Ruta raíz - Servir el frontend
 app.get('/', (req, res) => {
@@ -44,9 +36,12 @@ npm run dev
 | URL | Descripción |
 |-----|-------------|
 | `http://localhost:3000` | **Frontend** - Página de login/registro |
-| `http://localhost:3000/dashboard.html` | Dashboard (requiere login) |
+| `http://localhost:3000/dashboard.html` | Dashboard completo (requiere login) |
+| `http://localhost:3000/scanner.html` | Escáner QR con cámara (requiere login) |
+| `http://localhost:3000/forgot.html` | Recuperar contraseña |
+| `http://localhost:3000/reset.html` | Restablecer contraseña |
 | `http://localhost:3000/api` | **API** - Información del backend (JSON) |
-| `http://localhost:3000/api/auth/login` | Endpoint de login (POST) |
+| `http://localhost:3000/api-docs` | **Swagger** - Documentación interactiva |
 
 ---
 
@@ -55,16 +50,29 @@ npm run dev
 ```
 http://localhost:3000/
 │
-├── /                          → index.html (Login/Registro)
-├── /dashboard.html            → Dashboard
-├── /css/index.css             → Estilos
+├── /                              → index.html (Login/Registro)
+├── /dashboard.html                → Dashboard con estadísticas
+├── /scanner.html                  → Escáner QR con cámara
+├── /forgot.html                   → Solicitar recuperación
+├── /reset.html                    → Restablecer contraseña
+├── /css/index.css                 → Estilos con temas
+├── /js/                           → Lógica del cliente
 │
-└── /api/                      → API REST (JSON)
-    ├── /api/auth/register     → POST - Registrar usuario
-    ├── /api/auth/login        → POST - Login
-    ├── /api/usuarios          → GET - Listar usuarios
-    ├── /api/dispositivos      → GET - Listar dispositivos
-    └── /api/accesos           → GET - Historial de accesos
+└── /api/                          → API REST (JSON)
+    ├── /api/auth/register         → POST - Registrar usuario
+    ├── /api/auth/login            → POST - Login con JWT
+    ├── /api/auth/forgot-password  → POST - Solicitar código
+    ├── /api/auth/reset-password   → POST - Restablecer contraseña
+    ├── /api/usuarios              → CRUD - Usuarios
+    ├── /api/usuarios/:id/photo    → POST - Subir foto de perfil
+    ├── /api/dispositivos          → CRUD - Dispositivos
+    ├── /api/medios-transporte     → GET - Medios de transporte
+    ├── /api/accesos               → GET/POST - Accesos
+    ├── /api/accesos/qr            → GET - Generar QR personal
+    ├── /api/accesos/invitation    → POST - Crear invitación QR
+    ├── /api/accesos/scan          → POST - Validar escaneo QR
+    ├── /api/stats                 → GET - Estadísticas del dashboard
+    └── /api-docs                  → Swagger UI (documentación)
 ```
 
 ---
@@ -74,36 +82,36 @@ http://localhost:3000/
 ✅ **Un solo puerto** - Todo en `localhost:3000`  
 ✅ **Sin CORS** - Frontend y backend en el mismo origen  
 ✅ **Fácil despliegue** - Un solo servidor para todo  
-✅ **Desarrollo rápido** - No necesitas Live Server  
+✅ **Caché optimizada** - Assets estáticos con 7 días de caché y ETags  
+✅ **Compresión** - Gzip activado con compression middleware  
+✅ **WebSockets** - Socket.IO integrado en el mismo servidor  
 
 ---
 
-## 🔧 Alternativa: Servidores Separados
+## 🐳 Alternativa: Docker (Producción)
 
-Si prefieres tener frontend y backend en puertos diferentes:
+En producción, Nginx actúa como reverse proxy:
 
-### Backend (puerto 3000):
 ```bash
-cd backend
-npm run dev
+docker-compose up -d --build
 ```
 
-### Frontend (puerto 5500):
-Usa **Live Server** en VS Code:
-1. Click derecho en `frontend/index.html`
-2. Selecciona "Open with Live Server"
-
-En este caso, el frontend estará en `http://localhost:5500` y el backend en `http://localhost:3000`.
+| Servicio | Puerto | Función |
+|----------|--------|---------|
+| Nginx | 80 | Reverse proxy + assets estáticos |
+| API | 3000 (interno) | Backend Express + Socket.IO |
+| MySQL | 3306 (interno) | Base de datos |
 
 ---
 
-## ✨ Resultado Final
+## ✨ Resultado
 
-Ahora al acceder a `http://localhost:3000` verás:
+Al acceder a `http://localhost:3000` verás:
 
-- ✅ La página de **login/registro** (HTML completo)
-- ✅ Estilos CSS aplicados
-- ✅ JavaScript funcionando
+- ✅ La página de **login/registro** con diseño premium
+- ✅ Modo oscuro/claro funcional
+- ✅ Validaciones en tiempo real
 - ✅ Conexión con el backend API
+- ✅ WebSockets para actualizaciones live
 
 **¡Todo funcionando desde un solo servidor!** 🎉

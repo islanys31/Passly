@@ -1,6 +1,6 @@
-# ✅ INTEGRACIÓN FRONTEND-BACKEND COMPLETADA
+# ✅ INTEGRACIÓN FRONTEND-BACKEND COMPLETADA - PASSLY v2.0.0
 
-## 🎨 MEJORAS IMPLEMENTADAS
+## 🎨 CARACTERÍSTICAS IMPLEMENTADAS
 
 ### 1. **Sistema de Modo Oscuro/Claro**
 ✅ Toggle funcional en la esquina superior derecha  
@@ -14,23 +14,25 @@
 - Fondo principal: `#2E2E2E` (Gris oscuro)
 - Acentos: `#2E7D32` (Verde institucional) + `#2979FF` (Azul eléctrico)
 - Textos: `#FFFFFF` (Blanco puro)
-- Tipografía: Roboto + Poppins
+- Tipografía: Poppins, Roboto, Inter
 
 #### **Tema Claro**
 - Fondo principal: `#FAFAF5` (Blanco hueso)
 - Acentos: `#B39DDB` (Lavanda) + `#66BB6A` (Verde esmeralda)
 - Contraste: `#212121` (Negro carbón)
-- Tipografía: Poppins + Nunito
+- Tipografía: Poppins, Nunito
 
 ### 3. **Mejoras de UX/UI**
-✅ Animaciones suaves (fade-in, hover effects)  
-✅ Bordes redondeados modernos  
 ✅ Glassmorphism en tarjetas  
+✅ Animaciones suaves (fade-in, hover, shake, pulse)  
+✅ Gradientes en botones y títulos  
+✅ Bordes redondeados modernos  
 ✅ Sombras dinámicas  
-✅ Efectos de gradiente en botones  
 ✅ Validación visual en tiempo real  
 ✅ Scrollbar personalizado  
 ✅ Diseño 100% responsive  
+✅ Toasts de notificación  
+✅ Modales dinámicos  
 
 ---
 
@@ -39,252 +41,156 @@
 ### **Estado Actual**
 ✅ Backend corriendo en `http://localhost:3000`  
 ✅ Frontend servido desde el mismo puerto  
-✅ Base de datos MySQL conectada  
-✅ API REST funcionando correctamente  
+✅ Base de datos MySQL conectada con Pool  
+✅ WebSockets (Socket.IO) para tiempo real  
+✅ API REST completa con Swagger (/api-docs)  
+✅ Seguridad Hardened (Helmet, Rate Limiting, Sanitización)  
 
 ### **Endpoints Disponibles**
 
 | Método | Endpoint | Descripción | Estado |
 |--------|----------|-------------|--------|
-| POST | `/api/auth/register` | Registrar usuario | ✅ Conectado |
-| POST | `/api/auth/login` | Iniciar sesión | ✅ Conectado |
-| GET | `/api/usuarios` | Listar usuarios | ✅ Disponible |
-| GET | `/api/dispositivos` | Listar dispositivos | ✅ Disponible |
-| GET | `/api/medios-transporte` | Listar medios | ✅ Disponible |
-| GET | `/api/accesos` | Historial accesos | ✅ Disponible |
+| POST | `/api/auth/register` | Registrar usuario | ✅ Hardened |
+| POST | `/api/auth/login` | Iniciar sesión | ✅ Hardened |
+| POST | `/api/auth/forgot-password` | Solicitar código de recuperación | ✅ Rate Limited |
+| POST | `/api/auth/reset-password` | Restablecer contraseña | ✅ Conectado |
+| GET | `/api/usuarios` | Listar usuarios | ✅ Autenticado |
+| POST | `/api/usuarios` | Crear usuario | ✅ Autenticado |
+| PUT | `/api/usuarios/:id` | Actualizar usuario | ✅ Autenticado |
+| DELETE | `/api/usuarios/:id` | Desactivar usuario | ✅ Autenticado |
+| POST | `/api/usuarios/:id/photo` | Subir foto de perfil | ✅ Multer |
+| GET | `/api/dispositivos` | Listar dispositivos | ✅ Autenticado |
+| POST | `/api/dispositivos` | Crear dispositivo | ✅ Autenticado |
+| PUT | `/api/dispositivos/:id` | Actualizar dispositivo | ✅ Autenticado |
+| DELETE | `/api/dispositivos/:id` | Desactivar dispositivo | ✅ Autenticado |
+| GET | `/api/medios-transporte` | Listar medios | ✅ Autenticado |
+| GET | `/api/accesos` | Historial de accesos | ✅ Autenticado |
+| POST | `/api/accesos` | Registrar acceso | ✅ + Socket.IO |
+| GET | `/api/accesos/qr` | Generar QR personal | ✅ Autenticado |
+| POST | `/api/accesos/invitation` | Crear invitación QR | ✅ Autenticado |
+| POST | `/api/accesos/scan` | Validar escaneo QR | ✅ + Socket.IO |
+| GET | `/api/stats` | Estadísticas generales | ✅ Autenticado |
 
-### **Flujo de Datos Verificado**
+### **Flujo de Datos**
 
 ```
-┌─────────────┐      HTTP Request       ┌─────────────┐      SQL Query      ┌──────────┐
+┌─────────────┐      HTTP + WS        ┌─────────────┐      SQL Query      ┌──────────┐
 │   FRONTEND  │ ──────────────────────> │   BACKEND   │ ─────────────────> │  MySQL   │
-│ (React/JS)  │                         │  (Express)  │                     │    DB    │
-└─────────────┘ <────────────────────── └─────────────┘ <───────────────── └──────────┘
-                   JSON Response                            Result Set
+│ (Vanilla JS)│                         │  (Express)  │                     │    DB    │
+│ + Socket.IO │ <────────────────────── │ + Socket.IO │ <───────────────── │    BD    │
+└─────────────┘   JSON + Events         └─────────────┘    Result Set       └──────────┘
 ```
 
 ---
 
 ## 📋 CHECKLIST TÉCNICO
 
-### ✅ Análisis del Backend
-- [x] Endpoints identificados y documentados
-- [x] Métodos HTTP verificados (GET, POST, PUT, DELETE)
-- [x] Estructura de payloads analizada
-- [x] Respuestas JSON validadas
-- [x] Puerto y URL base configurados (`localhost:3000`)
-- [x] CORS habilitado
-- [x] JWT implementado para autenticación
+### ✅ Backend
+- [x] Express + Helmet + CORS + Compression
+- [x] JWT con verificación de propósito y estado
+- [x] Bcrypt salt factor 10
+- [x] Rate Limiting por endpoint
+- [x] express-validator con reglas estrictas
+- [x] Sanitización de inputs (XSS)
+- [x] Socket.IO para tiempo real
+- [x] Multer para subida de fotos
+- [x] Nodemailer para emails
+- [x] Swagger para documentación API
+- [x] node-cron para backups
 
-### ✅ Integración Frontend
-- [x] `fetch` con `async/await` implementado
-- [x] Headers configurados (`Content-Type: application/json`)
-- [x] Body en formato JSON correcto
-- [x] Nombres de campos alineados (frontend ↔ backend ↔ BD)
-- [x] Tipos de datos validados
-- [x] Estados de carga manejados
-- [x] Mensajes de éxito implementados
-- [x] Manejo de errores completo
+### ✅ Frontend
+- [x] Dashboard completo con estadísticas live
+- [x] CRUD de Usuarios con modales
+- [x] CRUD de Dispositivos
+- [x] Historial de Accesos con filtros
+- [x] Exportación CSV y PDF
+- [x] Sistema QR (generación + invitaciones)
+- [x] Escáner QR con cámara
+- [x] Gráfica de tráfico (Chart.js)
+- [x] Recuperación de contraseña (3 pasos)
+- [x] Modo oscuro/claro persistente
+- [x] Responsive design
 
-### ✅ Validación de Flujo
-- [x] **Registro**: Frontend → Backend → BD ✅
-- [x] **Login**: Frontend → Backend → BD → JWT ✅
-- [x] **Persistencia**: Datos guardados correctamente ✅
-
-### ✅ Manejo de Errores
-- [x] Errores de CORS resueltos
-- [x] Problemas de asincronía manejados
-- [x] Errores HTTP detectados (400, 401, 404, 500)
-- [x] Mensajes claros para el usuario
-- [x] Validación en tiempo real
-- [x] Animaciones de error (shake effect)
+### ✅ Flujos End-to-End Validados
+- [x] **Registro** → Validación → Backend → BD → Socket → Dashboard
+- [x] **Login** → Verificación → JWT → localStorage → Dashboard
+- [x] **Acceso Manual** → Backend → BD → Socket → Dashboard en tiempo real
+- [x] **QR Personal** → Generación → Descarga PNG
+- [x] **QR Invitado** → JWT firmado → QR temporal con expiración
+- [x] **Escaneo QR** → Validación → Registro automático → Notificación
+- [x] **Recuperación** → Código 6 dígitos → Email → Verificación → Reset
+- [x] **Exportación** → CSV/PDF con datos filtrados
 
 ---
 
 ## 🚀 CÓMO USAR
 
-### 1. **Iniciar el servidor**
+### 1. **Iniciar el servidor:**
 ```bash
 cd backend
 npm run dev
 ```
 
-### 2. **Acceder a la aplicación**
-Abre tu navegador en: **`http://localhost:3000`**
+### 2. **Acceder desde el navegador:**
 
-### 3. **Probar el modo oscuro/claro**
-- Click en el botón de la esquina superior derecha
-- El tema se guarda automáticamente en localStorage
-
-### 4. **Registrar un usuario**
-1. Click en "¿No tienes cuenta? Regístrate aquí"
-2. Completa el formulario
-3. Acepta los términos
-4. Click en "Registrar"
-5. ✅ Usuario guardado en la BD
-
-### 5. **Iniciar sesión**
-1. Ingresa email y contraseña
-2. Click en "Entrar"
-3. ✅ Redirige al dashboard
+| URL | Descripción |
+|-----|-------------|
+| `http://localhost:3000` | Frontend - Página de login/registro |
+| `http://localhost:3000/dashboard.html` | Dashboard (requiere login) |
+| `http://localhost:3000/scanner.html` | Escáner QR (requiere login) |
+| `http://localhost:3000/forgot.html` | Recuperar contraseña |
+| `http://localhost:3000/reset.html` | Restablecer contraseña |
+| `http://localhost:3000/api` | API - Información del backend (JSON) |
+| `http://localhost:3000/api-docs` | Swagger - Documentación interactiva |
 
 ---
 
-## 🎯 FLUJOS END-TO-END VALIDADOS
+## 📂 Estructura de Rutas
 
-### ✅ Flujo 1: Registro de Usuario
 ```
-1. Usuario completa formulario
-2. Frontend valida campos en tiempo real
-3. Click en "Registrar"
-4. POST /api/auth/register
-5. Backend valida datos
-6. Backend hashea contraseña (bcrypt)
-7. INSERT INTO usuarios
-8. Respuesta 201 + userId
-9. Frontend muestra mensaje de éxito
-10. Redirige a login
+http://localhost:3000/
+│
+├── /                          → index.html (Login/Registro)
+├── /dashboard.html            → Dashboard completo
+├── /scanner.html              → Escáner QR con cámara
+├── /forgot.html               → Solicitar recuperación
+├── /reset.html                → Restablecer contraseña
+├── /css/index.css             → Estilos con temas
+├── /js/                       → Lógica del cliente
+│
+└── /api/                      → API REST (JSON)
+    ├── /api/auth/register     → POST - Registrar usuario
+    ├── /api/auth/login        → POST - Login
+    ├── /api/auth/forgot-password → POST - Solicitar código
+    ├── /api/auth/reset-password  → POST - Restablecer contraseña
+    ├── /api/usuarios          → CRUD - Usuarios
+    ├── /api/usuarios/:id/photo → POST - Subir foto
+    ├── /api/dispositivos      → CRUD - Dispositivos
+    ├── /api/medios-transporte → GET - Medios de transporte
+    ├── /api/accesos           → GET/POST - Accesos
+    ├── /api/accesos/qr        → GET - QR personal
+    ├── /api/accesos/invitation → POST - Invitación QR
+    ├── /api/accesos/scan      → POST - Validar escaneo
+    └── /api/stats             → GET - Estadísticas
 ```
-
-### ✅ Flujo 2: Login
-```
-1. Usuario ingresa credenciales
-2. Frontend valida formato
-3. POST /api/auth/login
-4. Backend busca usuario en BD
-5. Backend verifica contraseña
-6. Backend genera JWT
-7. Respuesta 200 + token + user data
-8. Frontend guarda token en localStorage
-9. Redirige a dashboard
-```
-
-### ✅ Flujo 3: Manejo de Errores
-```
-1. Usuario ingresa datos incorrectos
-2. Frontend valida y muestra error
-3. Usuario corrige
-4. Si falla en backend:
-   - 400: Muestra error de validación
-   - 401: Muestra "Credenciales inválidas"
-   - 500: Muestra "Error del servidor"
-5. Animación de shake en inputs
-6. Bordes rojos en campos con error
-```
-
----
-
-## 🎨 CARACTERÍSTICAS DE DISEÑO
-
-### **Modo Oscuro**
-- Fondo elegante con patrón geométrico sutil
-- Glassmorphism en tarjetas
-- Gradientes verde → azul en botones
-- Hover effects con cambio de color
-
-### **Modo Claro**
-- Fondo suave con ilustraciones minimalistas
-- Tarjetas con sombras suaves
-- Gradientes lavanda → esmeralda
-- Estilo artístico y moderno
-
-### **Animaciones**
-- Fade-in al cargar
-- Shake en errores
-- Pulse en carga
-- Smooth transitions (0.3s)
-- Hover effects en todos los elementos interactivos
-
-### **Responsive**
-- Mobile-first design
-- Breakpoints optimizados
-- Touch-friendly (botones grandes)
-- Scrollbar personalizado
-
----
-
-## 📊 MÉTRICAS DE CALIDAD
-
-| Aspecto | Estado | Nota |
-|---------|--------|------|
-| **Conexión Backend** | ✅ 100% | Sin errores |
-| **Validación Frontend** | ✅ 100% | Tiempo real |
-| **Manejo de Errores** | ✅ 100% | Completo |
-| **UX/UI** | ✅ 100% | Profesional |
-| **Responsive** | ✅ 100% | Mobile-ready |
-| **Accesibilidad** | ✅ 90% | Mejorable |
-| **Performance** | ✅ 95% | Optimizado |
-
----
-
-## 🔧 AJUSTES REALIZADOS
-
-### **Backend** (`backend/src/app.js`)
-```javascript
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '../../frontend')));
-
-// Ruta raíz sirve el frontend
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/index.html'));
-});
-```
-
-### **Frontend** (`frontend/css/index.css`)
-- ✅ Variables CSS para temas
-- ✅ Sistema de toggle implementado
-- ✅ Paletas de colores aplicadas
-- ✅ Animaciones agregadas
-- ✅ Responsive design
-
-### **Frontend** (`frontend/index.html`)
-- ✅ Script de toggle de tema
-- ✅ Persistencia con localStorage
-- ✅ Creación dinámica del botón
-- ✅ Event listeners configurados
-
----
-
-## 🚧 PRÓXIMOS PASOS (FASE 2)
-
-### **Optimización**
-- [ ] Lazy loading de imágenes
-- [ ] Code splitting
-- [ ] Minificación de assets
-- [ ] Service Workers (PWA)
-
-### **Normalización**
-- [ ] Refactorizar código duplicado
-- [ ] Crear componentes reutilizables
-- [ ] Implementar sistema de diseño completo
-
-### **Escalabilidad**
-- [ ] Migrar a React completo
-- [ ] Implementar Redux/Context API
-- [ ] Crear API documentation (Swagger)
-- [ ] Tests unitarios y E2E
-
-### **Base de Datos**
-- [ ] Optimizar queries
-- [ ] Agregar índices
-- [ ] Implementar caché (Redis)
-- [ ] Backup automático
 
 ---
 
 ## ✨ RESULTADO FINAL
 
-**El frontend está completamente conectado al backend.**
+**El sistema Passly está completamente integrado y funcional.**
 
-✅ Flujo end-to-end validado  
-✅ Datos persisten en MySQL  
-✅ Modo oscuro/claro funcional  
-✅ Diseño profesional y moderno  
-✅ Validación en tiempo real  
-✅ Manejo de errores robusto  
-✅ Responsive y accesible  
+✅ Flujos end-to-end validados  
+✅ Dashboard en tiempo real con WebSockets  
+✅ Sistema QR completo (generación, invitación, escaneo)  
+✅ Seguridad Hardened (Helmet, Rate Limiting, Validaciones)  
+✅ Exportación de reportes (CSV y PDF)  
+✅ Recuperación de contraseña por email  
+✅ Modo oscuro/claro persistente  
+✅ Diseño profesional y responsive  
+✅ Docker listo para producción  
 
-**🎉 Passly está listo para usar!**
+**🎉 Passly v2.0.0 - Sistema completo!**
 
 ---
 
@@ -295,6 +201,6 @@ Si encuentras algún problema:
 1. Verifica que el backend esté corriendo (`npm run dev`)
 2. Revisa la consola del navegador (F12)
 3. Verifica la conexión a MySQL
-4. Revisa los logs del servidor
+4. Consulta la documentación API en `http://localhost:3000/api-docs`
 
 **¡Disfruta de Passly!** 🚀
