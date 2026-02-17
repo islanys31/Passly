@@ -117,7 +117,7 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `email`, `password`, `cliente_id`, `rol_id`, `estado_id`) VALUES
-(1, 'Administrador', 'Sistema', 'admin@gmail.com', '$2b$10$n3yWd24yLpe.kUPONSz/7e39OSXRN4EKlp5gBs71h0mbltZSwg2pW', 1, 1, 1);
+(1, 'Administrador', 'Sistema', 'admin@gmail.com', '$2b$10$xlioDBSwN9.WIRBJlGhiqe1r5mXkvZnAzMXKen08m2.Wwm65IdOc.', 1, 1, 1);
 
 -- --------------------------------------------------------
 

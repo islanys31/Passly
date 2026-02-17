@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="/css/index.css">
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
   <script type="module" src="/js/dashboard.js"></script>
 </head>
 
@@ -60,6 +62,30 @@
       </div>
     </div>
   </div>
+
+  <script>
+    // Detector de errores global para el dashboard
+    window.onerror = function (msg, url, line, col, error) {
+      const content = document.getElementById('view-content');
+      if (content) {
+        content.innerHTML = `
+          <div class="card" style="max-width: 600px; margin: 40px auto; border-left: 5px solid var(--error-color); text-align: left;">
+            <h3 style="color: var(--error-color); margin-bottom: 10px;">🛑 Error de Inicialización</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 15px;">
+              El panel no pudo cargar correctamente debido a un error técnico.
+            </p>
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; overflow-x: auto;">
+              <strong>Error:</strong> ${msg}<br>
+              <strong>Archivo:</strong> ${url.split('/').pop()}<br>
+              <strong>Línea:</strong> ${line}:${col}
+            </div>
+            <button onclick="location.reload()" style="margin-top: 20px; background: var(--accent-blue);">Reintentar Carga</button>
+          </div>
+        `;
+      }
+      return false;
+    };
+  </script>
 </body>
 
 </html>

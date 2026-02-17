@@ -20,8 +20,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupUI() {
-    document.getElementById('userName').textContent = `${userData.nombre} ${userData.apellido || ''}`;
-    document.getElementById('userInitial').textContent = userData.nombre.charAt(0).toUpperCase();
+    if (!userData) return;
+
+    const nombre = userData.nombre || 'Usuario';
+    const apellido = userData.apellido || '';
+
+    document.getElementById('userName').textContent = `${nombre} ${apellido}`;
+    document.getElementById('userInitial').textContent = nombre.charAt(0).toUpperCase();
     document.getElementById('userRole').textContent =
         userData.rol_id === 1 ? 'Administrador' :
             (userData.rol_id === 3 ? 'Seguridad' : 'Usuario');
@@ -36,6 +41,18 @@ function setupUI() {
             loadView(views[index]);
         };
     });
+
+    // Botón de escáner (solo para Seguridad y Admin)
+    if (userData.rol_id === 1 || userData.rol_id === 3) {
+        const scannerBtn = document.createElement('div');
+        scannerBtn.className = 'nav-item';
+        scannerBtn.innerHTML = '<i>📷</i> Escáner QR';
+        scannerBtn.style.background = 'rgba(41, 121, 255, 0.1)';
+        scannerBtn.style.color = 'var(--accent-blue)';
+        scannerBtn.style.marginTop = '10px';
+        scannerBtn.onclick = () => window.open('scanner.html', '_blank');
+        document.querySelector('.nav-menu').appendChild(scannerBtn);
+    }
 
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
         if (confirm('¿Deseas cerrar sesión?')) handleLogout();
@@ -101,7 +118,7 @@ async function renderOverview(container) {
     ]);
 
     const stats = statsRes?.data?.stats || { usuariosActivos: 0, accesosHoy: 0, dispositivosActivos: 0, alertas: 0 };
-    const recentAccess = accessRes?.data?.slice(0, 5) || [];
+    const recentAccess = (accessRes?.data?.data || accessRes?.data || []).slice(0, 5);
 
     const grid = [
         { label: 'Usuarios Activos', val: stats.usuariosActivos, icon: '👥', color: 'var(--accent-blue)' },
@@ -123,8 +140,9 @@ async function renderOverview(container) {
             `).join('')}
         </div>
 
-        <div class="dashboard-row" style="display: flex; gap: 20px; margin-top: 30px;">
-            <div class="card" style="flex: 2; text-align: left; padding: 25px;">
+        <div class="dashboard-row" style="display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap;">
+            <!-- Fila 1: Actividad y Gráfica -->
+            <div class="card" style="flex: 1.5; min-width: 300px; text-align: left; padding: 25px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin:0">🚨 Última Actividad</h3>
                     <button class="btn-table" onclick="loadView('accesos')">Ver Todo</button>
@@ -147,28 +165,65 @@ async function renderOverview(container) {
                 </div>
             </div>
 
-            <div class="card" style="flex: 1.2; text-align: left; padding: 25px;">
+            <div class="card" style="flex: 1; min-width: 300px; text-align: left; padding: 25px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin:0">📈 Análisis de Tráfico</h3>
-                    <div id="socketStatus" class="badge badge-success">● En Vivo</div>
+                    <h3 style="margin:0">📈 Tráfico</h3>
+                    <div id="socketStatus" class="badge badge-success">● Vivo</div>
                 </div>
-                <div style="height: 200px; position: relative;">
+                <div style="height: 180px; position: relative;">
                     <canvas id="peakHoursChart"></canvas>
                 </div>
-                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                    <small style="color: var(--text-muted); display: block; margin-bottom: 10px;">Hardening v2.5 Monitor</small>
-                    <div style="display: flex; gap: 10px;">
-                        <span class="badge badge-info" style="font-size: 10px;">AES-256</span>
-                        <span class="badge badge-info" style="font-size: 10px;">TLS 1.3</span>
-                        <span class="badge badge-info" style="font-size: 10px;">WSS</span>
-                    </div>
+            </div>
+
+            <div class="card" style="flex: 0.8; min-width: 250px; text-align: center; padding: 25px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h3 style="margin-bottom: 15px;">🔑 Mi Llave QR</h3>
+                <div id="qrContainer" style="width: 150px; height: 150px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+                    <i style="font-size: 30px; opacity: 0.3;">🔲</i>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:15px; width:100%;">
+                    <button class="btn-table" id="btnGenerateQR" style="flex:1; background: var(--accent-green); color: white; font-size:12px; margin:0;">Generar</button>
+                    <button class="btn-table" id="btnDownloadQR" style="flex:1; background: var(--bg-secondary); font-size:12px; margin:0; display:none;">Descargar</button>
                 </div>
             </div>
         </div>
     `;
 
     // Inicializar gráfica después de renderizar el contenedor
-    setTimeout(() => renderPeakHoursChart(accessRes?.data || []), 100);
+    setTimeout(() => {
+        renderPeakHoursChart(accessRes?.data?.data || accessRes?.data || []);
+        setupQRButton();
+    }, 100);
+}
+
+function setupQRButton() {
+    const btn = document.getElementById('btnGenerateQR');
+    const dlBtn = document.getElementById('btnDownloadQR');
+    if (!btn) return;
+
+    btn.onclick = async () => {
+        const container = document.getElementById('qrContainer');
+        btn.disabled = true;
+        btn.textContent = "Generando...";
+
+        const res = await apiRequest('/accesos/qr');
+        if (res.ok && res.data.qr) {
+            container.innerHTML = `<img id="currentUserQR" src="${res.data.qr}" style="width: 100%; height: 100%; border-radius: 8px; filter: drop-shadow(0 0 5px rgba(46,125,50,0.3));">`;
+            btn.textContent = "Actualizar";
+            dlBtn.style.display = 'block';
+
+            dlBtn.onclick = () => {
+                const link = document.createElement('a');
+                link.download = `Passly_QR_${userData.nombre}.png`;
+                link.href = res.data.qr;
+                link.click();
+                showToast("Descargando imagen...", "info");
+            };
+        } else {
+            showToast("Error al generar QR", "error");
+            btn.textContent = "Reintentar";
+        }
+        btn.disabled = false;
+    };
 }
 
 /**
@@ -228,7 +283,7 @@ function renderPeakHoursChart(logs) {
 async function renderUsuarios(container) {
     const { ok, data } = await apiRequest('/usuarios');
     if (!ok) return;
-    currentData = data;
+    currentData = data.data || data;
 
     renderModuleHeader(container, {
         buttonId: 'btnAddUser',
@@ -251,7 +306,7 @@ async function renderUsuarios(container) {
 async function renderDispositivos(container) {
     const { ok, data } = await apiRequest('/dispositivos');
     if (!ok) return;
-    currentData = data;
+    currentData = data.data || data;
 
     renderModuleHeader(container, {
         buttonId: 'btnAddDevice',
@@ -274,7 +329,7 @@ async function renderDispositivos(container) {
 async function renderAccesos(container) {
     const { ok, data } = await apiRequest('/accesos');
     if (!ok) return;
-    currentData = data;
+    currentData = data.data || data;
 
     renderModuleHeader(container, {
         buttonId: 'btnLogAccess',
@@ -317,7 +372,10 @@ function renderModuleHeader(container, config) {
             ` : ''}
 
             <div class="action-buttons">
-                ${config.hasExport ? `<button class="btn-export" id="btnExportCSV"><i>📥</i> Exportar CSV</button>` : ''}
+                ${config.hasExport ? `
+                    <button class="btn-export" id="btnExportCSV" title="Descargar Excel">📊 CSV</button>
+                    <button class="btn-export" id="btnExportPDF" style="border-color:var(--error-color); color:var(--error-color); background:rgba(239,68,68,0.05);" title="Descargar Reporte Formal">📄 PDF</button>
+                ` : ''}
                 <button class="btn-table" id="${config.buttonId}" style="background: ${config.buttonColor}; color: ${config.buttonId === 'btnLogAccess' ? '#222' : 'white'}; font-weight:600;">
                     ${config.buttonText}
                 </button>
@@ -373,6 +431,7 @@ function setupModuleEvents(container, type) {
     if (type === 'accesos') {
         document.getElementById('btnLogAccess').onclick = () => showModal('add_access');
         document.getElementById('btnExportCSV').onclick = exportCurrentData;
+        document.getElementById('btnExportPDF').onclick = exportToPDF;
     }
 
     attachTableActionEvents(tableContainer, type);
@@ -499,6 +558,51 @@ function exportCurrentData() {
     showToast("Reporte exportado como CSV", "success");
 }
 
+function exportToPDF() {
+    if (!currentData.length) return showToast("No hay datos para el reporte", "error");
+
+    // Intentar obtener el constructor jsPDF de varias fuentes posibles
+    const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+
+    if (!jsPDF) {
+        return showToast("La librería PDF aún se está cargando o fue bloqueada. Intente de nuevo en segundos.", "error");
+    }
+
+    const doc = new jsPDF();
+
+    // Estilo de encabezado
+    doc.setFillColor(46, 125, 50); // Verde Passly
+    doc.rect(0, 0, 210, 40, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text("PASSLY - Reporte de Seguridad", 15, 25);
+
+    doc.setFontSize(10);
+    doc.text(`Generado por: ${userData.nombre} ${userData.apellido || ''}`, 15, 33);
+    doc.text(`Fecha: ${new Date().toLocaleString()}`, 150, 33);
+
+    // Tabla de datos
+    const tableData = currentData.map(row => [
+        new Date(row.fecha_hora).toLocaleString(),
+        `${row.usuario_nombre} ${row.usuario_apellido || ''}`,
+        row.tipo,
+        row.dispositivo_nombre || 'Peatonal'
+    ]);
+
+    doc.autoTable({
+        startY: 50,
+        head: [['Fecha/Hora', 'Usuario', 'Evento', 'Detalle/Medio']],
+        body: tableData,
+        headStyles: { fillColor: [46, 125, 50] },
+        alternateRowStyles: { fillColor: [240, 240, 240] },
+        styles: { fontSize: 9 }
+    });
+
+    doc.save(`Passly_Reporte_${new Date().toISOString().split('T')[0]}.pdf`);
+    showToast("PDF generado correctamente", "success");
+}
+
 /**
  * --- SISTEMA DE MODALES ---
  */
@@ -530,7 +634,13 @@ async function showModal(type, data = null) {
             <select id="mEstado">
                 <option value="1" ${data?.estado_id === 1 ? 'selected' : ''}>Estado: Activo</option>
                 <option value="2" ${data?.estado_id === 2 ? 'selected' : ''}>Estado: Suspendido / Inactivo</option>
-            </select>` : ''}
+            </select>
+            <div style="margin-top: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 12px;">
+                <label style="display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">📸 Foto de Perfil (Opcional)</label>
+                ${data?.foto_url ? `<img src="${data.foto_url}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 3px solid var(--accent-green);">` : ''}
+                <input type="file" id="mPhoto" accept="image/jpeg,image/png" style="width: 100%; padding: 8px; background: var(--bg-primary); border: 2px dashed var(--border-color); border-radius: 8px; color: var(--text-primary); cursor: pointer;">
+                <small style="display: block; margin-top: 5px; color: var(--text-muted);">JPG o PNG, máx. 2MB</small>
+            </div>` : ''}
         `;
         saveBtn.onclick = async () => {
             const payload = {
@@ -563,7 +673,30 @@ async function showModal(type, data = null) {
 
             const res = await apiRequest(endpoint, method, payload);
             if (res.ok) {
-                showToast(isEdit ? "Usuario actualizado" : "Usuario creado", "success");
+                // Si hay foto y es edición, subirla
+                if (isEdit) {
+                    const photoInput = document.getElementById('mPhoto');
+                    if (photoInput && photoInput.files && photoInput.files[0]) {
+                        const formData = new FormData();
+                        formData.append('photo', photoInput.files[0]);
+
+                        const photoRes = await fetch(`/api/usuarios/${data.id}/photo`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
+                            body: formData
+                        });
+
+                        if (photoRes.ok) {
+                            showToast("Usuario y foto actualizados", "success");
+                        } else {
+                            showToast("Usuario actualizado, pero hubo un error con la foto", "warning");
+                        }
+                    } else {
+                        showToast("Usuario actualizado", "success");
+                    }
+                } else {
+                    showToast("Usuario creado", "success");
+                }
                 closeModal();
                 loadView('usuarios');
             } else {
@@ -587,7 +720,7 @@ async function showModal(type, data = null) {
             </select>
             <select id="mDevMedio">
                 <option value="">-- Medio de Transporte --</option>
-                ${medios.data.map(m => `<option value="${m.id}" ${row => row.id === data?.medio_transporte_id ? 'selected' : ''}>${m.nombre}</option>`).join('')}
+                ${medios.data.map(m => `<option value="${m.id}" ${m.id === data?.medio_transporte_id ? 'selected' : ''}>${m.nombre}</option>`).join('')}
             </select>
         `;
         // Correction for selection logic in template literal
@@ -612,27 +745,96 @@ async function showModal(type, data = null) {
             if (res.ok) { showToast("Dispositivo sincronizado", "success"); closeModal(); loadView('dispositivos'); }
         };
     } else if (type === 'add_access') {
-        title.textContent = "Manual Access Override";
+        title.textContent = "Registro de Acceso / Invitación";
         const [usuarios, dispositivos] = await Promise.all([apiRequest('/usuarios'), apiRequest('/dispositivos')]);
 
         body.innerHTML = `
-            <select id="mAccUser"><option value="">-- Persona Registrada --</option>${usuarios.data.map(u => `<option value="${u.id}">${u.nombre} ${u.apellido || ''}</option>`).join('')}</select>
-            <select id="mAccDev"><option value="">-- Acceso Peatonal (Manual) --</option>${dispositivos.data.filter(d => d.estado_id === 1).map(d => `<option value="${d.id}">${d.nombre} (${d.identificador_unico})</option>`).join('')}</select>
-            <select id="mAccType"><option value="Entrada">Registrar: Entrada</option><option value="Salida">Registrar: Salida</option></select>
-            <textarea id="mAccObs" placeholder="Motivo o detalle del acceso manual..." style="width:100%; margin-top:10px; border:2px solid var(--border-color); background:var(--bg-secondary); color:white; border-radius:12px; padding:12px; min-height:80px; font-family:inherit;"></textarea>
+            <div style="display:flex; border-bottom:1px solid var(--border-color); margin-bottom:20px;">
+                <button id="tabManual" style="flex:1; background:none; color:var(--accent-green); border-bottom:2px solid var(--accent-green); border-radius:0; margin:0; padding:10px;">Manual</button>
+                <button id="tabGuest" style="flex:1; background:none; color:var(--text-muted); border-radius:0; margin:0; padding:10px;">Nuevo Invitado (QR)</button>
+            </div>
+            
+            <div id="panelManual">
+                <select id="mAccUser"><option value="">-- Persona Registrada --</option>${usuarios.data.data ? usuarios.data.data.map(u => `<option value="${u.id}">${u.nombre} ${u.apellido || ''}</option>`).join('') : ''}</select>
+                <select id="mAccDev"><option value="">-- Acceso Peatonal (Manual) --</option>${dispositivos.data.data ? dispositivos.data.data.filter(d => d.estado_id === 1).map(d => `<option value="${d.id}">${d.nombre} (${d.identificador_unico})</option>`).join('') : ''}</select>
+                <select id="mAccType"><option value="Entrada">Registrar: Entrada</option><option value="Salida">Registrar: Salida</option></select>
+                <textarea id="mAccObs" placeholder="Motivo o detalle del acceso manual..." style="width:100%; margin-top:10px; border:2px solid var(--border-color); background:var(--bg-secondary); color:white; border-radius:12px; padding:12px; min-height:80px; font-family:inherit;"></textarea>
+            </div>
+
+            <div id="panelGuest" style="display:none;">
+                <input type="text" id="mGuestName" placeholder="Nombre completo del invitado">
+                <div style="text-align:left; margin-bottom:8px;"><small style="color:var(--text-muted)">Tiempo de validez (horas):</small></div>
+                <select id="mGuestExp">
+                    <option value="4">4 Horas (Visita corta)</option>
+                    <option value="12">12 Horas (Día completo)</option>
+                    <option value="24">24 Horas (Un día)</option>
+                    <option value="48">48 Horas (Fin de semana)</option>
+                    <option value="168">1 Semana (Permiso extendido)</option>
+                </select>
+                <div id="guestQRResult" style="margin-top:20px; text-align:center;"></div>
+            </div>
         `;
+
+        const tabManual = body.querySelector('#tabManual');
+        const tabGuest = body.querySelector('#tabGuest');
+        const panelManual = body.querySelector('#panelManual');
+        const panelGuest = body.querySelector('#panelGuest');
+
+        tabManual.onclick = () => {
+            panelManual.style.display = 'block';
+            panelGuest.style.display = 'none';
+            tabManual.style.color = 'var(--accent-green)';
+            tabManual.style.borderBottom = '2px solid var(--accent-green)';
+            tabGuest.style.color = 'var(--text-muted)';
+            tabGuest.style.borderBottom = 'none';
+            saveBtn.textContent = "Confirmar Registro";
+            saveBtn.style.display = 'block';
+        };
+
+        tabGuest.onclick = () => {
+            panelManual.style.display = 'none';
+            panelGuest.style.display = 'block';
+            tabGuest.style.color = 'var(--accent-blue)';
+            tabGuest.style.borderBottom = '2px solid var(--accent-blue)';
+            tabManual.style.color = 'var(--text-muted)';
+            tabManual.style.borderBottom = 'none';
+            saveBtn.textContent = "Generar Invitación QR";
+            saveBtn.style.display = 'block';
+        };
+
         saveBtn.textContent = "Confirmar Registro";
         saveBtn.onclick = async () => {
-            const payload = {
-                usuario_id: parseInt(document.getElementById('mAccUser').value),
-                dispositivo_id: document.getElementById('mAccDev').value ? parseInt(document.getElementById('mAccDev').value) : null,
-                tipo: document.getElementById('mAccType').value,
-                observaciones: document.getElementById('mAccObs').value
-            };
-            if (!payload.usuario_id) return showToast("Seleccione un usuario", "error");
+            if (panelManual.style.display !== 'none') {
+                const payload = {
+                    usuario_id: parseInt(document.getElementById('mAccUser').value),
+                    dispositivo_id: document.getElementById('mAccDev').value ? parseInt(document.getElementById('mAccDev').value) : null,
+                    tipo: document.getElementById('mAccType').value,
+                    observaciones: document.getElementById('mAccObs').value
+                };
+                if (!payload.usuario_id) return showToast("Seleccione un usuario", "error");
 
-            const res = await apiRequest('/accesos', 'POST', payload);
-            if (res.ok) { showToast("Acceso forzado exitosamente", "success"); closeModal(); loadView('accesos'); }
+                const res = await apiRequest('/accesos', 'POST', payload);
+                if (res.ok) { showToast("Acceso forzado exitosamente", "success"); closeModal(); loadView('accesos'); }
+            } else {
+                const guestName = document.getElementById('mGuestName').value.trim();
+                const expirationHours = parseInt(document.getElementById('mGuestExp').value);
+
+                if (!guestName) return showToast("Escriba el nombre del invitado", "error");
+
+                saveBtn.disabled = true;
+                const res = await apiRequest('/accesos/invitation', 'POST', { guestName, expirationHours });
+                if (res.ok) {
+                    const qrResult = document.getElementById('guestQRResult');
+                    qrResult.innerHTML = `
+                        <img src="${res.data.qr}" style="width:200px; border-radius:12px; margin-bottom:10px; border:4px solid white;">
+                        <p style="font-size:12px; color:var(--accent-green);">Válido hasta: ${res.data.expiresAt}</p>
+                        <button class="btn-table" onclick="this.parentElement.innerHTML='Copiado!'; showToast('Enlace copiado al portapapeles', 'info');" style="margin-top:10px; background:var(--bg-secondary);">Compartir Imagen</button>
+                    `;
+                    saveBtn.style.display = 'none';
+                    showToast("Invitación generada correctamente", "success");
+                }
+                saveBtn.disabled = false;
+            }
         };
     }
 

@@ -56,6 +56,7 @@ app.use(express.static(path.join(__dirname, '../../frontend'), {
     maxAge: '7d', // Cache de 7 días para assets estáticos
     etag: true
 }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ============================================
 // RUTAS API

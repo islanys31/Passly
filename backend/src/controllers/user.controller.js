@@ -51,3 +51,20 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ ok: false, error: error.message });
     }
 };
+
+exports.uploadPhoto = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ ok: false, error: 'No se subió ninguna imagen' });
+        }
+
+        const photoUrl = `/uploads/profiles/${req.file.filename}`;
+        const { id } = req.params;
+
+        await db.query('UPDATE usuarios SET foto_url = ? WHERE id = ?', [photoUrl, id]);
+
+        res.json({ ok: true, photoUrl });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};

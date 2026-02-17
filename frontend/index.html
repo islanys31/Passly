@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passly - Control de Acceso Seguro</title>
     <link rel="stylesheet" href="/css/index.css">
+    <script defer src="/js/recovery.js"></script>
     <style>
         /* Garantizar visibilidad de validación */
         .password-requirements li.valid {
@@ -66,6 +67,30 @@
         </p>
 
         <span class="toggle" id="toRegister">¿No tienes cuenta? Regístrate aquí</span>
+    </div>
+
+    <div class="card hidden" id="recoveryCard">
+        <h1>🔐 Recuperar Contraseña</h1>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+            Te enviaremos un código de 6 dígitos a tu correo electrónico.
+        </p>
+
+        <div id="stepEmail">
+            <input id="emailRecovery" type="email" placeholder="Tu correo electrónico">
+            <button id="btnSendCode" class="btn-primary">Enviar Código</button>
+        </div>
+
+        <div id="stepCode" class="hidden">
+            <input id="codeRecovery" type="text" placeholder="Código de 6 dígitos" maxlength="6" pattern="[0-9]{6}">
+            <input id="newPassword" type="password" placeholder="Nueva contraseña">
+            <input id="confirmPassword" type="password" placeholder="Confirmar contraseña">
+            <div class="checkbox-row">
+                <input type="checkbox" id="showRecovery"> <label for="showRecovery">Mostrar contraseña</label>
+            </div>
+            <button id="btnResetPassword" class="btn-primary">Restablecer Contraseña</button>
+        </div>
+
+        <span class="toggle" id="toLoginFromRecovery">Volver al inicio de sesión</span>
     </div>
 
     <div class="card hidden" id="registroCard">
@@ -185,9 +210,19 @@
             document.getElementById('toRegister').onclick = () => {
                 document.getElementById('loginCard').classList.add('hidden');
                 document.getElementById('registroCard').classList.remove('hidden');
+                document.getElementById('recoveryCard').classList.add('hidden');
             };
             document.getElementById('toLogin').onclick = () => {
                 document.getElementById('registroCard').classList.add('hidden');
+                document.getElementById('loginCard').classList.remove('hidden');
+                document.getElementById('recoveryCard').classList.add('hidden');
+            };
+            document.getElementById('resetLink').onclick = () => {
+                document.getElementById('loginCard').classList.add('hidden');
+                document.getElementById('recoveryCard').classList.remove('hidden');
+            };
+            document.getElementById('toLoginFromRecovery').onclick = () => {
+                document.getElementById('recoveryCard').classList.add('hidden');
                 document.getElementById('loginCard').classList.remove('hidden');
             };
 
@@ -266,12 +301,13 @@
                     } else {
                         loginAttempts++;
                         errorEl.style.display = "block";
+                        const errorMsg = data.error || data.message || "Credenciales incorrectas";
 
                         if (loginAttempts >= 3) {
-                            errorEl.innerHTML = `Has fallado ${loginAttempts} veces. <br>¿No tienes cuenta? Regístrate abajo o cambia tu contraseña.`;
+                            errorEl.innerHTML = `${errorMsg}.<br>Has fallado ${loginAttempts} veces. <br>¿No tienes cuenta? Regístrate abajo o cambia tu contraseña.`;
                             resetLink.style.display = "block";
                         } else {
-                            errorEl.textContent = `Credenciales incorrectas (Intento ${loginAttempts}/3)`;
+                            errorEl.textContent = `${errorMsg} (Intento ${loginAttempts}/3)`;
                         }
                     }
                 } catch (err) {
