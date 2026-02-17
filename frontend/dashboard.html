@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passly - Panel de Control Administrativo</title>
+  <link rel="stylesheet" href="/css/index.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="/js/dashboard.js"></script>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Passly</h1>
+      </div>
+      <nav class="nav-menu">
+        <div class="nav-item"><i>📊</i> Inicio</div>
+        <div class="nav-item"><i>👥</i> Usuarios</div>
+        <div class="nav-item"><i>📱</i> Dispositivos</div>
+        <div class="nav-item"><i>🚪</i> Accesos</div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="nav-item" style="color:var(--error-color)"><i>🚪</i> Salir</div>
+      </div>
+    </aside>
+
+    <main class="main-view">
+      <div class="top-bar">
+        <h2 id="view-title">Resumen</h2>
+        <div style="display:flex; align-items:center; gap:20px;">
+          <div class="theme-toggle" id="themeToggle">
+            <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+            <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+          </div>
+          <div class="user-profile">
+            <div class="user-avatar" id="userInitial">-</div>
+            <div style="text-align:left;">
+              <div id="userName" style="font-size:14px; font-weight:600; color:var(--text-primary);">Cargando...</div>
+              <div id="userRole" style="font-size:11px; color:var(--text-muted);">...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="view-content"></div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <h2 id="modalTitle" style="margin-bottom:20px;">Acción</h2>
+      <div id="modalBody"></div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn-table" style="flex:1" onclick="closeModal()">Cancelar</button>
+        <button id="btnSave" style="flex:1; margin-top:0">Guardar</button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

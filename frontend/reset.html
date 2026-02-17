@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Establecer Nueva Contraseña - Passly</title>
+  <link rel="stylesheet" href="/css/index.css">
+  <script type="module" src="/js/reset.js"></script>
+</head>
+
+<body>
+  <div class="theme-toggle" id="themeToggle">
+    <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+    <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+  </div>
+
+  <div class="card">
+    <h1>Restablecer Contraseña</h1>
+    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+      Ingresa el token y tu nueva contraseña segura.
+    </p>
+
+    <input id="token" type="text" placeholder="Token de recuperación">
+    <input id="nuevaPass" type="password" placeholder="Nueva contraseña">
+    <input id="confirmPass" type="password" placeholder="Confirmar contraseña">
+
+    <ul class="password-requirements" style="margin-top:15px; margin-bottom:15px;">
+      <li id="reqLength">Entre 8 y 12 caracteres.</li>
+      <li id="reqUpper">Mayúscula y minúscula.</li>
+      <li id="reqNumber">Al menos un número.</li>
+      <li id="reqSpecial">Carácter especial (!@#$%^*/_.).</li>
+    </ul>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="showPass">
+      <label for="showPass">Mostrar contraseñas</label>
+    </div>
+
+    <button id="btnReset"><span>Actualizar contraseña</span></button>
+
+    <a href="index.html" class="toggle">Volver al inicio de sesión</a>
+  </div>
+</body>
+
+</html>

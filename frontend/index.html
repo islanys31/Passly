@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passly - Control de Acceso Seguro</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <style>
+        /* Garantizar visibilidad de validación */
+        .password-requirements li.valid {
+            color: #10b981 !important;
+            font-weight: bold;
+        }
+
+        .password-requirements li.valid::before {
+            content: "✔ " !important;
+            color: #10b981 !important;
+        }
+
+        .password-requirements li {
+            color: #ef4444;
+            transition: all 0.3s ease;
+        }
+
+        .password-requirements li::before {
+            content: "✖ ";
+            color: #ef4444;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        #resetLink:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Theme Toggle -->
+    <div class="theme-toggle" id="themeToggle">
+        <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+        <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+    </div>
+
+    <div class="card" id="loginCard">
+        <h1>Iniciar Sesión</h1>
+        <input id="emailLogin" type="email" placeholder="Correo electrónico">
+        <input id="passLogin" type="password" placeholder="Contraseña">
+        <div class="checkbox-row">
+            <input type="checkbox" id="showLogin"> <label for="showLogin">Mostrar contraseña</label>
+        </div>
+        <select id="rolLogin">
+            <option value="" disabled selected>Selecciona tu rol</option>
+            <option value="1">Administrador</option>
+            <option value="2">Usuario regular</option>
+            <option value="3">Personal de Seguridad</option>
+        </select>
+        <p id="loginError" class="error-message" style="display:none;"></p>
+
+        <button id="btnLogin" class="btn-primary">Entrar</button>
+
+        <p id="resetLink"
+            style="display:none; color: var(--accent-blue); cursor: pointer; font-size: 13px; margin-top: 15px; font-weight: 500;">
+            ¿Olvidaste tu contraseña? Restablécela aquí
+        </p>
+
+        <span class="toggle" id="toRegister">¿No tienes cuenta? Regístrate aquí</span>
+    </div>
+
+    <div class="card hidden" id="registroCard">
+        <h1>Registrar Usuario</h1>
+
+        <input id="nombreRegistro" type="text" placeholder="Nombre" maxlength="50">
+        <span class="instruction-message">Mayúscula inicial, solo letras.</span>
+
+        <input id="apellidoRegistro" type="text" placeholder="Apellido" maxlength="50">
+        <span class="instruction-message">Mayúscula inicial, solo letras.</span>
+
+        <input id="emailRegistro" type="email" placeholder="Correo electrónico">
+        <span id="emailRegistroError" class="field-error"></span>
+
+        <input id="passRegistro" type="password" placeholder="Contraseña">
+        <input id="passConfirm" type="password" placeholder="Confirmar contraseña">
+
+        <ul class="password-requirements" id="passReqList">
+            <li id="reqLength">Entre 8 y 12 caracteres.</li>
+            <li id="reqUpper">Mayúscula y minúscula.</li>
+            <li id="reqNumber">Al menos un número (0-9).</li>
+            <li id="reqSpecial">Carácter especial (!@#$%^*/_.).</li>
+        </ul>
+
+        <select id="rolRegistro">
+            <option value="" disabled selected>Selecciona tu rol</option>
+            <option value="1">Administrador</option>
+            <option value="2">Usuario regular</option>
+            <option value="3">Personal de Seguridad</option>
+        </select>
+
+        <div class="checkbox-row">
+            <input type="checkbox" id="showReg"> <label for="showReg">Mostrar</label>
+            <input type="checkbox" id="aceptoTerminos"> <label for="aceptoTerminos">Acepto los términos</label>
+        </div>
+
+        <button id="btnRegistrar" disabled>Registrar</button>
+        <span class="toggle" id="toLogin">¿Ya tienes cuenta? Inicia sesión aquí</span>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + "/api";
+        let loginAttempts = 0;
+
+        function validarEmail(email) {
+            return /^[^@\s]+@(gmail\.com|hotmail\.com)$/i.test(email);
+        }
+
+        function validarPassword(pass) {
+            if (pass.length < 8 || pass.length > 12) return "Longitud inválida";
+            if (!/[A-Z]/.test(pass) || !/[a-z]/.test(pass)) return "Falta Mayús/Minús";
+            if (!/[0-9]/.test(pass)) return "Falta número";
+            if (!/[!@#$%^*/_.]/.test(pass)) return "Falta especial";
+            if (/\s/.test(pass)) return "Sin espacios";
+            return null;
+        }
+
+        function updateChecklist() {
+            const pass = document.getElementById('passRegistro').value;
+            const rules = {
+                'reqLength': pass.length >= 8 && pass.length <= 12,
+                'reqUpper': /[A-Z]/.test(pass) && /[a-z]/.test(pass),
+                'reqNumber': /[0-9]/.test(pass),
+                'reqSpecial': /[!@#$%^*/_.]/.test(pass)
+            };
+            for (const [id, ok] of Object.entries(rules)) {
+                const el = document.getElementById(id);
+                if (el) el.className = ok ? 'valid' : '';
+            }
+            validateAll();
+        }
+
+        function validateAll() {
+            const n = document.getElementById('nombreRegistro').value.trim();
+            const a = document.getElementById('apellidoRegistro').value.trim();
+            const e = document.getElementById('emailRegistro').value.trim();
+            const p = document.getElementById('passRegistro').value;
+            const c = document.getElementById('passConfirm').value;
+            const r = document.getElementById('rolRegistro').value;
+            const term = document.getElementById('aceptoTerminos').checked;
+
+            const nameOk = n.length >= 2 && /^[A-ZÁÉÍÓÚÑ]/.test(n);
+            const aOk = a.length >= 2 && /^[A-ZÁÉÍÓÚÑ]/.test(a);
+
+            const btn = document.getElementById('btnRegistrar');
+            btn.disabled = !(nameOk && aOk && validarEmail(e) && validarPassword(p) === null && p === c && c !== "" && r && term);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme Toggle Logic
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            updateThemeUI(currentTheme);
+
+            themeToggle.onclick = () => {
+                const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeUI(newTheme);
+            };
+
+            function updateThemeUI(theme) {
+                if (theme === 'light') {
+                    themeIcon.textContent = '☀️';
+                    themeText.textContent = 'Modo Oscuro';
+                } else {
+                    themeIcon.textContent = '🌙';
+                    themeText.textContent = 'Modo Claro';
+                }
+            }
+
+            // Toggles
+            document.getElementById('toRegister').onclick = () => {
+                document.getElementById('loginCard').classList.add('hidden');
+                document.getElementById('registroCard').classList.remove('hidden');
+            };
+            document.getElementById('toLogin').onclick = () => {
+                document.getElementById('registroCard').classList.add('hidden');
+                document.getElementById('loginCard').classList.remove('hidden');
+            };
+
+            // Eventos Registro
+            ['nombreRegistro', 'apellidoRegistro', 'emailRegistro', 'rolRegistro'].forEach(id => {
+                document.getElementById(id).oninput = validateAll;
+            });
+            document.getElementById('passRegistro').oninput = updateChecklist;
+            document.getElementById('passConfirm').oninput = validateAll;
+            document.getElementById('aceptoTerminos').onchange = validateAll;
+
+            document.getElementById('showReg').onchange = e => {
+                const type = e.target.checked ? 'text' : 'password';
+                document.getElementById('passRegistro').type = type;
+                document.getElementById('passConfirm').type = type;
+            };
+
+            // Registro Submit
+            document.getElementById('btnRegistrar').onclick = async () => {
+                const btn = document.getElementById('btnRegistrar');
+                btn.disabled = true;
+                btn.textContent = "Registrando...";
+
+                const body = {
+                    nombre: document.getElementById('nombreRegistro').value.trim(),
+                    apellido: document.getElementById('apellidoRegistro').value.trim(),
+                    email: document.getElementById('emailRegistro').value.trim(),
+                    password: document.getElementById('passRegistro').value,
+                    rol_id: parseInt(document.getElementById('rolRegistro').value),
+                    cliente_id: 1
+                };
+
+                try {
+                    const res = await fetch(API_BASE + "/auth/register", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        alert("¡Registro exitoso! Ya puedes iniciar sesión.");
+                        document.getElementById('toLogin').click();
+                    } else {
+                        alert(data.error || "Error al registrar");
+                    }
+                } catch (err) {
+                    alert("Error de conexión");
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = "Registrar";
+                    validateAll();
+                }
+            };
+
+            // Login Submit
+            document.getElementById('btnLogin').onclick = async () => {
+                const email = document.getElementById('emailLogin').value.trim();
+                const password = document.getElementById('passLogin').value;
+                const rol_id = document.getElementById('rolLogin').value;
+                const errorEl = document.getElementById('loginError');
+                const resetLink = document.getElementById('resetLink');
+
+                if (!email || !password || !rol_id) return alert("Completa todos los campos");
+
+                try {
+                    const res = await fetch(API_BASE + "/auth/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email, password, rol_id })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        localStorage.setItem('auth_token', data.token);
+                        localStorage.setItem('usuario_activo', JSON.stringify(data.user));
+                        window.location.href = "dashboard.html";
+                    } else {
+                        loginAttempts++;
+                        errorEl.style.display = "block";
+
+                        if (loginAttempts >= 3) {
+                            errorEl.innerHTML = `Has fallado ${loginAttempts} veces. <br>¿No tienes cuenta? Regístrate abajo o cambia tu contraseña.`;
+                            resetLink.style.display = "block";
+                        } else {
+                            errorEl.textContent = `Credenciales incorrectas (Intento ${loginAttempts}/3)`;
+                        }
+                    }
+                } catch (err) {
+                    alert("Error de conexión");
+                }
+            };
+
+            document.getElementById('showLogin').onchange = e => {
+                document.getElementById('passLogin').type = e.target.checked ? 'text' : 'password';
+            };
+
+            document.getElementById('resetLink').onclick = () => {
+                window.location.href = "forgot.html";
+            };
+        });
+    </script>
+</body>
+
+</html>
