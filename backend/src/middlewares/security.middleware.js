@@ -2,42 +2,42 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { body, validationResult } = require('express-validator');
 
-// Rate Limiting - Prevenir ataques de fuerza bruta
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // Aumentado para pruebas (era 5)
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: 'Demasiados intentos de inicio de sesión. Por favor, intenta de nuevo en 15 minutos.',
     standardHeaders: true,
     legacyHeaders: false,
 });
 
 const registerLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hora
-    max: 50, // Aumentado para pruebas (era 3)
+    windowMs: 60 * 60 * 1000,
+    max: 50,
     message: 'Demasiados registros desde esta IP. Por favor, intenta de nuevo más tarde.',
 });
 
 const forgotPasswordLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hora
-    max: 3, // Máximo 3 solicitudes por hora
+    windowMs: 60 * 60 * 1000,
+    max: 3,
     message: 'Has alcanzado el límite de 3 solicitudes de recuperación por hora. Por favor, intenta más tarde.',
 });
 
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // 100 requests por IP
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: 'Demasiadas peticiones desde esta IP. Por favor, intenta de nuevo más tarde.',
 });
 
-// Configuración de Helmet para headers de seguridad
 const helmetConfig = helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
             imgSrc: ["'self'", "data:", "https:"],
+            workerSrc: ["'self'", "blob:"],
+            childSrc: ["'self'", "blob:"],
         },
     },
     hsts: {
@@ -47,7 +47,6 @@ const helmetConfig = helmet({
     },
 });
 
-// Validadores de inputs
 const validateRegister = [
     body('nombre')
         .trim()
@@ -89,8 +88,7 @@ const validateLogin = [
     body('email')
         .trim()
         .isEmail()
-        .withMessage('Email inválido')
-        .normalizeEmail(),
+        .withMessage('Email inválido'),
 
     body('password')
         .notEmpty()
@@ -103,53 +101,6 @@ const validateLogin = [
         .withMessage('ID de rol inválido'),
 ];
 
-const validateDevice = [
-    body('nombre')
-        .trim()
-        .isLength({ min: 2, max: 100 })
-        .withMessage('El nombre debe tener entre 2 y 100 caracteres')
-        .matches(/^[a-zA-Z0-9\s]+$/)
-        .withMessage('El nombre del dispositivo no puede contener caracteres especiales'),
-
-    body('tipo')
-        .trim()
-        .isIn(['laptop', 'tablet', 'smartphone', 'otro'])
-        .withMessage('Tipo de dispositivo inválido'),
-
-    body('marca')
-        .optional()
-        .trim()
-        .isLength({ max: 50 })
-        .withMessage('La marca no puede exceder 50 caracteres'),
-
-    body('modelo')
-        .optional()
-        .trim()
-        .isLength({ max: 50 })
-        .withMessage('El modelo no puede exceder 50 caracteres'),
-];
-
-const validateAccess = [
-    body('usuario_id')
-        .isInt({ min: 1 })
-        .withMessage('ID de usuario inválido'),
-
-    body('dispositivo_id')
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage('ID de dispositivo inválido'),
-
-    body('medio_transporte_id')
-        .optional()
-        .isInt({ min: 1 })
-        .withMessage('ID de medio de transporte inválido'),
-
-    body('tipo_acceso')
-        .isIn(['entrada', 'salida'])
-        .withMessage('Tipo de acceso inválido'),
-];
-
-// Middleware para manejar errores de validación
 const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -164,14 +115,12 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
-// Sanitización de inputs (prevenir XSS)
 const sanitizeInput = (req, res, next) => {
-    // Sanitizar body
     if (req.body) {
         Object.keys(req.body).forEach(key => {
             if (typeof req.body[key] === 'string') {
                 req.body[key] = req.body[key]
-                    .replace(/[<>]/g, '') // Remover < y >
+                    .replace(/[<>]/g, '')
                     .trim();
             }
         });
@@ -187,8 +136,6 @@ module.exports = {
     helmetConfig,
     validateRegister,
     validateLogin,
-    validateDevice,
-    validateAccess,
     handleValidationErrors,
     sanitizeInput,
 };

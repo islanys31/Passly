@@ -1,14 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
-const { verifyToken, verifyRole } = require('../middlewares/authMiddleware');
+const authMiddleware = require('../middlewares/authMiddleware');
 
-router.use(verifyToken); // Protect all routes
-
-router.get('/', /* verifyRole([1]), */ userController.getAllUsers); // Usually admin only
-router.get('/:id', userController.getUserById);
-router.post('/', verifyRole([1]), userController.createUser);
-router.put('/:id', userController.updateUser);
-router.delete('/:id', verifyRole([1]), userController.deleteUser);
+router.get('/', authMiddleware.verifyToken, userController.getAllUsers);
+router.post('/', authMiddleware.verifyToken, userController.createUser);
+router.put('/:id', authMiddleware.verifyToken, userController.updateUser);
+router.post('/:id/photo', authMiddleware.verifyToken, require('../middlewares/upload.middleware').single('photo'), userController.uploadPhoto);
+router.delete('/:id', authMiddleware.verifyToken, userController.deleteUser);
 
 module.exports = router;

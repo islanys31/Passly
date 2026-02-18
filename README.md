@@ -1,371 +1,360 @@
-# 🎯 Passly - Sistema de Control de Accesos
+# 🔐 Passly - Sistema de Control de Accesos Inteligente
 
-> Sistema profesional de gestión de accesos con modo oscuro/claro, diseño moderno y arquitectura full-stack.
-
-![Status](https://img.shields.io/badge/status-active-success.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-green.svg)
+![Node](https://img.shields.io/badge/node-18.x-blue.svg)
+![MySQL](https://img.shields.io/badge/mysql-8.0-orange.svg)
+![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
----
-
-## ✨ Características Principales
-
-### 🎨 **Diseño Profesional**
-- ✅ **Modo Oscuro/Claro** con toggle funcional
-- ✅ **Glassmorphism** y efectos modernos
-- ✅ **Animaciones suaves** y transiciones
-- ✅ **Responsive design** (móvil, tablet, desktop)
-- ✅ **Paletas de colores** profesionales
-
-### 🔐 **Seguridad**
-- ✅ **Autenticación JWT**
-- ✅ **Bcrypt** para contraseñas
-- ✅ **Validación en tiempo real**
-- ✅ **Protección de rutas**
-
-### 🚀 **Tecnología**
-- ✅ **Backend**: Node.js + Express + MySQL
-- ✅ **Frontend**: HTML5 + CSS3 + JavaScript
-- ✅ **Base de Datos**: MySQL con pool de conexiones
-- ✅ **API REST** completa y documentada
+**Passly** es un sistema de control de accesos moderno y seguro diseñado para unidades residenciales, edificios corporativos y espacios que requieren gestión de entradas y salidas con tecnología QR, validación en tiempo real y reportes profesionales.
 
 ---
 
-## 🎨 Temas Visuales
+## 🌟 Características Principales
 
-### **Tema Oscuro** (Por defecto)
-```css
-Fondo: #2E2E2E (Gris oscuro elegante)
-Acentos: #2E7D32 (Verde institucional) + #2979FF (Azul eléctrico)
-Textos: #FFFFFF (Blanco puro)
-Tipografía: Roboto + Poppins
-```
+### 🔐 Autenticación y Seguridad (Hardened)
+- ✅ Login seguro con JWT y verificación de rol
+- ✅ Registro con validaciones estrictas (frontend + backend espejo)
+- ✅ Recuperación de contraseña por email con códigos de 6 dígitos
+- ✅ Helmet.js (CSP, HSTS 1 año + preload, X-Frame-Options)
+- ✅ Rate Limiting por endpoint (login, register, recovery, API)
+- ✅ Sanitización de inputs (prevención XSS)
+- ✅ express-validator con reglas de negocio estrictas
+- ✅ Bcrypt salt factor 10 para hash de contraseñas
+- ✅ JWT con verificación de propósito y estado de usuario
 
-### **Tema Claro**
-```css
-Fondo: #FAFAF5 (Blanco hueso)
-Acentos: #B39DDB (Lavanda) + #66BB6A (Verde esmeralda)
-Contraste: #212121 (Negro carbón)
-Tipografía: Poppins + Nunito
-```
+### 📊 Dashboard en Tiempo Real
+- ✅ Estadísticas live: usuarios activos, accesos del día, dispositivos, alertas
+- ✅ Gráfica de tráfico por horas (Chart.js)
+- ✅ Últimos accesos actualizados vía WebSockets
+- ✅ Tarjeta de QR personal con generación y descarga
+- ✅ Alertas de seguridad visual
 
----
+### 🔑 Sistema QR Completo
+- ✅ **QR Personal**: Generación de código QR para usuarios permanentes
+- ✅ **QR Invitado**: Invitaciones temporales firmadas con JWT (4h - 1 semana)
+- ✅ **Escáner QR**: Página dedicada con cámara (html5-qrcode)
+- ✅ **Validación automática**: Registro de acceso al escanear
 
-## 📂 Estructura del Proyecto
+### 👥 Gestión Completa
+- ✅ CRUD de Usuarios con subida de fotos de perfil
+- ✅ CRUD de Dispositivos (vehículos, motos, bicicletas)
+- ✅ Registro de accesos manual y automático (QR)
+- ✅ Exportación a CSV y PDF profesional (jsPDF)
+- ✅ Soft delete (desactivación sin pérdida de datos)
 
-```
-Passly/
-│
-├── backend/                    # Servidor Node.js + Express
-│   ├── src/
-│   │   ├── config/            # Configuración (DB, env)
-│   │   ├── controllers/       # Lógica de negocio
-│   │   ├── middlewares/       # Autenticación y validación
-│   │   ├── routes/            # Endpoints API
-│   │   └── app.js             # Configuración Express
-│   ├── server.js              # Punto de entrada
-│   ├── .env                   # Variables de entorno
-│   ├── .env.example           # Plantilla de configuración
-│   ├── package.json
-│   ├── README.md              # Documentación backend
-│   └── CAMBIOS.md             # Cambios realizados
-│
-├── frontend/                   # Cliente Web
-│   ├── css/
-│   │   └── index.css          # Estilos con temas
-│   ├── index.html             # Login/Registro
-│   ├── dashboard.html         # Panel principal
-│   ├── forgot.html            # Recuperar contraseña
-│   └── reset.html             # Restablecer contraseña
-│
-├── database/
-│   └── passly.sql             # Script de base de datos
-│
-├── GUIA_RAPIDA.md             # Guía de inicio rápido
-├── INTEGRACION_COMPLETA.md    # Documentación técnica completa
-├── FRONTEND_BACKEND.md        # Integración frontend-backend
-└── README.md                  # Este archivo
-```
+### 🎨 Diseño Premium
+- ✅ Modo oscuro/claro persistente con toggle
+- ✅ Glassmorphism y efectos modernos
+- ✅ Responsive (móvil, tablet, desktop)
+- ✅ Animaciones suaves y transiciones
+- ✅ Tipografía moderna (Poppins, Roboto, Inter)
+- ✅ Toasts de notificación no intrusivas
+
+### 🐳 Deployment
+- ✅ Docker Compose con 3 servicios (API + MySQL + Nginx)
+- ✅ Nginx como reverse proxy con Gzip y WebSocket proxy
+- ✅ Volúmenes persistentes para datos
+- ✅ Restart automático de servicios
 
 ---
 
-## 🚀 Instalación y Uso
+## 🚀 Inicio Rápido
 
-### **1. Clonar el repositorio**
+### Opción 1: Desarrollo Local
+
 ```bash
-git clone <repository-url>
+# 1. Clonar el repositorio
+git clone https://github.com/tu-usuario/Passly.git
 cd Passly
-```
 
-### **2. Configurar la base de datos**
-```sql
--- Crear la base de datos
-CREATE DATABASE passly;
+# 2. Crear la base de datos
+mysql -u root -p < database/passly.sql
 
--- Importar el schema
-mysql -u root -p passly < database/passly.sql
-```
-
-### **3. Configurar el backend**
-```bash
+# 3. Configurar variables de entorno
 cd backend
+cp .env.example .env
+# Edita .env con tus credenciales de MySQL
+
+# 4. Instalar dependencias e iniciar
 npm install
-
-# Copiar y configurar .env
-copy .env.example .env
-# Editar .env con tus credenciales de MySQL
-```
-
-**Archivo `.env`:**
-```env
-PORT=3000
-NODE_ENV=development
-
-DB_HOST=127.0.0.1
-DB_USER=root
-DB_PASSWORD=tu_password
-DB_NAME=passly
-DB_PORT=3306
-
-JWT_SECRET=tu_secreto_super_seguro
-JWT_EXPIRES_IN=24h
-```
-
-### **4. Iniciar el servidor**
-```bash
 npm run dev
 ```
 
-### **5. Acceder a la aplicación**
-Abre tu navegador en: **`http://localhost:3000`**
+Accede a: **`http://localhost:3000`**
+
+### Opción 2: Docker (Producción)
+
+```bash
+docker-compose up -d --build
+```
+
+Accede a: **`http://localhost`**
+
+### Credenciales de Prueba
+
+| Email | Contraseña | Rol |
+|-------|-----------|-----|
+| `admin@gmail.com` | `Admin123!` | Administrador |
 
 ---
 
-## 🎯 Funcionalidades
+## 📁 Estructura del Proyecto
 
-### **Autenticación**
-- ✅ Registro de usuarios con validación completa
-- ✅ Login con JWT
-- ✅ Recuperación de contraseña
-- ✅ Validación en tiempo real
-
-### **Gestión de Usuarios**
-- ✅ CRUD completo
-- ✅ Roles y permisos
-- ✅ Estados (activo/inactivo)
-- ✅ Soft delete
-
-### **Gestión de Dispositivos**
-- ✅ Registro de dispositivos
-- ✅ Asignación a usuarios
-- ✅ Medios de transporte
-- ✅ Estados y tracking
-
-### **Control de Accesos**
-- ✅ Registro de entradas/salidas
-- ✅ Historial completo
-- ✅ Reportes
-- ✅ Auditoría
-
----
-
-## 📡 API Endpoints
-
-### **Autenticación**
-```http
-POST /api/auth/register    # Registrar usuario
-POST /api/auth/login       # Iniciar sesión
 ```
-
-### **Usuarios**
-```http
-GET    /api/usuarios       # Listar usuarios
-GET    /api/usuarios/:id   # Obtener usuario
-POST   /api/usuarios       # Crear usuario
-PUT    /api/usuarios/:id   # Actualizar usuario
-DELETE /api/usuarios/:id   # Desactivar usuario
-```
-
-### **Dispositivos**
-```http
-GET    /api/dispositivos       # Listar dispositivos
-POST   /api/dispositivos       # Crear dispositivo
-PUT    /api/dispositivos/:id   # Actualizar dispositivo
-DELETE /api/dispositivos/:id   # Desactivar dispositivo
-```
-
-### **Medios de Transporte**
-```http
-GET /api/medios-transporte  # Listar medios
-```
-
-### **Accesos**
-```http
-GET  /api/accesos          # Listar accesos
-POST /api/accesos          # Registrar acceso
+Passly/
+├── backend/
+│   ├── src/
+│   │   ├── config/          # DB pool, Socket.IO, Swagger
+│   │   ├── controllers/     # Auth, User, Device, Access, Transport, Stats
+│   │   ├── middlewares/     # Auth JWT, Security (Helmet/Rate/Validation), Upload
+│   │   ├── routes/          # 6 archivos de rutas API
+│   │   ├── services/        # Email (Nodemailer)
+│   │   ├── utils/           # Backups (node-cron)
+│   │   └── app.js           # Express + Helmet + CORS + Compression
+│   ├── uploads/             # Fotos de perfil
+│   ├── server.js            # HTTP + Socket.IO
+│   ├── Dockerfile
+│   ├── .env / .env.example
+│   └── package.json
+├── frontend/
+│   ├── css/index.css        # Estilos con temas oscuro/claro
+│   ├── js/                  # auth, dashboard, api, utils, theme, forgot, recovery, reset
+│   ├── index.html           # Login/Registro
+│   ├── dashboard.html       # Panel principal
+│   ├── scanner.html         # Escáner QR
+│   ├── forgot.html          # Recuperar contraseña
+│   ├── reset.html           # Restablecer contraseña
+│   └── service-worker.js    # PWA
+├── database/
+│   └── passly.sql           # Schema completo (8 tablas)
+├── nginx/
+│   └── default.conf         # Reverse Proxy + Gzip + WebSocket
+├── docker-compose.yml       # 3 servicios
+├── docs/                    # Documentación formal
+│   ├── 01_REQUISITOS_Y_PROPUESTA.md
+│   ├── 02_DIAGRAMAS_SISTEMA.md
+│   ├── 03_BASE_DE_DATOS.md
+│   ├── 04_MANUALES.md
+│   └── 05_PRUEBAS_Y_DISEÑO.md
+└── README.md
 ```
 
 ---
 
-## 🎨 Modo Oscuro/Claro
+## 🔌 API REST
 
-### **Cómo usar:**
-1. Click en el botón de la esquina superior derecha
-2. El tema se guarda automáticamente en localStorage
-3. Se mantiene entre sesiones
+### Autenticación
+```
+POST /api/auth/register          - Registrar usuario
+POST /api/auth/login             - Iniciar sesión (JWT)
+POST /api/auth/forgot-password   - Solicitar código de recuperación
+POST /api/auth/reset-password    - Restablecer contraseña
+```
 
-### **Implementación técnica:**
-```javascript
-// Toggle automático
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-}
+### Usuarios
+```
+GET    /api/usuarios             - Listar todos
+POST   /api/usuarios             - Crear nuevo
+PUT    /api/usuarios/:id         - Actualizar
+DELETE /api/usuarios/:id         - Desactivar (soft delete)
+POST   /api/usuarios/:id/photo   - Subir foto de perfil
+```
+
+### Dispositivos
+```
+GET    /api/dispositivos         - Listar todos
+POST   /api/dispositivos         - Crear nuevo
+PUT    /api/dispositivos/:id     - Actualizar
+DELETE /api/dispositivos/:id     - Desactivar (soft delete)
+```
+
+### Accesos y QR
+```
+GET    /api/accesos              - Listar historial (con JOINs)
+POST   /api/accesos              - Registrar acceso manual
+GET    /api/accesos/qr           - Generar QR personal
+POST   /api/accesos/invitation   - Crear invitación QR temporal
+POST   /api/accesos/scan         - Validar escaneo QR
+```
+
+### Otros
+```
+GET    /api/medios-transporte    - Listar medios de transporte
+GET    /api/stats                - Estadísticas generales
+```
+
+> 📘 Documentación interactiva: `http://localhost:3000/api-docs` (Swagger)
+
+---
+
+## 🔒 Seguridad (Hardening)
+
+| Medida | Detalle |
+|--------|---------|
+| **Helmet.js** | CSP, HSTS (1 año + preload), X-Frame-Options DENY |
+| **Rate Limiting** | Login: 100/15min, Register: 50/h, Recovery: 3/h, API: 100/15min |
+| **express-validator** | Email: @gmail/@hotmail, Password: 8-12 chars complejos, Nombre: solo letras y acentos |
+| **Sanitización** | Eliminación de tags HTML (`<>`) en todos los inputs |
+| **JWT Hardened** | Verificación de propósito + estado del usuario en BD |
+| **Bcrypt** | Salt factor 10 para hash irreversible |
+| **CORS** | Origen restringido en producción |
+| **SQL** | Prepared statements (parámetros ?) |
+| **Docker** | Red aislada, solo Nginx expuesto |
+| **Soft Delete** | Desactivación sin pérdida de datos |
+
+---
+
+## 🗄️ Base de Datos
+
+### Tablas (8)
+| Tabla | Descripción |
+|-------|-------------|
+| `estados` | Diccionario: Activo, Inactivo, Mantenimiento, Bloqueado |
+| `clientes` | Unidades residenciales / empresas |
+| `roles` | Admin, Usuario, Seguridad |
+| `usuarios` | Gestión con credenciales encriptadas y foto |
+| `medios_transporte` | Vehículo, Motocicleta, Bicicleta, Peatonal |
+| `dispositivos` | Bienes vinculados a usuarios |
+| `accesos` | Log histórico de entradas/salidas |
+| `recovery_codes` | Códigos de recuperación con expiración |
+
+---
+
+## 🎨 Diseño
+
+### Tema Oscuro (Por defecto)
+- Fondo: `#2E2E2E` | Acentos: Verde `#2E7D32` + Azul `#2979FF`
+- Glassmorphism con backdrop blur
+- Gradientes verde → azul en botones
+
+### Tema Claro
+- Fondo: `#FAFAF5` | Acentos: Lavanda `#B39DDB` + Esmeralda `#66BB6A`
+- Sombras suaves
+- Gradientes lavanda → esmeralda
+
+### Responsive
+- ✅ Móvil (< 480px)
+- ✅ Tablet (481-768px)
+- ✅ Desktop (> 768px)
+
+---
+
+## 📦 Dependencias Principales
+
+### Backend
+| Paquete | Versión | Función |
+|---------|---------|---------|
+| express | ^4.18.2 | Framework web |
+| mysql2 | ^3.9.8 | Base de datos |
+| jsonwebtoken | ^9.0.2 | Autenticación |
+| bcrypt | ^5.1.1 | Hash de contraseñas |
+| helmet | ^8.1.0 | Headers de seguridad |
+| express-rate-limit | ^7.1.5 | Rate limiting |
+| express-validator | ^7.0.1 | Validaciones |
+| socket.io | ^4.7.4 | Tiempo real |
+| nodemailer | ^6.9.9 | Envío de emails |
+| qrcode | ^1.5.3 | Generación QR |
+| multer | ^1.4.5 | Subida de archivos |
+| compression | ^1.8.1 | Compresión Gzip |
+| cors | ^2.8.5 | Cross-Origin |
+| node-cron | ^3.0.3 | Tareas programadas |
+
+### Frontend
+| Librería | Función |
+|----------|---------|
+| Chart.js | Gráficas de tráfico |
+| jsPDF | Exportación a PDF |
+| html5-qrcode | Escáner QR con cámara |
+| Socket.IO Client | Actualizaciones en tiempo real |
+| QRCode.js | Generación de QR en cliente |
+
+---
+
+## 🐳 Docker
+
+### Servicios
+| Servicio | Imagen | Puerto | Función |
+|----------|--------|--------|---------|
+| `passly-web` | Nginx Alpine | 80 | Reverse Proxy + Gzip |
+| `passly-api` | Node 18-slim | 3000 (interno) | API + Socket.IO |
+| `passly-db` | MySQL 8.0 | 3306 (interno) | Base de datos |
+
+### Comandos
+```bash
+# Levantar todo
+docker-compose up -d --build
+
+# Ver logs
+docker-compose logs -f
+
+# Detener
+docker-compose down
+
+# Reiniciar
+docker-compose restart
 ```
 
 ---
 
-## 🔧 Configuración Avanzada
+## 🛠️ Configuración
 
-### **Variables de Entorno**
+### Variables de Entorno (.env)
 ```env
-PORT=3000                    # Puerto del servidor
-NODE_ENV=development         # Entorno (development/production)
-DB_HOST=127.0.0.1           # Host de MySQL
-DB_USER=root                 # Usuario de MySQL
-DB_PASSWORD=                 # Contraseña de MySQL
-DB_NAME=passly              # Nombre de la base de datos
-DB_PORT=3306                # Puerto de MySQL
-JWT_SECRET=secret_key        # Secreto para JWT
-JWT_EXPIRES_IN=24h          # Expiración del token
-```
+# Base de Datos
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=tu_contraseña
+DB_NAME=passly
+DB_PORT=3306
 
-### **Pool de Conexiones MySQL**
-```javascript
-{
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-}
+# JWT
+JWT_SECRET=tu_clave_secreta_segura
+
+# Servidor
+PORT=3000
+NODE_ENV=development
+
+# Email (Opcional - para recuperación de contraseña)
+EMAIL_USER=tu_correo@gmail.com
+EMAIL_PASS=contraseña_de_aplicacion_gmail
+
+# Frontend (Solo producción)
+FRONTEND_URL=http://localhost:3000
 ```
 
 ---
 
-## 📊 Métricas de Calidad
+## 📚 Documentación
 
-| Aspecto | Estado | Nota |
-|---------|--------|------|
-| **Backend** | ✅ 100% | Funcional |
-| **Frontend** | ✅ 100% | Conectado |
-| **Base de Datos** | ✅ 100% | Operativa |
-| **Validación** | ✅ 100% | Tiempo real |
-| **UX/UI** | ✅ 100% | Profesional |
-| **Responsive** | ✅ 100% | Mobile-ready |
-| **Seguridad** | ✅ 95% | JWT + Bcrypt |
-
----
-
-## 🐛 Troubleshooting
-
-### **El servidor no inicia**
-```bash
-# Verificar que el puerto 3000 esté libre
-netstat -ano | findstr :3000
-
-# Matar el proceso si está ocupado
-taskkill /F /PID <PID>
-```
-
-### **Error de conexión a MySQL**
-```bash
-# Verificar que MySQL esté corriendo
-# Verificar credenciales en .env
-# Usar 127.0.0.1 en lugar de localhost
-```
-
-### **El frontend no carga**
-```bash
-# Verificar que el backend esté corriendo
-# Revisar la consola del navegador (F12)
-# Limpiar caché del navegador
-```
+| Documento | Descripción |
+|-----------|-------------|
+| `README.md` | Documentación principal (este archivo) |
+| `ANALISIS_PROYECTO.md` | Análisis técnico detallado |
+| `ANALISIS_FUNCIONALIDADES.md` | Estado de funcionalidades |
+| `RESUMEN_EJECUTIVO.md` | Resumen de logros |
+| `RESUMEN_ANALISIS.md` | Análisis rápido del proyecto |
+| `REPORTE_TECNICO_HARDENING.md` | Reporte de endurecimiento |
+| `DOCUMENTACION_PROYECTO_PASSLY.md` | Documentación estratégica |
+| `GUIA_RAPIDA.md` | Guía de inicio rápido |
+| `GUIA_DISENO.md` | Especificaciones de diseño |
+| `INTEGRACION_COMPLETA.md` | Detalles de integración |
+| `FRONTEND_BACKEND.md` | Arquitectura de servidor |
+| `docs/01_REQUISITOS_Y_PROPUESTA.md` | Requisitos y propuesta técnica |
+| `docs/02_DIAGRAMAS_SISTEMA.md` | Diagramas UML y técnicos |
+| `docs/03_BASE_DE_DATOS.md` | Modelo de base de datos |
+| `docs/04_MANUALES.md` | Manuales de operación |
+| `docs/05_PRUEBAS_Y_DISEÑO.md` | Pruebas y diseño UX/UI |
 
 ---
 
-## 📚 Documentación Adicional
+## 🆘 Soporte
 
-- **[GUIA_RAPIDA.md](GUIA_RAPIDA.md)** - Inicio rápido
-- **[INTEGRACION_COMPLETA.md](INTEGRACION_COMPLETA.md)** - Detalles técnicos
-- **[FRONTEND_BACKEND.md](FRONTEND_BACKEND.md)** - Integración
-- **[backend/README.md](backend/README.md)** - Backend
-- **[backend/CAMBIOS.md](backend/CAMBIOS.md)** - Changelog
+- 📧 Email: soporte@passly.com
+- 🐛 Issues: https://github.com/tu-usuario/Passly/issues
+- 📖 API Docs: http://localhost:3000/api-docs
 
 ---
 
-## 🚧 Roadmap
-
-### **Fase 1** ✅ (Completada)
-- [x] Backend funcional
-- [x] Frontend conectado
-- [x] Base de datos operativa
-- [x] Modo oscuro/claro
-- [x] Diseño profesional
-
-### **Fase 2** (En progreso)
-- [ ] Dashboard completo
-- [ ] Gráficas y métricas
-- [ ] Reportes PDF
-- [ ] Notificaciones en tiempo real
-
-### **Fase 3** (Planificada)
-- [ ] Migración a React
-- [ ] PWA (Progressive Web App)
-- [ ] Tests automatizados
-- [ ] CI/CD pipeline
-
----
-
-## 👥 Contribuir
-
-1. Fork el proyecto
-2. Crea una rama (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
-
----
-
-## 🙏 Agradecimientos
-
-- **Poppins, Roboto, Inter** - Tipografías de Google Fonts
-- **Node.js** - Runtime de JavaScript
-- **Express** - Framework web
-- **MySQL** - Base de datos
-- **JWT** - Autenticación
-
----
-
-## 📞 Contacto
-
-**Proyecto:** Passly  
-**Versión:** 1.0.0  
-**Estado:** ✅ Activo y funcional
-
----
-
-**🎉 ¡Disfruta de Passly!**
-
-*Sistema profesional de control de accesos con modo oscuro/claro y diseño moderno* 🚀
+**🔐 Passly v2.0.0 - Sistema de Control de Accesos Inteligente**  
+*Desarrollado con Node.js, Express, MySQL, Socket.IO y Docker*

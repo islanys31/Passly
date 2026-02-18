@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const accessController = require('../controllers/access.controller');
-const { verifyToken } = require('../middlewares/authMiddleware');
+const authMiddleware = require('../middlewares/authMiddleware');
 
-router.use(verifyToken);
-
-router.get('/', accessController.getAllAccessLogs);
-router.post('/', accessController.registerAccess);
+router.get('/', authMiddleware.verifyToken, accessController.getAllAccess);
+router.get('/qr', authMiddleware.verifyToken, accessController.generateAccessQR);
+router.post('/invitation', authMiddleware.verifyToken, accessController.createGuestInvitation);
+router.post('/scan', authMiddleware.verifyToken, accessController.validateScan);
+router.post('/', authMiddleware.verifyToken, accessController.logAccess);
 
 module.exports = router;

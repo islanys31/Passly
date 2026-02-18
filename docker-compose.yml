@@ -6,61 +6,43 @@ services:
     container_name: passly-db
     restart: always
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: passly
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: passly_user
+      MYSQL_PASSWORD: passly_password
     ports:
-      - "127.0.0.1:3306:3306" # Solo accesible desde el host local
+      - "3307:3306" # Usamos 3307 para no chocar si ya hay uno local en el 3306
     volumes:
       - ./database/passly.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql_data:/var/lib/mysql
-    networks:
-      - passly-network
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   api:
     build: ./backend
     container_name: passly-api
     restart: always
-    # Los puertos ya no se exponen al exterior, solo Nginx accede
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - PORT=${PORT}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=root_password
+      - DB_NAME=passly
+      - JWT_SECRET=super_secret_key_passly_2026
+      - JWT_EXPIRES_IN=24h
     depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - passly-network
+      - db
 
   nginx:
     image: nginx:alpine
-    container_name: passly-proxy
+    container_name: passly-web
     restart: always
     ports:
       - "80:80"
-      - "443:443"
     volumes:
+      - ./frontend:/usr/share/nginx/html:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      # - ./certbot/conf:/etc/letsencrypt # Para SSL real
     depends_on:
       - api
-    networks:
-      - passly-network
-
-networks:
-  passly-network:
-    driver: bridge
 
 volumes:
   mysql_data:

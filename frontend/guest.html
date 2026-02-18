@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passly - Tu Invitación</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
+        }
+
+        .invitation-card {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            max-width: 90%;
+            width: 400px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #qr-wrapper {
+            margin: 20px auto;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #qrcode {
+            display: block;
+        }
+
+        .status-badge {
+            background: rgba(41, 121, 255, 0.1);
+            color: #2979ff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invitation-card">
+        <div class="status-badge">Invitación Activa</div>
+        <h1 style="color:white; margin-bottom:10px;">¡Hola!</h1>
+        <p id="guestMsg" style="color:var(--text-secondary); margin-bottom:20px;">Cargando tu código de acceso...</p>
+
+        <div id="qr-wrapper"
+            style="margin: 20px auto; background: white; padding: 15px; border-radius: 12px; display: inline-block;">
+            <canvas id="qrcode" style="display: block;"></canvas>
+        </div>
+
+        <p id="expiryMsg" style="color:var(--text-muted); font-size:12px; margin-top:20px;"></p>
+
+        <div style="margin-top:30px; border-top:1px solid var(--border-color); padding-top:20px;">
+            <p style="font-size:11px; color:var(--text-muted);">Presenta este código en el lector QR de la entrada.</p>
+        </div>
+    </div>
+
+    <script>
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error("JWT Parse Error", e);
+                return null;
+            }
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (token) {
+            const decoded = parseJwt(token);
+            if (decoded) {
+                document.getElementById('guestMsg').innerHTML = `<strong>${decoded.guestName}</strong>, aquí tienes tu código para ingresar.`;
+
+                // Generar QR con validación de librería
+                if (typeof QRCode !== 'undefined') {
+                    QRCode.toCanvas(document.getElementById('qrcode'), token, {
+                        width: 250,
+                        margin: 1,
+                        color: {
+                            dark: '#2979FF',
+                            light: '#ffffff'
+                        }
+                    }, function (error) {
+                        if (error) {
+                            console.error(error);
+                            document.getElementById('qr-wrapper').innerHTML = "⚠️ Error al generar QR";
+                        }
+                    });
+                } else {
+                    document.getElementById('qr-wrapper').innerHTML = "⌛ Cargando motor QR...";
+                    // Reintento simple si la librería tarda
+                    setTimeout(() => location.reload(), 2000);
+                }
+
+                if (decoded.exp) {
+                    const date = new Date(decoded.exp * 1000);
+                    document.getElementById('expiryMsg').textContent = `Expira el: ${date.toLocaleString()}`;
+                }
+            } else {
+                showError("Token inválido");
+            }
+        } else {
+            showError("No se encontró invitación");
+        }
+
+        function showError(msg) {
+            document.querySelector('.invitation-card').innerHTML = `
+                <h1 style="color:var(--error-color)">Error</h1>
+                <p style="color:var(--text-secondary)">${msg}</p>
+                <a href="/" style="color:var(--accent-blue); text-decoration:none; margin-top:20px; display:inline-block;">Ir al inicio</a>
+            `;
+        }
+    </script>
+</body>
+
+</html>

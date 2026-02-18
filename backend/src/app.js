@@ -7,6 +7,7 @@ const deviceRoutes = require('./routes/device.routes');
 const transportRoutes = require('./routes/transport.routes');
 const accessRoutes = require('./routes/access.routes');
 const statsRoutes = require('./routes/stats.routes');
+const logRoutes = require('./routes/log.routes');
 
 // Importar middlewares de seguridad
 const {
@@ -56,6 +57,7 @@ app.use(express.static(path.join(__dirname, '../../frontend'), {
     maxAge: '7d', // Cache de 7 días para assets estáticos
     etag: true
 }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ============================================
 // RUTAS API
@@ -64,9 +66,10 @@ app.use(express.static(path.join(__dirname, '../../frontend'), {
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', userRoutes);
 app.use('/api/dispositivos', deviceRoutes);
-app.use('/api/medios-transporte', transportRoutes);
+app.use('/api/transportes', transportRoutes);
 app.use('/api/accesos', accessRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/logs', logRoutes);
 
 // ============================================
 // RUTAS FRONTEND

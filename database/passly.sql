@@ -112,7 +112,12 @@ CREATE TABLE `usuarios` (
   KEY `cliente_id` (`cliente_id`),
   KEY `rol_id` (`rol_id`),
   KEY `estado_id` (`estado_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+--
+-- Volcado de datos para la tabla `usuarios`
+--
+
+INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `email`, `password`, `cliente_id`, `rol_id`, `estado_id`) VALUES
+(1, 'Administrador', 'Sistema', 'admin@gmail.com', '$2b$10$xlioDBSwN9.WIRBJlGhiqe1r5mXkvZnAzMXKen08m2.Wwm65IdOc.', 1, 1, 1);
 
 -- --------------------------------------------------------
 
