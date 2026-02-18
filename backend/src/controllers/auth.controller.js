@@ -1,6 +1,7 @@
 const { pool: db } = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { logAction } = require('../utils/logger');
 
 exports.register = async (req, res) => {
     try {
@@ -77,6 +78,9 @@ exports.login = async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
+        // Audit Log
+        await logAction(user.id, 'Inicio de Sesión', 'Seguridad', 'Login exitoso', req.ip);
+
         res.json({
             message: 'Login exitoso',
             token,
@@ -85,7 +89,8 @@ exports.login = async (req, res) => {
                 nombre: user.nombre,
                 apellido: user.apellido,
                 email: user.email,
-                rol_id: user.rol_id
+                rol_id: user.rol_id,
+                foto_url: user.foto_url
             }
         });
 
@@ -133,6 +138,9 @@ exports.forgotPassword = async (req, res) => {
         const emailResult = await emailService.sendRecoveryCode(email, code, user.nombre);
 
         if (emailResult.success) {
+            // Audit Log
+            await logAction(user.id, 'Solicitud de Recuperación', 'Seguridad', 'Código enviado', req.ip);
+
             res.json({
                 success: true,
                 message: 'Código de recuperación enviado a tu correo electrónico.'
@@ -182,6 +190,9 @@ exports.resetPassword = async (req, res) => {
 
         // Actualizar contraseña
         await db.query('UPDATE usuarios SET password = ? WHERE id = ?', [hashedPassword, users[0].id]);
+
+        // Audit Log
+        await logAction(users[0].id, 'Cambio de Contraseña', 'Seguridad', 'Contraseña restablecida por código', req.ip);
 
         // Enviar confirmación por email
         const emailService = require('../services/email.service');

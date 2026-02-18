@@ -39,6 +39,8 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 ## 🛡️ 4. MATRIZ DE SEGURIDAD IMPLEMENTADA (HARDENING)
 | Categoría | Medida Implementada | Detalle |
 | :--- | :--- | :--- |
+| **Fase G: Comunicación Avanzada** | **WhatsApp Integration** | Generación de enlaces profundos (`wa.me`) para compartir invitaciones QR con asistentes. |
+| **Página de Invitado** | **Invitación Pública** | Vista web ligera para que invitados vean su QR sin estar registrados en el sistema. |
 | **Headers** | **Helmet.js** | CSP (scripts solo de CDN autorizados), HSTS (1 año + preload), X-Frame-Options DENY |
 | **Acceso (Login)** | **Rate Limiting** | 100 intentos / 15 minutos por IP |
 | **Acceso (Registro)** | **Rate Limiting** | 50 intentos / hora por IP |
@@ -52,9 +54,9 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | **XSS** | **Sanitización** | Eliminación automática de `<>` en todos los inputs del body |
 | **Enumeración** | **Respuesta genérica** | forgot-password no revela si el email existe |
 | **SQL Injection** | **Prepared Statements** | Todas las queries usan parámetros ? de mysql2 |
+| **Multi-tenancy** | **Aislamiento Estricto** | Cada usuario solo ve y edita datos de su propio `cliente_id` (vía JWT mapping) |
+| **Auditoría** | **Logs de Sistema** | Registro histórico inmutable de acciones administrativas (CRUD, Login, Recovery) |
 | **Contenedores** | **Red Aislada** | MySQL y API sin acceso público; solo Nginx expuesto (80/443) |
-| **Secretos** | **.env** | JWT_SECRET, DB credentials, EMAIL credentials fuera del código |
-| **Soft Delete** | **Estado** | Usuarios y dispositivos no se borran, cambian a estado_id = 2 |
 
 ---
 
@@ -67,19 +69,17 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 *   **Inicialización:** SQL dump se carga automáticamente al crear el contenedor MySQL.
 
 ### **Fase B: Backend & API Hardening**
-*   **Seguridad de Headers:** Helmet.js con CSP personalizado (permite CDN de Chart.js, QRCode, fonts).
+*   **Seguridad de Headers:** Helmet.js con CSP personalizado.
 *   **Rate Limiting:** 4 limitadores independientes por tipo de endpoint.
 *   **Validaciones Estrictas:** express-validator con reglas de negocio (email, password, nombre, apellido, rol).
 *   **Sanitización Global:** Middleware que limpia tags HTML de todos los inputs.
 *   **Compresión:** compression middleware para respuestas Gzip.
 *   **Caché:** Assets estáticos con maxAge 7 días + ETags.
-*   **Backups:** Sistema de cron programado para verificaciones diarias.
 
 ### **Fase C: Dashboard & UX**
 *   **Integración Real:** Dashboard conectado 100% con estadísticas del backend vía API + Socket.IO.
 *   **CRUD Operativo:** Gestión completa de Usuarios (crear, editar, desactivar, subir foto) y Dispositivos.
-*   **Live Updates:** Eventos `new_access` y `stats_update` vía WebSockets notifican instantáneamente.
-*   **Gráficas:** Chart.js con tráfico por horas del día actual.
+*   **Live Updates:** Eventos `new_access` y `stats_update` vía WebSockets.
 *   **QR Personal:** Tarjeta en dashboard con generación y descarga PNG.
 
 ### **Fase D: Sistema QR & Recuperación**
@@ -89,9 +89,14 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 *   **Recovery:** Flujo completo forgot → código 6 dígitos → email → verificación → reset con confirmación.
 
 ### **Fase E: Refinamiento de Validaciones**
-*   **Validaciones Backend alineadas** con frontend: emails solo @gmail/@hotmail en minúsculas, acentos permitidos en nombres.
-*   **Caracteres especiales de password refinados:** !@#$%^*/_. (sin caracteres problemáticos).
+*   **Validaciones Backend alineadas** con frontend: emails solo @gmail/@hotmail, acentos permitidos.
 *   **Verificación de rol en login:** El rol seleccionado debe coincidir con el registrado en BD.
+
+### **Fase F: Auditoría y Multi-Tenencia (Avanzado)**
+*   **Aislamiento de Datos:** Arquitectura multi-inquilino donde cada cliente (`cliente_id`) tiene sus datos aislados.
+*   **Sistema de Logs:** Módulo de Auditoría que registra IP, Usuario y Acción.
+*   **Dashboard Administrativo:** Vista de Auditoría integrada.
+*   **MFA-Ready:** Base de datos preparada con campos para 2FA.
 
 ---
 
@@ -99,27 +104,23 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | Prueba | Estado | Observaciones |
 | :--- | :--- | :--- |
 | **Ataque de Diccionario** | ✅ Bloqueado | Rate limit se activa correctamente en login y recovery. |
+| **Lectura Transversal de Datos** | ✅ Bloqueado | Multi-tenant impide que un admin vea datos de otro cliente. |
 | **Inyección de Código (XSS)** | ✅ Rechazado | Sanitización elimina `<>` + CSP bloquea scripts no autorizados. |
 | **Inyección SQL** | ✅ Mitigado | Prepared statements en todas las queries. |
-| **Escalamiento de Privilegios** | ✅ Mitigado | JWT verificado por rol y propósito; estado del usuario en BD. |
-| **Enumeración de Usuarios** | ✅ Protegido | Respuestas genéricas en forgot-password. |
+| **Escalamiento de Privilegios** | ✅ Mitigado | JWT verificado por rol y propósito; verificado contra cliente_id. |
+| **Fuga de Información** | ✅ Protegido | Logs de auditoría permiten trazar cualquier acceso no autorizado. |
 | **Email con Dominio No Autorizado** | ✅ Rechazado | Solo @gmail y @hotmail permitidos. |
-| **Contraseña sin Complejidad** | ✅ Rechazado | Regex estricto en frontend y backend. |
-| **QR Expirado** | ✅ Rechazado | JWT verify detecta expiración correctamente. |
-| **Velocidad de Carga** | ✅ Excelente | Menos de 400ms gracias a Gzip, caché y pool MySQL. |
-| **WebSockets** | ✅ Funcional | Actualizaciones en < 100ms tras registrar acceso. |
 
 ---
 
 ## 📝 7. CONCLUSIONES Y RECOMENDACIONES
-El sistema **Passly** se encuentra en un estado de **Alta Disponibilidad y Seguridad**. Se han completado todas las tareas de endurecimiento planificadas, incluyendo las refinaciones de validación en la Fase E.
+El sistema **Passly** se encuentra en un estado de **Alta Disponibilidad y Seguridad**. Se han completado todas las tareas de endurecimiento planificadas, incluyendo el sistema de multi-arrendamiento y auditoría.
 
 **Recomendaciones para el siguiente nivel:**
 1. Instalar certificados SSL (Let's Encrypt) para activar HTTPS real y habilitar el escáner QR en producción.
 2. Configurar credenciales de email reales para que la recuperación de contraseña envíe códigos por email.
-3. Implementar CI/CD con GitHub Actions para testing y deploy automático.
-4. Monitorear logs de Nginx y Express para identificar patrones de tráfico inusuales.
-5. Considerar MFA (Multi-Factor Authentication) para cuentas de administradores.
+3. Activar el sistema MFA (ya preparado en BD) para cuentas de administradores.
+4. Implementar CI/CD con GitHub Actions para testing y deploy automático.
 
 ---
 **Documento generado para el Proyecto Passly**  

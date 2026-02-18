@@ -2,13 +2,15 @@ const { pool: db } = require('../config/db');
 
 exports.getAllAccess = async (req, res) => {
     try {
+        const tenantId = req.user.cliente_id;
         const [rows] = await db.query(`
-            SELECT a.*, u.nombre as usuario_nombre, u.apellido as usuario_apellido, d.nombre as dispositivo_nombre 
+            SELECT a.*, u.nombre as usuario_nombre, u.apellido as usuario_apellido, u.foto_url as usuario_foto, d.nombre as dispositivo_nombre 
             FROM accesos a
             JOIN usuarios u ON a.usuario_id = u.id
             LEFT JOIN dispositivos d ON a.dispositivo_id = d.id
+            WHERE u.cliente_id = ?
             ORDER BY a.fecha_hora DESC
-        `);
+        `, [tenantId]);
         res.json({ ok: true, data: rows });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
@@ -23,8 +25,18 @@ exports.logAccess = async (req, res) => {
             [usuario_id || req.user.id, dispositivo_id || null, tipo || 'Entrada']
         );
 
+        const [userData] = await db.query('SELECT nombre, apellido, foto_url FROM usuarios WHERE id = ?', [usuario_id || req.user.id]);
+        const user = userData[0];
+
         const io = require('../config/socket').getIO();
-        io.emit('new_access', { id: result.insertId, tipo });
+        io.emit('new_access', {
+            id: result.insertId,
+            tipo: tipo || 'Entrada',
+            usuario_nombre: user?.nombre || 'Sistemas',
+            usuario_apellido: user?.apellido || '',
+            usuario_foto: user?.foto_url || null,
+            fecha_hora: new Date()
+        });
         io.emit('stats_update');
 
         res.status(201).json({ ok: true, id: result.insertId });
@@ -97,6 +109,7 @@ exports.createGuestInvitation = async (req, res) => {
         res.json({
             ok: true,
             qr: qrImage,
+            token: guestToken,
             expiresAt: new Date(Date.now() + expirationHours * 3600000).toLocaleString()
         });
     } catch (error) {
@@ -161,7 +174,13 @@ exports.validateScan = async (req, res) => {
 
         // Notificar via Socket
         const io = require('../config/socket').getIO();
-        io.emit('new_access', { id: insert.insertId, tipo: type, usuario: result.nombre });
+        io.emit('new_access', {
+            id: insert.insertId,
+            tipo: type,
+            usuario_nombre: result.nombre,
+            usuario_foto: result.foto,
+            fecha_hora: new Date()
+        });
         io.emit('stats_update');
 
         res.json({ ok: true, data: result });

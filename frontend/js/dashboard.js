@@ -9,6 +9,11 @@ let userData = null;
 let currentData = [];
 let currentView = 'overview';
 
+// Global exposure for event handlers (do this as early as possible)
+window.closeModal = closeModal;
+window.loadView = loadView;
+window.handleLogout = handleLogout;
+
 document.addEventListener('DOMContentLoaded', async () => {
     userData = checkAuth();
     if (!userData) return;
@@ -26,16 +31,22 @@ function setupUI() {
     const apellido = userData.apellido || '';
 
     document.getElementById('userName').textContent = `${nombre} ${apellido}`;
-    document.getElementById('userInitial').textContent = nombre.charAt(0).toUpperCase();
+    const avatarEl = document.getElementById('userInitial');
+    if (userData.foto_url) {
+        avatarEl.innerHTML = `<img src="${userData.foto_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+    } else {
+        avatarEl.textContent = nombre.charAt(0).toUpperCase();
+    }
     document.getElementById('userRole').textContent =
         userData.rol_id === 1 ? 'Administrador' :
             (userData.rol_id === 3 ? 'Seguridad' : 'Usuario');
 
     // Sidebar navigation
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
-    const views = ['overview', 'usuarios', 'dispositivos', 'accesos'];
+    const views = ['overview', 'usuarios', 'dispositivos', 'transportes', 'accesos', 'logs'];
 
     navItems.forEach((item, index) => {
+        if (!navItems[index]) return;
         item.onclick = (e) => {
             e.preventDefault();
             loadView(views[index]);
@@ -72,6 +83,7 @@ async function loadView(view) {
         item.classList.remove('active');
         const text = item.textContent.trim().toLowerCase();
         if (view === 'overview' && text.includes('inicio')) item.classList.add('active');
+        else if (view === 'logs' && text.includes('auditoría')) item.classList.add('active');
         else if (text.includes(view)) item.classList.add('active');
     });
 
@@ -96,9 +108,17 @@ async function loadView(view) {
                 title.textContent = "Dispositivos Registrados";
                 await renderDispositivos(content);
                 break;
+            case 'transportes':
+                title.textContent = "Medios de Transporte";
+                await renderTransportes(content);
+                break;
             case 'accesos':
                 title.textContent = "Historial de Accesos";
                 await renderAccesos(content);
+                break;
+            case 'logs':
+                title.textContent = "Registro de Auditoría";
+                await renderAuditLogs(content);
                 break;
         }
     } catch (error) {
@@ -155,7 +175,14 @@ async function renderOverview(container) {
                         <tbody>
                             ${recentAccess.length ? recentAccess.map(a => `
                                 <tr>
-                                    <td><strong>${escapeHTML(a.usuario_nombre)}</strong></td>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <div class="user-avatar" style="width:25px; height:25px; font-size:10px; background:var(--bg-secondary);">
+                                                ${a.usuario_foto ? `<img src="${a.usuario_foto}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (a.usuario_nombre?.charAt(0) || '?')}
+                                            </div>
+                                            <strong>${escapeHTML(a.usuario_nombre)}</strong>
+                                        </div>
+                                    </td>
                                     <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo}</span></td>
                                     <td>${new Date(a.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                 </tr>
@@ -326,6 +353,29 @@ async function renderDispositivos(container) {
     setupModuleEvents(container, 'dispositivos');
 }
 
+async function renderTransportes(container) {
+    const { ok, data } = await apiRequest('/transportes');
+    if (!ok) return;
+    currentData = data.data || data;
+
+    renderModuleHeader(container, {
+        buttonId: 'btnAddTransport',
+        buttonText: '+ Nuevo Medio',
+        buttonColor: 'var(--accent-lavender)',
+        searchPlaceholder: 'Buscar transporte...',
+        module: 'transportes'
+    });
+
+    const tableHtml = `
+        <div class="data-table-container" id="moduleTableContainer">
+            ${generateTransportTable(data)}
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', tableHtml);
+
+    setupModuleEvents(container, 'transportes');
+}
+
 async function renderAccesos(container) {
     const { ok, data } = await apiRequest('/accesos');
     if (!ok) return;
@@ -349,6 +399,35 @@ async function renderAccesos(container) {
     container.insertAdjacentHTML('beforeend', tableHtml);
 
     setupModuleEvents(container, 'accesos');
+}
+
+async function renderAuditLogs(container) {
+    // Solo admins pueden ver esto (doble check en frontend por UX)
+    if (userData.rol_id !== 1) {
+        container.innerHTML = `<div class="error-message">Acceso restringido. Solo administradores pueden ver la auditoría.</div>`;
+        return;
+    }
+
+    const { ok, data } = await apiRequest('/logs');
+    if (!ok) return;
+    currentData = data.data || data;
+
+    renderModuleHeader(container, {
+        buttonId: 'btnRefreshLogs',
+        buttonText: '🔄 Actualizar',
+        buttonColor: 'var(--bg-secondary)',
+        searchPlaceholder: 'Buscar en logs...',
+        module: 'logs'
+    });
+
+    const tableHtml = `
+        <div class="data-table-container" id="moduleTableContainer">
+            ${generateAuditTable(data)}
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', tableHtml);
+
+    setupModuleEvents(container, 'logs');
 }
 
 /**
@@ -416,7 +495,9 @@ function setupModuleEvents(container, type) {
 
         if (type === 'usuarios') tableContainer.innerHTML = generateUserTable(filtered);
         else if (type === 'dispositivos') tableContainer.innerHTML = generateDeviceTable(filtered);
+        else if (type === 'transportes') tableContainer.innerHTML = generateTransportTable(filtered);
         else if (type === 'accesos') tableContainer.innerHTML = generateAccessTable(filtered);
+        else if (type === 'logs') tableContainer.innerHTML = generateAuditTable(filtered);
 
         attachTableActionEvents(tableContainer, type);
     };
@@ -426,13 +507,26 @@ function setupModuleEvents(container, type) {
     if (dateEnd) dateEnd.onchange = triggerFilter;
 
     // Actions
-    if (type === 'usuarios') document.getElementById('btnAddUser').onclick = () => showModal('add_user');
-    if (type === 'dispositivos') document.getElementById('btnAddDevice').onclick = () => showModal('add_device');
-    if (type === 'accesos') {
-        document.getElementById('btnLogAccess').onclick = () => showModal('add_access');
-        document.getElementById('btnExportCSV').onclick = exportCurrentData;
-        document.getElementById('btnExportPDF').onclick = exportToPDF;
-    }
+    const btnUser = document.getElementById('btnAddUser');
+    if (btnUser) btnUser.onclick = () => showModal('add_user');
+
+    const btnDev = document.getElementById('btnAddDevice');
+    if (btnDev) btnDev.onclick = () => showModal('add_device');
+
+    const btnTrans = document.getElementById('btnAddTransport');
+    if (btnTrans) btnTrans.onclick = () => showModal('add_transport');
+
+    const btnLogs = document.getElementById('btnRefreshLogs');
+    if (btnLogs) btnLogs.onclick = () => renderAuditLogs(container);
+
+    const btnLogAcc = document.getElementById('btnLogAccess');
+    if (btnLogAcc) btnLogAcc.onclick = () => showModal('add_access');
+
+    const btnCsv = document.getElementById('btnExportCSV');
+    if (btnCsv) btnCsv.onclick = exportCurrentData;
+
+    const btnPdf = document.getElementById('btnExportPDF');
+    if (btnPdf) btnPdf.onclick = exportToPDF;
 
     attachTableActionEvents(tableContainer, type);
 }
@@ -441,14 +535,20 @@ function attachTableActionEvents(container, type) {
     container.querySelectorAll('.btn-edit').forEach(btn => {
         btn.onclick = () => {
             const item = JSON.parse(btn.getAttribute('data-item'));
-            showModal(type === 'usuarios' ? 'user' : 'device', item);
+            let modalType = 'user';
+            if (type === 'dispositivos') modalType = 'device';
+            if (type === 'transportes') modalType = 'transport';
+            showModal(modalType, item);
         };
     });
 
     container.querySelectorAll('.btn-delete').forEach(btn => {
         btn.onclick = async () => {
             const id = btn.dataset.id;
-            const endpoint = type === 'usuarios' ? `/usuarios/${id}` : `/dispositivos/${id}`;
+            let endpoint = `/usuarios/${id}`;
+            if (type === 'dispositivos') endpoint = `/dispositivos/${id}`;
+            if (type === 'transportes') endpoint = `/transportes/${id}`;
+
             if (confirm(`¿Estás seguro de desactivar este registro?`)) {
                 const res = await apiRequest(endpoint, 'DELETE');
                 if (res.ok) {
@@ -468,10 +568,15 @@ function generateUserTable(data) {
     if (!data.length) return `<div class="empty-state"><i>🔍</i> No se encontraron usuarios.</div>`;
     return `
         <table>
-            <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Foto</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody>
                 ${data.map(u => `
                     <tr>
+                        <td>
+                            <div class="user-avatar" style="width:35px; height:35px; background:var(--bg-secondary); overflow:hidden;">
+                                ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; height:100%; object-fit:cover;">` : u.nombre.charAt(0)}
+                            </div>
+                        </td>
                         <td><strong>${escapeHTML(u.nombre)} ${escapeHTML(u.apellido || '')}</strong></td>
                         <td>${escapeHTML(u.email)}</td>
                         <td><span class="badge badge-info">${u.rol_id === 1 ? 'Admin' : (u.rol_id === 3 ? 'Seguridad' : 'Usuario')}</span></td>
@@ -479,6 +584,28 @@ function generateUserTable(data) {
                         <td>
                             <button class="btn-table btn-edit" data-item='${JSON.stringify(u)}'>✏️</button>
                             <button class="btn-table btn-delete" data-id="${u.id}" style="color:var(--error-color)">🗑️</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function generateTransportTable(data) {
+    if (!data.length) return `<div class="empty-state"><i>🔍</i> No hay medios de transporte registrados.</div>`;
+    return `
+        <table>
+            <thead><tr><th>Nombre</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+                ${data.map(t => `
+                    <tr>
+                        <td><strong>${escapeHTML(t.nombre)}</strong></td>
+                        <td>${escapeHTML(t.descripcion || 'Sin descripción')}</td>
+                        <td><span class="badge ${t.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${t.estado_id === 1 ? 'Activo' : 'Inactivo'}</span></td>
+                        <td>
+                            <button class="btn-table btn-edit" data-item='${JSON.stringify(t)}'>✏️</button>
+                            <button class="btn-table btn-delete" data-id="${t.id}" style="color:var(--error-color)">🗑️</button>
                         </td>
                     </tr>
                 `).join('')}
@@ -519,9 +646,36 @@ function generateAccessTable(data) {
                 ${data.map(a => `
                     <tr>
                         <td style="font-family: var(--font-metrics); font-size:13px;">${new Date(a.fecha_hora).toLocaleString()}</td>
-                        <td><strong>${escapeHTML(a.usuario_nombre)} ${escapeHTML(a.usuario_apellido || '')}</strong></td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="user-avatar" style="width:30px; height:30px; font-size:12px; background:var(--bg-secondary);">
+                                    ${a.usuario_foto ? `<img src="${a.usuario_foto}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (a.usuario_nombre?.charAt(0) || '?')}
+                                </div>
+                                <strong>${escapeHTML(a.usuario_nombre)} ${escapeHTML(a.usuario_apellido || '')}</strong>
+                            </div>
+                        </td>
                         <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo}</span></td>
                         <td>${escapeHTML(a.dispositivo_nombre || 'Puerta Peatonal')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function generateAuditTable(data) {
+    if (!data.length) return `<div class="empty-state"><i>📋</i> No hay registros de auditoría aún.</div>`;
+    return `
+        <table>
+            <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Módulo</th><th>Detalles</th></tr></thead>
+            <tbody>
+                ${data.map(l => `
+                    <tr>
+                        <td style="font-family: var(--font-metrics); font-size:12px;">${new Date(l.fecha_hora).toLocaleString()}</td>
+                        <td><strong>${escapeHTML(l.nombre)} ${escapeHTML(l.apellido)}</strong><br><small>${escapeHTML(l.email)}</small></td>
+                        <td><span class="badge ${l.accion.includes('Eliminar') || l.accion.includes('Desactivar') ? 'badge-danger' : 'badge-info'}" style="background:rgba(255,255,255,0.1); color:var(--text-primary); border:1px solid var(--border-color);">${l.accion}</span></td>
+                        <td>${l.modulo}</td>
+                        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; opacity:0.8;" title='${escapeHTML(l.detalles)}'><code>${escapeHTML(l.detalles)}</code></td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -709,7 +863,7 @@ async function showModal(type, data = null) {
         title.textContent = isEdit ? "Editar Dispositivo" : "Vincular Nuevo Dispositivo";
 
         body.innerHTML = `<div class="loading">Cargando catálogos...</div>`;
-        const [medios, usuarios] = await Promise.all([apiRequest('/medios-transporte'), apiRequest('/usuarios')]);
+        const [medios, usuarios] = await Promise.all([apiRequest('/transportes'), apiRequest('/usuarios')]);
 
         body.innerHTML = `
             <input type="text" id="mDevName" value="${data?.nombre || ''}" placeholder="Ejem: Ford Raptor / Placa XYZ-123">
@@ -744,6 +898,37 @@ async function showModal(type, data = null) {
             const res = await apiRequest(endpoint, method, payload);
             if (res.ok) { showToast("Dispositivo sincronizado", "success"); closeModal(); loadView('dispositivos'); }
         };
+    } else if (type === 'transport' || type === 'add_transport' || type === 'transportes') {
+        const isEdit = type === 'transport';
+        title.textContent = isEdit ? `Editar: ${data.nombre}` : "Nuevo Medio de Transporte";
+        body.innerHTML = `
+            <input type="text" id="mTNombre" value="${data?.nombre || ''}" placeholder="Ejem: Camión de Carga / Moto Eléctrica">
+            <textarea id="mTDesc" placeholder="Descripción opcional..." style="width:100%; margin-top:10px; border:2px solid var(--border-color); background:var(--bg-secondary); color:white; border-radius:12px; padding:12px; min-height:80px; font-family:inherit;">${data?.descripcion || ''}</textarea>
+            ${isEdit ? `
+            <select id="mTEstado">
+                <option value="1" ${data?.estado_id === 1 ? 'selected' : ''}>Estado: Activo</option>
+                <option value="2" ${data?.estado_id === 2 ? 'selected' : ''}>Estado: Fuera de Servicio</option>
+            </select>` : ''}
+        `;
+        saveBtn.onclick = async () => {
+            const payload = {
+                nombre: document.getElementById('mTNombre').value.trim(),
+                descripcion: document.getElementById('mTDesc').value.trim()
+            };
+            if (isEdit) payload.estado_id = parseInt(document.getElementById('mTEstado').value);
+
+            if (!payload.nombre) return showToast("El nombre es obligatorio", "error");
+
+            const endpoint = isEdit ? `/transportes/${data.id}` : '/transportes';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await apiRequest(endpoint, method, payload);
+            if (res.ok) {
+                showToast(isEdit ? "Medio actualizado" : "Medio creado", "success");
+                closeModal();
+                loadView('transportes');
+            }
+        };
     } else if (type === 'add_access') {
         title.textContent = "Registro de Acceso / Invitación";
         const [usuarios, dispositivos] = await Promise.all([apiRequest('/usuarios'), apiRequest('/dispositivos')]);
@@ -768,8 +953,7 @@ async function showModal(type, data = null) {
                     <option value="4">4 Horas (Visita corta)</option>
                     <option value="12">12 Horas (Día completo)</option>
                     <option value="24">24 Horas (Un día)</option>
-                    <option value="48">48 Horas (Fin de semana)</option>
-                    <option value="168">1 Semana (Permiso extendido)</option>
+                    <option value="168">Una Semana</option>
                 </select>
                 <div id="guestQRResult" style="margin-top:20px; text-align:center;"></div>
             </div>
@@ -825,21 +1009,54 @@ async function showModal(type, data = null) {
                 const res = await apiRequest('/accesos/invitation', 'POST', { guestName, expirationHours });
                 if (res.ok) {
                     const qrResult = document.getElementById('guestQRResult');
+                    const guestLink = `${window.location.origin}/guest.html?token=${res.data.token}`;
+
+                    // Asegurar codificación robusta
+                    const introText = `¡Hola ${guestName}! 👋 Te envío tu invitación QR para ingresar a Passly.`;
+                    const linkText = `Haz clic aquí para ver tu código: ${guestLink}`;
+                    const waMessage = encodeURIComponent(`${introText}\n\n${linkText}`);
+
+                    // URL de WhatsApp universal
+                    const waUrl = `https://wa.me/?text=${waMessage}`;
+
                     qrResult.innerHTML = `
-                        <img src="${res.data.qr}" style="width:200px; border-radius:12px; margin-bottom:10px; border:4px solid white;">
-                        <p style="font-size:12px; color:var(--accent-green);">Válido hasta: ${res.data.expiresAt}</p>
-                        <button class="btn-table" onclick="this.parentElement.innerHTML='Copiado!'; showToast('Enlace copiado al portapapeles', 'info');" style="margin-top:10px; background:var(--bg-secondary);">Compartir Imagen</button>
+                        <div style="background: white; padding: 10px; border-radius: 12px; display: inline-block; margin-bottom: 10px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <img src="${res.data.qr}" style="width:180px; display: block;">
+                        </div>
+                        <p style="font-size:12px; color:var(--accent-green); margin-bottom: 15px; font-weight: 500;">📅 Válido hasta: ${res.data.expiresAt}</p>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <a href="${waUrl}" target="_blank" class="btn-table" style="background:#25D366; color:white; border:none; text-decoration:none; display:flex; align-items:center; gap:8px; padding: 10px 20px; font-weight:bold; border-radius: 8px;">
+                                <i style="font-style: normal; font-size: 18px;">📱</i> WhatsApp
+                            </a>
+                            <button class="btn-table" id="btnCopyGuestLink" style="background:var(--bg-secondary); display:flex; align-items:center; gap:8px; padding: 10px 20px; border-radius: 8px;">
+                                <i style="font-style: normal; font-size: 18px;">🔗</i> Copiar
+                            </button>
+                            <button class="btn-table" onclick="closeModal()" style="background:var(--text-muted); color:white; border:none; padding: 10px 20px; border-radius: 8px; font-weight:bold;">
+                                Cerrar
+                            </button>
+                        </div>
                     `;
+
+                    document.getElementById('btnCopyGuestLink').onclick = () => {
+                        navigator.clipboard.writeText(guestLink);
+                        showToast('Enlace copiado al portapapeles', 'success');
+                    };
+
                     saveBtn.style.display = 'none';
-                    showToast("Invitación generada correctamente", "success");
+                    showToast("Invitación generada", "success");
+                    saveBtn.disabled = false;
                 }
-                saveBtn.disabled = false;
             }
         };
     }
-
-    window.onclick = (e) => { if (e.target === overlay) closeModal(); };
 }
+
+// Escuchar clicks fuera del modal para cerrar
+window.addEventListener('click', (e) => {
+    const overlay = document.getElementById('modalOverlay');
+    if (e.target === overlay) closeModal();
+});
 
 function closeModal() {
     document.getElementById('modalOverlay').style.display = 'none';
@@ -878,7 +1095,14 @@ function setupSocket() {
                     const row = `
                         <tr style="animation: highlight 2s ease forwards">
                             <td style="font-family: var(--font-metrics); font-size:13px;">${new Date(newLog.fecha_hora).toLocaleString()}</td>
-                            <td><strong>${escapeHTML(newLog.usuario_nombre)} ${escapeHTML(newLog.usuario_apellido || '')}</strong></td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="user-avatar" style="width:30px; height:30px; font-size:12px; background:var(--bg-secondary);">
+                                        ${newLog.usuario_foto ? `<img src="${newLog.usuario_foto}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (newLog.usuario_nombre?.charAt(0) || '?')}
+                                    </div>
+                                    <strong>${escapeHTML(newLog.usuario_nombre)} ${escapeHTML(newLog.usuario_apellido || '')}</strong>
+                                </div>
+                            </td>
                             <td><span class="badge ${newLog.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${newLog.tipo}</span></td>
                             <td>${escapeHTML(newLog.dispositivo_nombre || 'Puerta Peatonal')}</td>
                         </tr>
@@ -901,6 +1125,4 @@ function setupSocket() {
     }
 }
 
-// Global exposure for event handlers
-window.closeModal = closeModal;
-window.loadView = loadView;
+// Global exposure for event handlers is now at the top
