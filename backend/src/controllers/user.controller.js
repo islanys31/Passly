@@ -12,6 +12,16 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
+exports.getMe = async (req, res) => {
+    try {
+        const [users] = await db.query('SELECT id, nombre, apellido, email, rol_id, estado_id, foto_url, mfa_enabled FROM usuarios WHERE id = ?', [req.user.id]);
+        if (users.length === 0) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
+        res.json({ ok: true, user: users[0] });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};
+
 exports.createUser = async (req, res) => {
     try {
         const { nombre, apellido, email, password, rol_id } = req.body;

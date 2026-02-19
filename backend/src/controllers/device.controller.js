@@ -5,7 +5,7 @@ exports.getAllDevices = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
         const [rows] = await db.query(`
-            SELECT d.*, u.nombre as usuario_nombre, m.nombre as medio_transporte
+            SELECT d.*, u.nombre as usuario_nombre, u.foto_url as usuario_foto, m.nombre as medio_transporte
             FROM dispositivos d
             INNER JOIN usuarios u ON d.usuario_id = u.id
             LEFT JOIN medios_transporte m ON d.medio_transporte_id = m.id

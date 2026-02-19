@@ -2,6 +2,9 @@ const { pool: db } = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { logAction } = require('../utils/logger');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
+const { trackFailedAttempt, resetAttempts } = require('../middleware/ipBlocker');
 
 exports.register = async (req, res) => {
     try {
@@ -50,13 +53,15 @@ exports.login = async (req, res) => {
         const [users] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
 
         if (users.length === 0) {
+            await trackFailedAttempt(req.ip);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
         const user = users[0];
 
-        // Verificar rol (3ra credencial)
+        // Verificar rol (3rd credential)
         if (user.rol_id !== parseInt(rol_id)) {
+            await trackFailedAttempt(req.ip);
             return res.status(401).json({ error: 'El rol seleccionado no coincide con su cuenta' });
         }
 
@@ -68,18 +73,37 @@ exports.login = async (req, res) => {
         // Verificar contraseña
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
+            await trackFailedAttempt(req.ip);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // Generar JWT
+        // Login exitoso -> Resetear intentos de IP
+        await resetAttempts(req.ip);
+
+        // Audit Log
+        await logAction(user.id, 'Inicio de Sesión', 'Seguridad', 'Intento de login exitoso', req.ip);
+
+        // Check if MFA is enabled
+        if (user.mfa_enabled) {
+            // Generate a temporary JWT for MFA step
+            const mfaToken = jwt.sign(
+                { id: user.id, mfaPending: true },
+                process.env.JWT_SECRET,
+                { expiresIn: '5m' }
+            );
+            return res.json({
+                message: 'MFA_REQUIRED',
+                mfaRequired: true,
+                mfaToken
+            });
+        }
+
+        // Generar JWT Final
         const token = jwt.sign(
             { id: user.id, email: user.email, rol_id: user.rol_id, cliente_id: user.cliente_id },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN }
         );
-
-        // Audit Log
-        await logAction(user.id, 'Inicio de Sesión', 'Seguridad', 'Login exitoso', req.ip);
 
         res.json({
             message: 'Login exitoso',
@@ -203,5 +227,101 @@ exports.resetPassword = async (req, res) => {
     } catch (error) {
         console.error('Reset password error:', error);
         res.status(500).json({ error: 'Error al restablecer la contraseña' });
+    }
+};
+
+exports.mfaSetup = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const [users] = await db.query('SELECT email FROM usuarios WHERE id = ?', [userId]);
+        const user = users[0];
+
+        const secret = speakeasy.generateSecret({ name: `Passly (${user.email})` });
+        const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+        // Store secret temporarily (not enabled yet)
+        await db.query('UPDATE usuarios SET mfa_secret = ? WHERE id = ?', [secret.base32, userId]);
+
+        res.json({
+            success: true,
+            secret: secret.base32,
+            qrCodeUrl
+        });
+    } catch (error) {
+        console.error('MFA Setup error:', error);
+        res.status(500).json({ error: 'Error al configurar MFA' });
+    }
+};
+
+exports.mfaVerify = async (req, res) => {
+    try {
+        const { token } = req.body;
+        const userId = req.user.id;
+
+        const [users] = await db.query('SELECT mfa_secret FROM usuarios WHERE id = ?', [userId]);
+        const secret = users[0].mfa_secret;
+
+        const isValid = speakeasy.totp.verify({
+            secret: secret,
+            encoding: 'base32',
+            token: token
+        });
+
+        if (isValid) {
+            await db.query('UPDATE usuarios SET mfa_enabled = TRUE WHERE id = ?', [userId]);
+            await logAction(userId, 'MFA Habilitado', 'Seguridad', 'MFA activado correctamente', req.ip);
+            res.json({ success: true, message: 'MFA habilitado correctamente' });
+        } else {
+            res.status(400).json({ error: 'Código inválido' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Error al verificar MFA' });
+    }
+};
+
+exports.mfaLogin = async (req, res) => {
+    try {
+        const { mfaToken, code } = req.body;
+
+        const decoded = jwt.verify(mfaToken, process.env.JWT_SECRET);
+        if (!decoded.mfaPending) {
+            return res.status(401).json({ error: 'Token inválido' });
+        }
+
+        const [users] = await db.query('SELECT * FROM usuarios WHERE id = ?', [decoded.id]);
+        const user = users[0];
+
+        const isValid = speakeasy.totp.verify({
+            secret: user.mfa_secret,
+            encoding: 'base32',
+            token: code
+        });
+
+        if (isValid) {
+            const token = jwt.sign(
+                { id: user.id, email: user.email, rol_id: user.rol_id, cliente_id: user.cliente_id },
+                process.env.JWT_SECRET,
+                { expiresIn: process.env.JWT_EXPIRES_IN }
+            );
+
+            await logAction(user.id, 'Login MFA Exitoso', 'Seguridad', 'MFA verificado', req.ip);
+
+            res.json({
+                message: 'Login exitoso',
+                token,
+                user: {
+                    id: user.id,
+                    nombre: user.nombre,
+                    apellido: user.apellido,
+                    email: user.email,
+                    rol_id: user.rol_id,
+                    foto_url: user.foto_url
+                }
+            });
+        } else {
+            res.status(401).json({ error: 'Código MFA inválido' });
+        }
+    } catch (error) {
+        res.status(401).json({ error: 'Token expirado o inválido' });
     }
 };

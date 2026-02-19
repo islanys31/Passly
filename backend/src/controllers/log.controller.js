@@ -6,7 +6,7 @@ exports.getAuditLogs = async (req, res) => {
 
         // Los admins solo ven logs de su organización (usuarios que pertenecen a su cliente_id)
         const [rows] = await db.query(`
-            SELECT l.*, u.nombre, u.apellido, u.email 
+            SELECT l.*, u.nombre, u.apellido, u.email, u.foto_url
             FROM logs_sistema l
             JOIN usuarios u ON l.usuario_id = u.id
             WHERE u.cliente_id = ?
