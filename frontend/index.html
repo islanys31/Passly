@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passly - Control de Acceso Seguro</title>
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="manifest" href="/manifest.json">
     <script defer src="/js/recovery.js"></script>
     <style>
         /* Garantizar visibilidad de validación */
@@ -44,7 +45,7 @@
         <span class="theme-toggle-text" id="themeText">Modo Claro</span>
     </div>
 
-    <div class="card" id="loginCard">
+    <div class="card glass-glow" id="loginCard">
         <h1>Iniciar Sesión</h1>
         <input id="emailLogin" type="email" placeholder="Correo electrónico">
         <input id="passLogin" type="password" placeholder="Contraseña">
@@ -93,7 +94,7 @@
         <span class="toggle" id="toLoginFromRecovery">Volver al inicio de sesión</span>
     </div>
 
-    <div class="card hidden" id="registroCard">
+    <div class="card hidden glass-glow" id="registroCard">
         <h1>Registrar Usuario</h1>
 
         <input id="nombreRegistro" type="text" placeholder="Nombre" maxlength="50">
@@ -277,13 +278,45 @@
                 }
             };
 
+            // Variables para MFA
+            let currentMfaToken = null;
+
             // Login Submit
             document.getElementById('btnLogin').onclick = async () => {
-                const email = document.getElementById('emailLogin').value.trim();
-                const password = document.getElementById('passLogin').value;
-                const rol_id = document.getElementById('rolLogin').value;
+                const emailEl = document.getElementById('emailLogin');
+                const passEl = document.getElementById('passLogin');
+                const rolEl = document.getElementById('rolLogin');
+                const mfaInput = document.getElementById('mfaCode'); // Nuevo campo
+
                 const errorEl = document.getElementById('loginError');
                 const resetLink = document.getElementById('resetLink');
+
+                // Si estamos en el paso de MFA
+                if (currentMfaToken) {
+                    const code = mfaInput.value.trim();
+                    if (!code) return alert("Ingresa el código MFA");
+
+                    try {
+                        const res = await fetch(API_BASE + "/auth/mfa/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ mfaToken: currentMfaToken, code })
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            localStorage.setItem('auth_token', data.token);
+                            localStorage.setItem('usuario_activo', JSON.stringify(data.user));
+                            window.location.href = "dashboard.html";
+                        } else {
+                            alert(data.error || "Código MFA incorrecto");
+                        }
+                    } catch (err) { alert("Error de conexión"); }
+                    return;
+                }
+
+                const email = emailEl.value.trim();
+                const password = passEl.value;
+                const rol_id = rolEl.value;
 
                 if (!email || !password || !rol_id) return alert("Completa todos los campos");
 
@@ -294,7 +327,32 @@
                         body: JSON.stringify({ email, password, rol_id })
                     });
                     const data = await res.json();
+
                     if (res.ok) {
+                        if (data.mfaRequired) {
+                            currentMfaToken = data.mfaToken;
+                            // Transformar UI para MFA
+                            emailEl.style.display = 'none';
+                            passEl.style.display = 'none';
+                            rolEl.style.display = 'none';
+                            document.querySelector('.checkbox-row').style.display = 'none';
+                            resetLink.style.display = 'none';
+
+                            const mfaHtml = `
+                                <div id="mfaSection" style="margin-top:20px; text-align:center;">
+                                    <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">🛡️ Se requiere autenticación de dos factores.</p>
+                                    <input id="mfaCode" type="text" placeholder="Código de 6 dígitos" maxlength="6" style="text-align:center; font-size:24px; letter-spacing:5px;">
+                                </div>
+                            `;
+                            document.getElementById('loginCard').insertBefore(
+                                document.createRange().createContextualFragment(mfaHtml),
+                                errorEl
+                            );
+                            document.getElementById('btnLogin').textContent = "Verificar Código";
+                            document.querySelector('h1').textContent = "Paso de Seguridad";
+                            return;
+                        }
+
                         localStorage.setItem('auth_token', data.token);
                         localStorage.setItem('usuario_activo', JSON.stringify(data.user));
                         window.location.href = "dashboard.html";

@@ -99,6 +99,22 @@ Accede a: **`http://localhost`**
 
 ---
 
+---
+
+## 🏗️ Arquitectura del Sistema
+
+```mermaid
+graph TD
+    User((Usuario)) <--> Nginx[Nginx Reverse Proxy]
+    Nginx <--> Express[API Express / Node.js]
+    Express <--> MySQL[(MySQL 8.0 Database)]
+    Express <--> Sockets[Socket.IO - Real Time]
+    Express <--> Mail[Nodemailer - Gmail]
+    Frontend[Vanilla JS / PWA] <--> Nginx
+```
+
+---
+
 ## 📁 Estructura del Proyecto
 
 ```

@@ -105,6 +105,8 @@ CREATE TABLE `usuarios` (
   `cliente_id` int(11) DEFAULT NULL,
   `rol_id` int(11) NOT NULL,
   `estado_id` int(11) DEFAULT 1,
+  `mfa_enabled` tinyint(1) DEFAULT 0,
+  `mfa_secret` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -112,6 +114,8 @@ CREATE TABLE `usuarios` (
   KEY `cliente_id` (`cliente_id`),
   KEY `rol_id` (`rol_id`),
   KEY `estado_id` (`estado_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Volcado de datos para la tabla `usuarios`
 --
