@@ -14,6 +14,7 @@ window.closeModal = closeModal;
 window.loadView = loadView;
 window.handleLogout = handleLogout;
 window.showModal = showModal;
+window.showUserDetail = (id) => showUserDetail(id); // Exposición global inmediata
 // Fallback para botones en HTML que no pueden esperar a que el módulo cargue
 if (!window.closeModal) window.closeModal = () => {
     const o = document.getElementById('modalOverlay');
@@ -26,9 +27,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initTheme();
     setupUI();
+    setupSidebarToggle(); // Nueva función
     await loadView('overview');
     setupSocket();
 });
+
+function setupSidebarToggle() {
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
+
+    // Recuperar estado previo
+    const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+    if (isCollapsed) sidebar.classList.add('collapsed');
+
+    toggleBtn.onclick = () => {
+        const collapsed = sidebar.classList.toggle('collapsed');
+        localStorage.setItem('sidebar_collapsed', collapsed);
+    };
+}
 
 function setupUI() {
     if (!userData) return;
@@ -64,7 +80,7 @@ function setupUI() {
             (userData.rol_id === 3 ? 'Seguridad' : 'Usuario');
 
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
-    const views = ['overview', 'usuarios', 'dispositivos', 'transportes', 'accesos', 'logs', 'security'];
+    const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security'];
 
     navItems.forEach((item, index) => {
         if (!navItems[index]) return;
@@ -79,16 +95,16 @@ function setupUI() {
         const divider = document.createElement('div');
         divider.className = 'nav-section';
         divider.style.marginTop = '20px';
-        divider.textContent = 'Recuerda / Terminales';
-        document.querySelector('.nav-menu').appendChild(divider);
+        divider.textContent = 'Terminales';
+        navMenu.appendChild(divider);
 
         const scannerBtn = document.createElement('div');
         scannerBtn.className = 'nav-item';
-        scannerBtn.innerHTML = '<i>📷</i> Escáner QR';
+        scannerBtn.innerHTML = '<i>📷</i> <span class="nav-text">Escáner QR</span>';
         scannerBtn.style.background = 'rgba(41, 121, 255, 0.1)';
         scannerBtn.style.color = 'var(--accent-blue)';
         scannerBtn.onclick = () => window.open('scanner.html', '_blank');
-        document.querySelector('.nav-menu').appendChild(scannerBtn);
+        navMenu.appendChild(scannerBtn);
     }
 
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
@@ -138,9 +154,9 @@ async function loadView(view, force = false) {
                 title.textContent = "Dispositivos Registrados";
                 await renderDispositivos(content);
                 break;
-            case 'transportes':
-                title.textContent = "Medios de Transporte";
-                await renderTransportes(content);
+            case 'vehiculos':
+                title.textContent = "Gestión de Vehículos";
+                await renderVehiculos(content);
                 break;
             case 'accesos':
                 title.textContent = "Historial de Accesos";
@@ -172,7 +188,7 @@ async function loadView(view, force = false) {
 function renderSkeleton(container, view) {
     let html = '';
     if (view === 'overview') {
-        html = `<div class="stats-grid">${'<div class="skeleton skeleton-card"></div>'.repeat(4)}</div>
+        html = `<div class="stats-grid">${'<div class="skeleton skeleton-card"></div>'.repeat(5)}</div>
                 <div class="dashboard-row" style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-top:30px;">
                     <div class="card skeleton" style="height:350px;"></div>
                     <div class="card skeleton" style="height:350px;"></div>
@@ -197,7 +213,8 @@ async function renderOverview(container) {
     const grid = [
         { label: 'Usuarios Activos', val: stats.users, icon: '👥', color: 'var(--accent-blue)' },
         { label: 'Accesos Hoy', val: stats.accessToday, icon: '🚪', color: 'var(--accent-green)' },
-        { label: 'Dispositivos', val: stats.devices, icon: '📱', color: 'var(--accent-lavender)' },
+        { label: 'Equipos Tech', val: stats.tech, icon: '💻', color: 'var(--accent-lavender)' },
+        { label: 'Vehículos', val: stats.vehicles, icon: '🚗', color: 'var(--accent-emerald)' },
         { label: 'Alertas', val: stats.alerts, icon: '⚠️', color: 'var(--error-color)' }
     ];
 
@@ -360,7 +377,10 @@ function generateUserTable(data) {
                 <td><strong>${escapeHTML(u.nombre)} ${escapeHTML(u.apellido || '')}</strong></td>
                 <td>${escapeHTML(u.email)}</td>
                 <td>${u.rol_id === 1 ? 'Admin' : 'Usuario'}</td>
-                <td><button class="btn-table btn-edit" data-item='${JSON.stringify(u)}'>✏️</button></td>
+                <td>
+                    <button class="btn-table btn-detail" data-id="${u.id}" title="Ver ficha maestra">👁️</button>
+                    <button class="btn-table btn-edit" data-item='${JSON.stringify(u)}' title="Editar usuario">✏️</button>
+                </td>
             </tr>`).join('')}
         </tbody>
     </table>`;
@@ -412,27 +432,31 @@ async function updateMFAStatus(container) {
 async function renderDispositivos(container) {
     const { ok, data } = await apiRequest('/dispositivos');
     if (!ok) return;
-    currentData = data.data || data;
-    renderModuleHeader(container, { buttonId: 'btnAddDevice', buttonText: '+ Dispositivo', buttonColor: 'var(--accent-blue)', searchPlaceholder: 'Buscar placa...', module: 'dispositivos' });
+    // Filtrar: Solo dispositivos sin medio de transporte (tecnología)
+    const techData = (data.data || data).filter(d => !d.medio_transporte_id);
+
+    renderModuleHeader(container, { buttonId: 'btnAddDevice', buttonText: '+ Dispositivo', buttonColor: 'var(--accent-blue)', searchPlaceholder: 'Buscar equipo...', module: 'dispositivos' });
     const div = document.createElement('div');
     div.className = "data-table-container";
     div.id = "moduleTableContainer";
-    div.innerHTML = generateDeviceTable(currentData);
+    div.innerHTML = generateDeviceTable(techData);
     container.appendChild(div);
     setupModuleEvents(container, 'dispositivos');
 }
 
-async function renderTransportes(container) {
-    const { ok, data } = await apiRequest('/transportes');
+async function renderVehiculos(container) {
+    const { ok, data } = await apiRequest('/dispositivos');
     if (!ok) return;
-    currentData = data.data || data;
-    renderModuleHeader(container, { buttonId: 'btnAddTransport', buttonText: '+ Medio', buttonColor: 'var(--accent-lavender)', searchPlaceholder: 'Buscar...', module: 'transportes' });
+    // Filtrar: Solo aquellos que tienen medio de transporte
+    const vehicleData = (data.data || data).filter(d => d.medio_transporte_id);
+
+    renderModuleHeader(container, { buttonId: 'btnAddVehicle', buttonText: '+ Vehículo', buttonColor: 'var(--accent-lavender)', searchPlaceholder: 'Buscar placa...', module: 'vehiculos' });
     const div = document.createElement('div');
     div.className = "data-table-container";
     div.id = "moduleTableContainer";
-    div.innerHTML = generateTransportTable(currentData);
+    div.innerHTML = generateVehicleTable(vehicleData);
     container.appendChild(div);
-    setupModuleEvents(container, 'transportes');
+    setupModuleEvents(container, 'vehiculos');
 }
 
 async function renderAccesos(container) {
@@ -463,28 +487,31 @@ async function renderAuditLogs(container) {
 }
 
 function generateDeviceTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay dispositivos</div>`;
+    if (!data.length) return `<div class="empty-state">No hay dispositivos tecnológicos vinculados</div>`;
     return `<table>
-        <thead><tr><th>Dispositivo</th><th>Dueño</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Nombre Equipo</th><th>Dueño</th><th>Última Conexión</th><th>Estado</th></tr></thead>
         <tbody>
             ${data.map(d => `<tr>
-                <td><strong>${escapeHTML(d.nombre)}</strong><br><small>${escapeHTML(d.medio_transporte || 'Particular')}</small></td>
-                <td>${escapeHTML(d.usuario_nombre || 'N/A')}</td>
+                <td><strong>${escapeHTML(d.nombre)}</strong><br><small>UID: ${escapeHTML(d.identificador_unico)}</small></td>
+                <td>${escapeHTML(d.usuario_nombre || 'Sin asignar')}</td>
+                <td>${d.last_connection ? new Date(d.last_connection).toLocaleString() : 'N/A'}</td>
                 <td><span class="badge ${d.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${d.estado_id === 1 ? 'Activo' : 'Inactivo'}</span></td>
             </tr>`).join('')}
         </tbody>
     </table>`;
 }
 
-function generateTransportTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay medios</div>`;
+function generateVehicleTable(data) {
+    if (!data.length) return `<div class="empty-state">No hay vehículos registrados</div>`;
     return `<table>
-        <thead><tr><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Vehículo</th><th>Placa</th><th>Propietario</th><th>Categoría</th><th>Acciones</th></tr></thead>
         <tbody>
-            ${data.map(t => `<tr>
-                <td><strong>${escapeHTML(t.nombre)}</strong></td>
-                <td>${escapeHTML(t.descripcion || '-')}</td>
-                <td><button class="btn-table btn-edit" data-item='${JSON.stringify(t)}'>✏️</button></td>
+            ${data.map(v => `<tr>
+                <td><strong>${escapeHTML(v.nombre)}</strong></td>
+                <td><span class="badge badge-info" style="font-family:monospace; font-size:14px;">${escapeHTML(v.identificador_unico)}</span></td>
+                <td>${escapeHTML(v.usuario_nombre)}</td>
+                <td>${escapeHTML(v.medio_transporte || 'Particular')}</td>
+                <td><button class="btn-table btn-edit" data-item='${JSON.stringify(v)}'>✏️</button></td>
             </tr>`).join('')}
         </tbody>
     </table>`;
@@ -588,7 +615,7 @@ function setupModuleEvents(container, type) {
         const filtered = currentData.filter(item => JSON.stringify(item).toLowerCase().includes(term));
         if (type === 'usuarios') tableContainer.innerHTML = generateUserTable(filtered);
         else if (type === 'dispositivos') tableContainer.innerHTML = generateDeviceTable(filtered);
-        else if (type === 'transportes') tableContainer.innerHTML = generateTransportTable(filtered);
+        else if (type === 'vehiculos') tableContainer.innerHTML = generateVehicleTable(filtered);
         else if (type === 'accesos') tableContainer.innerHTML = generateAccessTable(filtered);
         else if (type === 'logs') tableContainer.innerHTML = generateAuditTable(filtered);
     };
@@ -596,11 +623,27 @@ function setupModuleEvents(container, type) {
     const addBtnMap = {
         'usuarios': 'btnAddUser',
         'dispositivos': 'btnAddDevice',
-        'transportes': 'btnAddTransport',
+        'vehiculos': 'btnAddVehicle',
         'accesos': 'btnLogAccess'
     };
     const btn = document.getElementById(addBtnMap[type]);
     if (btn) btn.onclick = () => showModal(type);
+
+    // Vincular botones de edición (Lápiz)
+    container.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.onclick = () => {
+            const item = JSON.parse(btn.getAttribute('data-item'));
+            showModal(type, item);
+        };
+    });
+
+    // Vincular botones de detalle (Ojo / Ficha Maestra)
+    container.querySelectorAll('.btn-detail').forEach(btn => {
+        btn.onclick = () => {
+            const id = parseInt(btn.getAttribute('data-id'));
+            showUserDetail(id);
+        };
+    });
 }
 
 function showModal(type, item = null) {
@@ -611,10 +654,23 @@ function showModal(type, item = null) {
 
     if (!overlay || !body) return;
 
-    title.textContent = item ? `Editar ${type}` : `Nuevo ${type}`;
-    body.innerHTML = renderModalFields(type, item);
-
+    title.textContent = item ? `Editar ${type}` : `Nuevo ${type.slice(0, -1)}`;
+    saveBtn.style.display = 'block'; // Asegurar que sea visible si venimos de Ficha Médica
     saveBtn.onclick = () => handleModalSave(type, item?.id);
+
+    if (type === 'vehiculos' || type === 'dispositivos') {
+        body.innerHTML = `<div class="loading-spinner"></div> Cargando formulario...`;
+        Promise.all([
+            apiRequest('/usuarios'),
+            apiRequest('/transportes')
+        ]).then(([usersRes, transRes]) => {
+            const users = usersRes.data.data || usersRes.data;
+            const trans = transRes.data.data || transRes.data;
+            body.innerHTML = renderDynamicForm(type, item, users, trans);
+        });
+    } else {
+        body.innerHTML = renderModalFields(type, item);
+    }
 
     overlay.classList.add('active');
     overlay.style.display = 'flex';
@@ -669,18 +725,73 @@ function renderModalFields(type, item) {
     }
     if (type === 'transportes') {
         return `
-            <div class="form-group"><label>Nombre del Transporte</label><input type="text" id="t_nombre" value="${item?.nombre || ''}" placeholder="Ej: Bus Empresarial, Blindado, etc."></div>
+            <div class="form-group"><label>Nombre de la Categoría</label><input type="text" id="t_nombre" value="${item?.nombre || ''}" placeholder="Ej: Carro, Moto, Blindado"></div>
             <div class="form-group"><label>Descripción</label><input type="text" id="t_desc" value="${item?.descripcion || ''}" placeholder="Opcional"></div>
         `;
     }
     return `<p>Formulario para ${type} en desarrollo...</p>`;
 }
 
+function renderDynamicForm(type, item, users, trans) {
+    if (type === 'vehiculos') {
+        return `
+            <div class="form-group">
+                <label>Propietario</label>
+                <select id="v_usuario">
+                    <option value="">Seleccione dueño...</option>
+                    ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Categoría</label>
+                <select id="v_tipo">
+                    <option value="">Seleccione tipo...</option>
+                    ${trans.map(t => `<option value="${t.id}" ${item?.medio_transporte_id === t.id ? 'selected' : ''}>${t.nombre}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group"><label>Marca / Modelo</label><input type="text" id="v_nombre" value="${item?.nombre || ''}" placeholder="Ej: Mazda CX-5"></div>
+            <div class="form-group"><label>Placa (Matrícula)</label><input type="text" id="v_placa" value="${item?.identificador_unico || ''}" placeholder="Ej: ABC-123"></div>
+        `;
+    }
+    if (type === 'dispositivos') {
+        return `
+            <div class="form-group">
+                <label>Asignar a Usuario</label>
+                <select id="d_usuario">
+                    <option value="">Seleccione usuario...</option>
+                    ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group"><label>Nombre del Equipo</label><input type="text" id="d_nombre" value="${item?.nombre || ''}" placeholder="Ej: Laptop Dell, iPad Admin"></div>
+            <div class="form-group"><label>ID Único / Serial</label><input type="text" id="d_uid" value="${item?.identificador_unico || ''}" placeholder="Opcional"></div>
+        `;
+    }
+}
+
 async function handleModalSave(type, id) {
-    if (type === 'accesos') {
+    let payload = {};
+    let url = type === 'vehiculos' ? '/dispositivos' : `/${type}`;
+    let method = id ? 'PUT' : 'POST';
+    if (id) url += `/${id}`;
+
+    if (type === 'vehiculos') {
+        payload = {
+            usuario_id: document.getElementById('v_usuario').value,
+            medio_transporte_id: document.getElementById('v_tipo').value,
+            nombre: document.getElementById('v_nombre').value,
+            identificador_unico: document.getElementById('v_placa').value
+        };
+        if (!payload.usuario_id || !payload.medio_transporte_id || !payload.nombre || !payload.identificador_unico) return showToast("Faltan campos", "error");
+    } else if (type === 'dispositivos') {
+        payload = {
+            usuario_id: document.getElementById('d_usuario').value,
+            nombre: document.getElementById('d_nombre').value,
+            identificador_unico: document.getElementById('d_uid').value || `TECH-${Date.now()}`
+        };
+        if (!payload.usuario_id || !payload.nombre) return showToast("Faltan campos", "error");
+    } else if (type === 'accesos') {
         const guestName = document.getElementById('guest_name').value;
         const expirationHours = document.getElementById('guest_expires').value;
-
         if (!guestName) return showToast("Nombre requerido", "error");
 
         const res = await apiRequest('/accesos/invitation', 'POST', { guestName, expirationHours });
@@ -698,16 +809,151 @@ async function handleModalSave(type, id) {
             };
 
             showToast("Invitación generada", "success");
-            // No cerramos el modal inmediatamente para que el usuario vea el QR / comparta
             return;
         }
+        return;
+    } else if (type === 'usuarios') {
+        payload = {
+            nombre: document.getElementById('m_nombre').value,
+            apellido: document.getElementById('m_apellido').value,
+            email: document.getElementById('m_email').value,
+            rol_id: parseInt(document.getElementById('m_rol').value)
+        };
     }
 
-    // Default logic for other types
-    showToast(`Operación exitosa`, 'success');
-    closeModal();
-    loadView(type);
+    const finalRes = await apiRequest(url, method, payload);
+    if (finalRes.ok) {
+        showToast(id ? 'Actualizado correctamente' : 'Creado correctamente', 'success');
+        closeModal();
+        loadView(type);
+    } else {
+        showToast(finalRes.data?.error || "Error al guardar", "error");
+    }
 }
 
-function setupSocket() { }
+function setupSocket() {
+    const socket = io();
+    socket.on('stats_update', () => {
+        if (currentView === 'overview') loadView('overview', true);
+    });
+
+    socket.on('new_access', (data) => {
+        showToast(`🔔 Acceso: ${data.usuario_nombre} (${data.tipo})`, 'info');
+        if (currentView === 'overview' || currentView === 'accesos') {
+            loadView(currentView, true);
+        }
+    });
+}
+
+async function showUserDetail(userId) {
+    const overlay = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    const saveBtn = document.getElementById('btnSave');
+
+    title.textContent = "Ficha Maestra - Perfil de Usuario";
+    saveBtn.style.display = 'none'; // No se edita aquí
+
+    body.innerHTML = `<div class="loading-spinner"></div> Consultando historial...`;
+    overlay.style.display = 'flex';
+
+    try {
+        const [dRes, aRes] = await Promise.all([
+            apiRequest('/dispositivos'),
+            apiRequest('/accesos')
+        ]);
+
+        const allDevices = dRes.data.data || dRes.data;
+        const allAccess = aRes.data.data || aRes.data;
+
+        const user = currentData.find(u => u.id === userId);
+        const userVehicles = allDevices.filter(d => d.usuario_id === userId && d.medio_transporte_id);
+        const userTech = allDevices.filter(d => d.usuario_id === userId && !d.medio_transporte_id);
+        const userHistory = allAccess.filter(a => a.usuario_id === userId).slice(0, 5);
+
+        body.innerHTML = `
+            <div style="display:grid; grid-template-columns: 80px 1fr; gap:20px; text-align:left; border-bottom:1px solid var(--border-color); padding-bottom:20px; margin-bottom:20px;">
+                <div class="user-avatar" style="width:70px; height:70px; font-size:28px;">
+                    ${user.foto_url ? `<img src="${user.foto_url}" style="width:100%; border-radius:12px;">` : user.nombre.charAt(0)}
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div>
+                            <h2 style="color:var(--text-primary); margin:0; font-size:20px;">${user.nombre} ${user.apellido}</h2>
+                            <p style="color:var(--accent-blue); font-weight:600; font-size:13px; margin:2px 0;">${user.email}</p>
+                        </div>
+                        <button class="btn-table btn-edit" id="btnEditFromDetail" style="padding: 5px 10px;">✏️ Editar Perfil</button>
+                    </div>
+                    <span class="badge badge-info" style="font-size:10px;">${user.rol_id === 1 ? 'Administrador' : 'Usuario Regular'}</span>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; text-align:left;">
+                <div class="card" style="background:rgba(255,255,255,0.02); padding:15px; border:1px solid var(--border-color);">
+                    <h4 style="margin-bottom:12px; font-size:14px; display:flex; justify-content:space-between;">
+                        🚗 Vehículos 
+                        <button class="btn-table" onclick="closeModal(); showModal('vehiculos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
+                    </h4>
+                    ${userVehicles.length ? userVehicles.map(v => `
+                        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border-color);">
+                            <div style="font-weight:600; font-size:12px;">${v.nombre}</div>
+                            <div style="color:var(--accent-green); font-size:11px; font-family:monospace;">Placa: ${v.identificador_unico}</div>
+                        </div>
+                    `).join('') : `
+                        <div style="text-align:center; padding:10px; opacity:0.6;">
+                            <p style="font-size:11px; margin-bottom:10px;">No tiene vehículos registrados</p>
+                            <button class="btn-table" onclick="closeModal(); showModal('vehiculos')" style="width:100%; border:1px dashed var(--accent-green); color:var(--accent-green);">Vincular primer vehículo</button>
+                        </div>
+                    `}
+                </div>
+                <div class="card" style="background:rgba(255,255,255,0.02); padding:15px; border:1px solid var(--border-color);">
+                    <h4 style="margin-bottom:12px; font-size:14px; display:flex; justify-content:space-between;">
+                        💻 Equipos Tech
+                        <button class="btn-table" onclick="closeModal(); showModal('dispositivos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
+                    </h4>
+                    ${userTech.length ? userTech.map(t => `
+                        <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border-color);">
+                            <div style="font-weight:600; font-size:12px;">${t.nombre}</div>
+                            <div style="opacity:0.6; font-size:10px;">SN: ${t.identificador_unico}</div>
+                        </div>
+                    `).join('') : `
+                        <div style="text-align:center; padding:10px; opacity:0.6;">
+                            <p style="font-size:11px; margin-bottom:10px;">Sin equipos tecnológicos</p>
+                            <button class="btn-table" onclick="closeModal(); showModal('dispositivos')" style="width:100%; border:1px dashed var(--accent-blue); color:var(--accent-blue);">Vincular laptop/tablet</button>
+                        </div>
+                    `}
+                </div>
+            </div>
+
+            <div style="margin-top:20px; text-align:left;">
+                <h4 style="margin-bottom:10px; font-size:14px;">🚪 Últimos Movimientos</h4>
+                <div class="data-table-container">
+                    <table style="font-size:11px;">
+                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Observaciones</th></tr></thead>
+                        <tbody>
+                            ${userHistory.length ? userHistory.map(h => `
+                                <tr>
+                                    <td>${new Date(h.fecha_hora).toLocaleDateString()}</td>
+                                    <td><span class="badge ${h.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}" style="font-size:9px; padding:2px 6px;">${h.tipo}</span></td>
+                                    <td style="opacity:0.7;">${h.observaciones || 'Ingreso registrado'}</td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="3" style="text-align:center; padding:15px; opacity:0.5;">No registra movimientos recientes</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <button class="btn-table" onclick="window.closeModal()" style="width:100%; margin-top:20px; background:var(--bg-secondary); border:1px solid var(--border-color);">Cerrar Ficha Maestra</button>
+        `;
+
+        // Vincular botón editar dentro del detalle
+        const btnEditDetail = document.getElementById('btnEditFromDetail');
+        if (btnEditDetail) btnEditDetail.onclick = () => { closeModal(); showModal('usuarios', user); };
+
+    } catch (e) {
+        body.innerHTML = `<p style="color:var(--error-color)">Error al cargar la ficha técnica.</p>`;
+    }
+}
+
+window.showUserDetail = showUserDetail;
 
