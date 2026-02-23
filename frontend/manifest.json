@@ -1,0 +1,22 @@
+{
+    "name": "Passly - Control de Acceso",
+    "short_name": "Passly",
+    "description": "Sistema de Control de Accesos mediante Códigos QR",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#2E2E2E",
+    "theme_color": "#2E7D32",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/1000/1000946.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/1000/1000946.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

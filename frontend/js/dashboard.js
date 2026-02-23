@@ -13,6 +13,12 @@ let currentView = 'overview';
 window.closeModal = closeModal;
 window.loadView = loadView;
 window.handleLogout = handleLogout;
+window.showModal = showModal;
+// Fallback para botones en HTML que no pueden esperar a que el módulo cargue
+if (!window.closeModal) window.closeModal = () => {
+    const o = document.getElementById('modalOverlay');
+    if (o) o.style.display = 'none';
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
     userData = checkAuth();
@@ -26,6 +32,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function setupUI() {
     if (!userData) return;
+
+    // Etiquetas de sección para el menú estático
+    const navMenu = document.querySelector('.nav-menu');
+    const items = navMenu.querySelectorAll('.nav-item');
+
+    // Insertar "OPERACIONES" al inicio
+    const opHeader = document.createElement('div');
+    opHeader.className = 'nav-section';
+    opHeader.textContent = 'Gestión Principal';
+    navMenu.insertBefore(opHeader, items[0]);
+
+    // Insertar "SISTEMA" antes de Auditoría (que es el item 5 originalmente, ahora 6 con Operaciones)
+    const sysHeader = document.createElement('div');
+    sysHeader.className = 'nav-section';
+    sysHeader.textContent = 'Seguridad y Logs';
+    navMenu.insertBefore(sysHeader, document.getElementById('navAudit'));
 
     const nombre = userData.nombre || 'Usuario';
     const apellido = userData.apellido || '';
@@ -53,12 +75,18 @@ function setupUI() {
     });
 
     if (userData.rol_id === 1 || userData.rol_id === 3) {
+        // Sección divisor "Recuerda"
+        const divider = document.createElement('div');
+        divider.className = 'nav-section';
+        divider.style.marginTop = '20px';
+        divider.textContent = 'Recuerda / Terminales';
+        document.querySelector('.nav-menu').appendChild(divider);
+
         const scannerBtn = document.createElement('div');
         scannerBtn.className = 'nav-item';
         scannerBtn.innerHTML = '<i>📷</i> Escáner QR';
         scannerBtn.style.background = 'rgba(41, 121, 255, 0.1)';
         scannerBtn.style.color = 'var(--accent-blue)';
-        scannerBtn.style.marginTop = '10px';
         scannerBtn.onclick = () => window.open('scanner.html', '_blank');
         document.querySelector('.nav-menu').appendChild(scannerBtn);
     }
@@ -66,29 +94,35 @@ function setupUI() {
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
         if (confirm('¿Deseas cerrar sesión?')) handleLogout();
     };
+
+    // Vincular botón cancelar del modal de forma segura
+    const cancelBtn = document.querySelector('#modalOverlay .btn-table[onclick="closeModal()"]');
+    if (cancelBtn) {
+        cancelBtn.removeAttribute('onclick');
+        cancelBtn.addEventListener('click', closeModal);
+    }
 }
 
-async function loadView(view) {
-    if (currentView === view && view !== 'overview') return;
+async function loadView(view, force = false) {
+    if (currentView === view && view !== 'overview' && !force) return;
     currentView = view;
 
     const content = document.getElementById('view-content');
     const title = document.getElementById('view-title');
 
+    // Transición ultra-rápida
     content.style.opacity = '0';
-    content.style.transform = 'translateY(10px)';
-    content.style.transition = 'all 0.3s ease';
+    content.style.transform = 'translateY(5px)';
+    content.style.transition = 'all 0.15s ease-out';
 
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
     navItems.forEach(i => i.classList.remove('active'));
 
-    // Find active item by text or index
     let activeItem = [...navItems].find(item => item.textContent.toLowerCase().includes(view.toLowerCase()));
     if (activeItem) activeItem.classList.add('active');
 
-    setTimeout(() => {
-        if (currentView === view) renderSkeleton(content, view);
-    }, 50);
+    // Mostrar skeleton inmediatamente para feedback visual
+    renderSkeleton(content, view);
 
     try {
         switch (view) {
@@ -122,6 +156,7 @@ async function loadView(view) {
                 break;
         }
 
+        // Aparecer suavemente con un pequeño delay para forzar el reflow del navegador
         setTimeout(() => {
             content.style.opacity = '1';
             content.style.transform = 'translateY(0)';
@@ -129,9 +164,10 @@ async function loadView(view) {
 
     } catch (error) {
         console.error("View Error:", error);
-        content.innerHTML = `<div class="error-message">Error al cargar la vista.</div>`;
+        content.innerHTML = `<div class="error-message">Error al cargar la vista. Consola para más detalles.</div>`;
     }
 }
+
 
 function renderSkeleton(container, view) {
     let html = '';
@@ -172,7 +208,7 @@ async function renderOverview(container) {
                     <div class="stat-icon" style="color: ${s.color}; background: rgba(255,255,255,0.03);">${s.icon}</div>
                     <div class="stat-info">
                         <h3>${s.label}</h3>
-                        <div class="value">${s.val || 0}</div>
+                        <div class="value">${s.val ?? 0}</div>
                     </div>
                 </div>
             `).join('')}
@@ -188,8 +224,8 @@ async function renderOverview(container) {
                     <table>
                         <thead><tr><th>Usuario</th><th>Tipo</th><th>Hora</th></tr></thead>
                         <tbody>
-                            ${recentAccess.length ? recentAccess.map(a => `
-                                <tr>
+                            ${recentAccess.length ? recentAccess.map((a, index) => `
+                                <tr class="animate-row" style="animation-delay: ${index * 0.1}s">
                                     <td>
                                         <div style="display:flex; align-items:center; gap:10px;">
                                             <div class="user-avatar" style="width:25px; height:25px; font-size:10px;">
@@ -201,7 +237,16 @@ async function renderOverview(container) {
                                     <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo}</span></td>
                                     <td>${new Date(a.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                 </tr>
-                            `).join('') : '<tr><td colspan="3">No hay actividad</td></tr>'}
+                            `).join('') : `
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="empty-state" style="padding: 20px; border:none; background:transparent;">
+                                            <div class="empty-state-icon" style="font-size:24px;">🚪</div>
+                                            <div class="empty-state-text"><p>No hay actividad hoy</p></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `}
                         </tbody>
                     </table>
                 </div>
@@ -217,12 +262,12 @@ async function renderOverview(container) {
 
             <div class="card glass-glow" style="flex: 0.8; min-width: 250px; text-align: center; padding: 25px;">
                 <h3>🔑 Mi Llave QR</h3>
-                <div id="qrContainer" style="width:150px; height:150px; margin:20px auto; border: 2px dashed var(--border-color); border-radius:12px; display:flex; align-items:center; justify-content:center;">
-                    <i style="font-size:30px; opacity:0.3;">🔲</i>
+                <div id="qrContainer" style="width:150px; height:150px; margin:20px auto; border: 2px dashed var(--border-color); border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:white;">
+                    <i style="font-size:30px; opacity:0.3; color:#000;">🔲</i>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <button class="btn-table" id="btnGenerateQR" style="flex:1; background:var(--accent-green); color:white;">Generar</button>
-                    <button class="btn-table" id="btnDownloadQR" style="flex:1; display:none;">Descargar</button>
+                    <button class="btn-table" id="btnDownloadQR" style="flex:1; display:none;">💾 Guardar</button>
                 </div>
             </div>
         </div>
@@ -446,11 +491,14 @@ function generateTransportTable(data) {
 }
 
 function generateAccessTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay accesos</div>`;
+    if (!data.length) return `<div class="empty-state">
+        <div class="empty-state-icon">🚪</div>
+        <div class="empty-state-text"><h3>Sin accesos</h3><p>No se han registrado entradas o salidas aún.</p></div>
+    </div>`;
     return `<table>
         <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Tipo</th></tr></thead>
         <tbody>
-            ${data.map(a => `<tr>
+            ${data.map((a, i) => `<tr class="animate-row" style="animation-delay: ${i * 0.05}s">
                 <td>${new Date(a.fecha_hora).toLocaleString()}</td>
                 <td>${escapeHTML(a.usuario_nombre)}</td>
                 <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo}</span></td>
@@ -460,12 +508,15 @@ function generateAccessTable(data) {
 }
 
 function generateAuditTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay registros de auditoría aún</div>`;
+    if (!data.length) return `<div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-text"><h3>Sin auditoría</h3><p>El registro de acciones administrativas está vacío.</p></div>
+    </div>`;
     return `<table>
         <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Módulo</th><th>IP</th></tr></thead>
         <tbody>
-            ${data.map(l => `
-                <tr>
+            ${data.map((l, i) => `
+                <tr class="animate-row" style="animation-delay: ${i * 0.05}s">
                     <td style="font-size:12px;">${new Date(l.fecha_hora).toLocaleString()}</td>
                     <td><strong>${escapeHTML(l.usuario_nombre || 'Sistema')}</strong></td>
                     <td><span class="badge ${l.accion.includes('Crear') ? 'badge-success' : (l.accion.includes('Eliminar') ? 'badge-danger' : 'badge-info')}">${l.accion}</span></td>
@@ -477,9 +528,59 @@ function generateAuditTable(data) {
     </table>`;
 }
 
+function exportToPDF(title, columns, rows, fileName) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFillColor(46, 125, 50);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text("Passly", 14, 20);
+    doc.setFontSize(10);
+    doc.text("Reporte de Sistema - " + new Date().toLocaleString(), 14, 30);
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(18);
+    doc.text(title, 14, 55);
+
+    doc.autoTable({
+        startY: 65,
+        head: [columns],
+        body: rows,
+        theme: 'striped',
+        headStyles: { fillColor: [46, 125, 50] },
+        alternateRowStyles: { fillColor: [240, 240, 240] }
+    });
+
+    doc.save(`${fileName}_${new Date().getTime()}.pdf`);
+    showToast("Reporte generado exitosamente", "success");
+}
+
 function setupModuleEvents(container, type) {
     const searchInput = document.getElementById('moduleSearch');
     const tableContainer = document.getElementById('moduleTableContainer');
+    const exportBtn = document.getElementById('btnExportPDF');
+
+    if (exportBtn) {
+        exportBtn.onclick = () => {
+            if (type === 'accesos') {
+                const cols = ["Fecha/Hora", "Usuario", "Tipo"];
+                const rows = currentData.map(a => [new Date(a.fecha_hora).toLocaleString(), a.usuario_nombre, a.tipo]);
+                exportToPDF("Historial de Accesos", cols, rows, "Passly_Accesos");
+            } else if (type === 'logs') {
+                const cols = ["Fecha", "Usuario", "Acción", "Módulo", "IP"];
+                const rows = currentData.map(l => [new Date(l.fecha_hora).toLocaleString(), l.usuario_nombre || 'Sistema', l.accion, l.modulo, l.ip_address]);
+                exportToPDF("Registro de Auditoría", cols, rows, "Passly_Auditoria");
+            }
+        };
+    }
+
+    const refreshBtn = document.getElementById('btnRefreshLogs');
+    if (refreshBtn) {
+        refreshBtn.onclick = () => loadView('logs', true);
+    }
+
     if (!searchInput || !tableContainer) return;
 
     searchInput.oninput = () => {
@@ -492,9 +593,14 @@ function setupModuleEvents(container, type) {
         else if (type === 'logs') tableContainer.innerHTML = generateAuditTable(filtered);
     };
 
-    const addBtnMap = { 'usuarios': 'btnAddUser', 'dispositivos': 'btnAddDevice', 'transportes': 'btnAddTransport' };
+    const addBtnMap = {
+        'usuarios': 'btnAddUser',
+        'dispositivos': 'btnAddDevice',
+        'transportes': 'btnAddTransport',
+        'accesos': 'btnLogAccess'
+    };
     const btn = document.getElementById(addBtnMap[type]);
-    if (btn) btn.onclick = () => showModal(type === 'usuarios' ? 'add_user' : 'add_item');
+    if (btn) btn.onclick = () => showModal(type);
 }
 
 function showModal(type, item = null) {
@@ -561,7 +667,13 @@ function renderModalFields(type, item) {
             </div>
         `;
     }
-    return `<p>Campos para ${type} en desarrollo...</p>`;
+    if (type === 'transportes') {
+        return `
+            <div class="form-group"><label>Nombre del Transporte</label><input type="text" id="t_nombre" value="${item?.nombre || ''}" placeholder="Ej: Bus Empresarial, Blindado, etc."></div>
+            <div class="form-group"><label>Descripción</label><input type="text" id="t_desc" value="${item?.descripcion || ''}" placeholder="Opcional"></div>
+        `;
+    }
+    return `<p>Formulario para ${type} en desarrollo...</p>`;
 }
 
 async function handleModalSave(type, id) {
@@ -596,4 +708,6 @@ async function handleModalSave(type, id) {
     closeModal();
     loadView(type);
 }
+
 function setupSocket() { }
+
