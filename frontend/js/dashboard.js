@@ -26,9 +26,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initTheme();
     setupUI();
+    setupSidebarToggle(); // Nueva función
     await loadView('overview');
     setupSocket();
 });
+
+function setupSidebarToggle() {
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
+
+    // Recuperar estado previo
+    const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+    if (isCollapsed) sidebar.classList.add('collapsed');
+
+    toggleBtn.onclick = () => {
+        const collapsed = sidebar.classList.toggle('collapsed');
+        localStorage.setItem('sidebar_collapsed', collapsed);
+    };
+}
 
 function setupUI() {
     if (!userData) return;
@@ -79,16 +94,16 @@ function setupUI() {
         const divider = document.createElement('div');
         divider.className = 'nav-section';
         divider.style.marginTop = '20px';
-        divider.textContent = 'Recuerda / Terminales';
-        document.querySelector('.nav-menu').appendChild(divider);
+        divider.textContent = 'Terminales';
+        navMenu.appendChild(divider);
 
         const scannerBtn = document.createElement('div');
         scannerBtn.className = 'nav-item';
-        scannerBtn.innerHTML = '<i>📷</i> Escáner QR';
+        scannerBtn.innerHTML = '<i>📷</i> <span class="nav-text">Escáner QR</span>';
         scannerBtn.style.background = 'rgba(41, 121, 255, 0.1)';
         scannerBtn.style.color = 'var(--accent-blue)';
         scannerBtn.onclick = () => window.open('scanner.html', '_blank');
-        document.querySelector('.nav-menu').appendChild(scannerBtn);
+        navMenu.appendChild(scannerBtn);
     }
 
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
