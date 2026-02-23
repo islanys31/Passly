@@ -14,6 +14,7 @@ window.closeModal = closeModal;
 window.loadView = loadView;
 window.handleLogout = handleLogout;
 window.showModal = showModal;
+window.showUserDetail = (id) => showUserDetail(id); // Exposición global inmediata
 // Fallback para botones en HTML que no pueden esperar a que el módulo cargue
 if (!window.closeModal) window.closeModal = () => {
     const o = document.getElementById('modalOverlay');
@@ -377,7 +378,7 @@ function generateUserTable(data) {
                 <td>${escapeHTML(u.email)}</td>
                 <td>${u.rol_id === 1 ? 'Admin' : 'Usuario'}</td>
                 <td>
-                    <button class="btn-table" onclick="showUserDetail(${u.id})" title="Ver detalles completo">👁️</button>
+                    <button class="btn-table btn-detail" data-id="${u.id}" title="Ver ficha maestra">👁️</button>
                     <button class="btn-table btn-edit" data-item='${JSON.stringify(u)}' title="Editar usuario">✏️</button>
                 </td>
             </tr>`).join('')}
@@ -627,6 +628,22 @@ function setupModuleEvents(container, type) {
     };
     const btn = document.getElementById(addBtnMap[type]);
     if (btn) btn.onclick = () => showModal(type);
+
+    // Vincular botones de edición (Lápiz)
+    container.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.onclick = () => {
+            const item = JSON.parse(btn.getAttribute('data-item'));
+            showModal(type, item);
+        };
+    });
+
+    // Vincular botones de detalle (Ojo / Ficha Maestra)
+    container.querySelectorAll('.btn-detail').forEach(btn => {
+        btn.onclick = () => {
+            const id = parseInt(btn.getAttribute('data-id'));
+            showUserDetail(id);
+        };
+    });
 }
 
 function showModal(type, item = null) {
@@ -637,6 +654,8 @@ function showModal(type, item = null) {
 
     if (!overlay || !body) return;
 
+    title.textContent = item ? `Editar ${type}` : `Nuevo ${type.slice(0, -1)}`;
+    saveBtn.style.display = 'block'; // Asegurar que sea visible si venimos de Ficha Médica
     saveBtn.onclick = () => handleModalSave(type, item?.id);
 
     if (type === 'vehiculos' || type === 'dispositivos') {
@@ -858,30 +877,51 @@ async function showUserDetail(userId) {
                     ${user.foto_url ? `<img src="${user.foto_url}" style="width:100%; border-radius:12px;">` : user.nombre.charAt(0)}
                 </div>
                 <div>
-                    <h2 style="color:var(--text-primary); margin:0; font-size:20px;">${user.nombre} ${user.apellido}</h2>
-                    <p style="color:var(--accent-blue); font-weight:600; font-size:13px; margin:2px 0;">${user.email}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div>
+                            <h2 style="color:var(--text-primary); margin:0; font-size:20px;">${user.nombre} ${user.apellido}</h2>
+                            <p style="color:var(--accent-blue); font-weight:600; font-size:13px; margin:2px 0;">${user.email}</p>
+                        </div>
+                        <button class="btn-table btn-edit" id="btnEditFromDetail" style="padding: 5px 10px;">✏️ Editar Perfil</button>
+                    </div>
                     <span class="badge badge-info" style="font-size:10px;">${user.rol_id === 1 ? 'Administrador' : 'Usuario Regular'}</span>
                 </div>
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; text-align:left;">
-                <div>
-                    <h4 style="margin-bottom:10px; font-size:14px;">🚗 Vehículos (${userVehicles.length})</h4>
+                <div class="card" style="background:rgba(255,255,255,0.02); padding:15px; border:1px solid var(--border-color);">
+                    <h4 style="margin-bottom:12px; font-size:14px; display:flex; justify-content:space-between;">
+                        🚗 Vehículos 
+                        <button class="btn-table" onclick="closeModal(); showModal('vehiculos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
+                    </h4>
                     ${userVehicles.length ? userVehicles.map(v => `
                         <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border-color);">
                             <div style="font-weight:600; font-size:12px;">${v.nombre}</div>
                             <div style="color:var(--accent-green); font-size:11px; font-family:monospace;">Placa: ${v.identificador_unico}</div>
                         </div>
-                    `).join('') : '<p style="font-size:11px; opacity:0.5;">Sin vehículos</p>'}
+                    `).join('') : `
+                        <div style="text-align:center; padding:10px; opacity:0.6;">
+                            <p style="font-size:11px; margin-bottom:10px;">No tiene vehículos registrados</p>
+                            <button class="btn-table" onclick="closeModal(); showModal('vehiculos')" style="width:100%; border:1px dashed var(--accent-green); color:var(--accent-green);">Vincular primer vehículo</button>
+                        </div>
+                    `}
                 </div>
-                <div>
-                    <h4 style="margin-bottom:10px; font-size:14px;">💻 Equipos Tech (${userTech.length})</h4>
+                <div class="card" style="background:rgba(255,255,255,0.02); padding:15px; border:1px solid var(--border-color);">
+                    <h4 style="margin-bottom:12px; font-size:14px; display:flex; justify-content:space-between;">
+                        💻 Equipos Tech
+                        <button class="btn-table" onclick="closeModal(); showModal('dispositivos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
+                    </h4>
                     ${userTech.length ? userTech.map(t => `
                         <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border-color);">
                             <div style="font-weight:600; font-size:12px;">${t.nombre}</div>
                             <div style="opacity:0.6; font-size:10px;">SN: ${t.identificador_unico}</div>
                         </div>
-                    `).join('') : '<p style="font-size:11px; opacity:0.5;">Sin tecnología</p>'}
+                    `).join('') : `
+                        <div style="text-align:center; padding:10px; opacity:0.6;">
+                            <p style="font-size:11px; margin-bottom:10px;">Sin equipos tecnológicos</p>
+                            <button class="btn-table" onclick="closeModal(); showModal('dispositivos')" style="width:100%; border:1px dashed var(--accent-blue); color:var(--accent-blue);">Vincular laptop/tablet</button>
+                        </div>
+                    `}
                 </div>
             </div>
 
@@ -889,22 +929,26 @@ async function showUserDetail(userId) {
                 <h4 style="margin-bottom:10px; font-size:14px;">🚪 Últimos Movimientos</h4>
                 <div class="data-table-container">
                     <table style="font-size:11px;">
-                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Obs.</th></tr></thead>
+                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Observaciones</th></tr></thead>
                         <tbody>
                             ${userHistory.length ? userHistory.map(h => `
                                 <tr>
                                     <td>${new Date(h.fecha_hora).toLocaleDateString()}</td>
                                     <td><span class="badge ${h.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}" style="font-size:9px; padding:2px 6px;">${h.tipo}</span></td>
-                                    <td>${h.observaciones || '-'}</td>
+                                    <td style="opacity:0.7;">${h.observaciones || 'Ingreso registrado'}</td>
                                 </tr>
-                            `).join('') : '<tr><td colspan="3">Sin historial reciente</td></tr>'}
+                            `).join('') : '<tr><td colspan="3" style="text-align:center; padding:15px; opacity:0.5;">No registra movimientos recientes</td></tr>'}
                         </tbody>
                     </table>
                 </div>
             </div>
             
-            <button class="btn-table" onclick="window.closeModal()" style="width:100%; margin-top:20px; background:var(--bg-secondary);">Cerrar Ficha</button>
+            <button class="btn-table" onclick="window.closeModal()" style="width:100%; margin-top:20px; background:var(--bg-secondary); border:1px solid var(--border-color);">Cerrar Ficha Maestra</button>
         `;
+
+        // Vincular botón editar dentro del detalle
+        const btnEditDetail = document.getElementById('btnEditFromDetail');
+        if (btnEditDetail) btnEditDetail.onclick = () => { closeModal(); showModal('usuarios', user); };
 
     } catch (e) {
         body.innerHTML = `<p style="color:var(--error-color)">Error al cargar la ficha técnica.</p>`;
