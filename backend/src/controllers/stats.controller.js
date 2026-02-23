@@ -4,7 +4,7 @@ exports.getGeneralStats = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
 
-        const [usersRes, accessRes, devicesRes, blockedRes] = await Promise.all([
+        const [usersRes, accessRes, techRes, vehicleRes, blockedRes] = await Promise.all([
             db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 1 AND cliente_id = ?', [tenantId]),
             db.query(`
                 SELECT COUNT(*) as total FROM accesos a
@@ -14,7 +14,12 @@ exports.getGeneralStats = async (req, res) => {
             db.query(`
                 SELECT COUNT(*) as total FROM dispositivos d
                 JOIN usuarios u ON d.usuario_id = u.id
-                WHERE d.estado_id = 1 AND u.cliente_id = ?
+                WHERE d.estado_id = 1 AND d.medio_transporte_id IS NULL AND u.cliente_id = ?
+            `, [tenantId]),
+            db.query(`
+                SELECT COUNT(*) as total FROM dispositivos d
+                JOIN usuarios u ON d.usuario_id = u.id
+                WHERE d.estado_id = 1 AND d.medio_transporte_id IS NOT NULL AND u.cliente_id = ?
             `, [tenantId]),
             db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 4 AND cliente_id = ?', [tenantId])
         ]);
@@ -24,7 +29,8 @@ exports.getGeneralStats = async (req, res) => {
             stats: {
                 users: usersRes[0][0].total,
                 accessToday: accessRes[0][0].total,
-                devices: devicesRes[0][0].total,
+                tech: techRes[0][0].total,
+                vehicles: vehicleRes[0][0].total,
                 alerts: blockedRes[0][0].total
             }
         });
