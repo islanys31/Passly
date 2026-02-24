@@ -187,6 +187,41 @@ CREATE TABLE `accesos` (
   KEY `dispositivo_id` (`dispositivo_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `logs_sistema`
+--
+
+CREATE TABLE `logs_sistema` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) DEFAULT NULL,
+  `accion` varchar(255) NOT NULL,
+  `modulo` varchar(100) NOT NULL,
+  `detalles` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `fecha_hora` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `recovery_codes`
+--
+
+CREATE TABLE `recovery_codes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) NOT NULL,
+  `code` varchar(6) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Restricciones para tablas volcadas
 --
@@ -230,6 +265,12 @@ ALTER TABLE `dispositivos`
 ALTER TABLE `accesos`
   ADD CONSTRAINT `accesos_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
   ADD CONSTRAINT `accesos_fk_dispositivo` FOREIGN KEY (`dispositivo_id`) REFERENCES `dispositivos` (`id`);
+
+--
+-- Filtros para la tabla `logs_sistema`
+--
+ALTER TABLE `logs_sistema`
+  ADD CONSTRAINT `logs_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
 
 COMMIT;
 

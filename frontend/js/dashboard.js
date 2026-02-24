@@ -705,6 +705,7 @@ function renderModalFields(type, item) {
             <div style="text-align:left;">
                 <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">Crea una invitación temporal para un invitado o registra un acceso manual.</p>
                 <div class="form-group"><label>Nombre del Invitado</label><input type="text" id="guest_name" placeholder="Ej: Juan Pérez"></div>
+                <div class="form-group"><label>Email del Invitado (Opcional)</label><input type="email" id="guest_email" placeholder="Para enviarle el QR directamente"></div>
                 <div class="form-group">
                     <label>Expiración (Horas)</label>
                     <select id="guest_expires">
@@ -791,10 +792,11 @@ async function handleModalSave(type, id) {
         if (!payload.usuario_id || !payload.nombre) return showToast("Faltan campos", "error");
     } else if (type === 'accesos') {
         const guestName = document.getElementById('guest_name').value;
+        const guestEmail = document.getElementById('guest_email').value;
         const expirationHours = document.getElementById('guest_expires').value;
         if (!guestName) return showToast("Nombre requerido", "error");
 
-        const res = await apiRequest('/accesos/invitation', 'POST', { guestName, expirationHours });
+        const res = await apiRequest('/accesos/invitation', 'POST', { guestName, guestEmail, expirationHours });
         if (res.ok) {
             const resultDiv = document.getElementById('invitationResult');
             const qrDiv = document.getElementById('guestQR');
@@ -808,7 +810,7 @@ async function handleModalSave(type, id) {
                 if (waRes.ok) window.open(waRes.data.waLink, '_blank');
             };
 
-            showToast("Invitación generada", "success");
+            showToast(res.data.sentByEmail ? "Invitación generada y enviada" : "Invitación generada", "success");
             return;
         }
         return;
