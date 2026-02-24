@@ -31,6 +31,8 @@
 ✅ **Dashboard completo** en tiempo real con WebSockets y Chart.js  
 ✅ **Sistema QR Premium** - Generación, validación, invitaciones temporales, escáner  
 ✅ **Recuperación de contraseña** por email con códigos de 6 dígitos  
+✅ **Sistema de Notificaciones** - Bienvenida, Invitaciones y Alertas MFA  
+✅ **Seguridad MFA (2FA)** integrada con TOTP y generación de QR  
 ✅ **Integración funcional** frontend ↔ backend ↔ MySQL ↔ Socket.IO  
 ✅ **Diseño profesional** con glassmorphism y modo oscuro/claro  
 ✅ **Exportación** a CSV y PDF profesional  
@@ -48,6 +50,7 @@
 | **Sanitización** | Eliminación de tags HTML (`<>`) en inputs | ✅ Activo |
 | **JWT Hardened** | Verificación de propósito + estado de usuario | ✅ Activo |
 | **Bcrypt** | Salt factor 10 para hash de contraseñas | ✅ Activo |
+| **MFA (2FA)** | Segundo factor vía TOTP (Google Authenticator) | ✅ Activo |
 | **Docker** | Redes aisladas, solo Nginx expuesto | ✅ Activo |
 
 ---
@@ -91,9 +94,8 @@
 1. 🟢 Certificados SSL (Let's Encrypt) para HTTPS
 2. 🟢 CI/CD con GitHub Actions
 3. 🟢 Aumentar test coverage al 80%+
-4. 🟢 MFA para administradores
-5. 🟢 Integración con hardware QR/RFID
-6. 🟢 Sistema multi-tenant completo
+4. 🟢 Integración con hardware QR/RFID
+5. 🟢 Sistema multi-tenant empresarial completo
 
 ---
 

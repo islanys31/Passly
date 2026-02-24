@@ -44,6 +44,10 @@
 
 ### **5. Seguridad Hardened** ✅
 - ✅ JWT con verificación de propósito y estado de usuario
+- ✅ MFA (2FA) con TOTP activa
+- ✅ Auditoría administrativa inmutable
+- ✅ Certificados SSL automáticos (Let's Encrypt)
+- ✅ Redirección 301 forzada a HTTPS
 - ✅ Bcrypt salt factor 10
 - ✅ Helmet.js (CSP, HSTS 1 año, preload)
 - ✅ Rate Limiting configurable por ruta
@@ -52,12 +56,13 @@
 - ✅ Prepared statements (SQL injection)
 
 ### **6. Deployment Containerizado** ✅
-- ✅ Docker Compose con 3 servicios (API + MySQL + Nginx)
-- ✅ Nginx como reverse proxy con Gzip y WebSocket proxy
+- ✅ Docker Compose con 4 servicios (API + MySQL + Nginx + Certbot)
+- ✅ Nginx como reverse proxy con terminación SSL nativa
 - ✅ Dockerfile optimizado (Node 18-slim)
-- ✅ Volúmenes persistentes para datos
+- ✅ Volúmenes persistentes para datos y certificados
 - ✅ Restart automático de servicios
-- ✅ Configuración HTTPS preparada
+- ✅ Certificados SSL automáticos (Let's Encrypt / Certbot)
+- ✅ Redirección automática HTTP → HTTPS
 
 ---
 
@@ -140,7 +145,10 @@ Accede a: **`http://localhost`**
 - [x] JWT + Bcrypt
 - [x] express-validator
 - [x] Swagger API docs
-- [x] Docker Compose
+- [x] node-cron para backups
+- [x] Certificados SSL automáticos
+- [x] Auditoría de sistema administrativa
+- [x] MFA (2FA) obligatorio configurable
 
 ### **Frontend**
 - [x] Login/Registro con validaciones
@@ -150,9 +158,11 @@ Accede a: **`http://localhost`**
 - [x] Historial de Accesos
 - [x] Exportación CSV y PDF
 - [x] Sistema QR completo
-- [x] Escáner QR con cámara
-- [x] Recuperación de contraseña
-- [x] Modo oscuro/claro
+- [x] Escáner QR con cámara (soporta HTTPS)
+- [x] Gráfica de tráfico (Chart.js)
+- [x] Recuperación de contraseña (3 pasos)
+- [x] MFA (2FA) - Configuración y acceso
+- [x] Modo oscuro/claro persistente
 - [x] Responsive design
 - [x] Animaciones y transiciones
 
@@ -165,6 +175,8 @@ Accede a: **`http://localhost`**
 - [x] Bcrypt salt 10
 - [x] CORS configurado
 - [x] Prepared statements
+- [x] Auditoría inmutable de acciones
+- [x] MFA (2FA) con TOTP
 - [x] Docker con redes aisladas
 
 ---

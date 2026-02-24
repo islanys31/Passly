@@ -15,7 +15,10 @@
 ### 🔐 Autenticación y Seguridad (Hardened)
 - ✅ Login seguro con JWT y verificación de rol
 - ✅ Registro con validaciones estrictas (frontend + backend espejo)
+- ✅ Autenticación de dos factores (MFA/2FA) vía TOTP (con alerta de seguridad por email)
 - ✅ Recuperación de contraseña por email con códigos de 6 dígitos
+- ✅ Email de Bienvenida automático para nuevos usuarios
+- ✅ Invitaciones de acceso enviadas directamente al correo del huésped
 - ✅ Helmet.js (CSP, HSTS 1 año + preload, X-Frame-Options)
 - ✅ Rate Limiting por endpoint (login, register, recovery, API)
 - ✅ Sanitización de inputs (prevención XSS)
@@ -143,7 +146,7 @@ Passly/
 │   ├── reset.html           # Restablecer contraseña
 │   └── service-worker.js    # PWA
 ├── database/
-│   └── passly.sql           # Schema completo (8 tablas)
+│   └── passly.sql           # Schema completo (9 tablas)
 ├── nginx/
 │   └── default.conf         # Reverse Proxy + Gzip + WebSocket
 ├── docker-compose.yml       # 3 servicios
@@ -164,6 +167,7 @@ Passly/
 ```
 POST /api/auth/register          - Registrar usuario
 POST /api/auth/login             - Iniciar sesión (JWT)
+POST /api/auth/mfa/login         - Verificar código TOTP para login
 POST /api/auth/forgot-password   - Solicitar código de recuperación
 POST /api/auth/reset-password    - Restablecer contraseña
 ```
@@ -213,6 +217,7 @@ GET    /api/stats                - Estadísticas generales
 | **express-validator** | Email: @gmail/@hotmail, Password: 8-12 chars complejos, Nombre: solo letras y acentos |
 | **Sanitización** | Eliminación de tags HTML (`<>`) en todos los inputs |
 | **JWT Hardened** | Verificación de propósito + estado del usuario en BD |
+| **MFA (2FA)** | Segundo factor de autenticación TOTP integrado |
 | **Bcrypt** | Salt factor 10 para hash irreversible |
 | **CORS** | Origen restringido en producción |
 | **SQL** | Prepared statements (parámetros ?) |
@@ -222,17 +227,17 @@ GET    /api/stats                - Estadísticas generales
 ---
 
 ## 🗄️ Base de Datos
-
-### Tablas (8)
+### Tablas (9)
 | Tabla | Descripción |
 |-------|-------------|
 | `estados` | Diccionario: Activo, Inactivo, Mantenimiento, Bloqueado |
 | `clientes` | Unidades residenciales / empresas |
 | `roles` | Admin, Usuario, Seguridad |
-| `usuarios` | Gestión con credenciales encriptadas y foto |
+| `usuarios` | Gestión con credenciales encriptadas, foto y MFA |
 | `medios_transporte` | Vehículo, Motocicleta, Bicicleta, Peatonal |
 | `dispositivos` | Bienes vinculados a usuarios |
 | `accesos` | Log histórico de entradas/salidas |
+| `logs_sistema` | Registro de auditoría administrativa |
 | `recovery_codes` | Códigos de recuperación con expiración |
 
 ---
@@ -292,9 +297,10 @@ GET    /api/stats                - Estadísticas generales
 ### Servicios
 | Servicio | Imagen | Puerto | Función |
 |----------|--------|--------|---------|
-| `passly-web` | Nginx Alpine | 80 | Reverse Proxy + Gzip |
+| `passly-web` | Nginx Alpine | 80/443 | Reverse Proxy + SSL + Gzip |
 | `passly-api` | Node 18-slim | 3000 (interno) | API + Socket.IO |
 | `passly-db` | MySQL 8.0 | 3306 (interno) | Base de datos |
+| `passly-certbot` | Certbot | N/A | Renovación SSL automática |
 
 ### Comandos
 ```bash
@@ -331,12 +337,17 @@ JWT_SECRET=tu_clave_secreta_segura
 PORT=3000
 NODE_ENV=development
 
-# Email (Opcional - para recuperación de contraseña)
+# Email (Configuración SMTP Flexible)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
 EMAIL_USER=tu_correo@gmail.com
 EMAIL_PASS=contraseña_de_aplicacion_gmail
 
-# Frontend (Solo producción)
-FRONTEND_URL=http://localhost:3000
+# Producción
+DOMAIN_NAME=passly.com
+EMAIL_ADMIN=admin@passly.com
+FRONTEND_URL=https://passly.com
 ```
 
 ---

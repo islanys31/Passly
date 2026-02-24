@@ -52,7 +52,7 @@ Passly/
 │   │   │   ├── transport.routes.js  ✅ Listado
 │   │   │   └── user.routes.js       ✅ CRUD + Photo Upload
 │   │   ├── services/
-│   │   │   └── email.service.js     ✅ Nodemailer (Recovery + Confirmación)
+│   │   │   └── email.service.js     ✅ Nodemailer (Bienvenida, Invitaciones, Alertas, Recovery)
 │   │   ├── utils/
 │   │   │   └── backup.js           ✅ Backups programados (cron)
 │   │   └── app.js                   ✅ Express + Helmet + CORS + Compression
@@ -84,7 +84,7 @@ Passly/
 │   └── package.json                 ✅ Configuración
 │
 ├── database/
-│   └── passly.sql                   ✅ Schema completo (7 tablas)
+│   └── passly.sql                   ✅ Schema completo (9 tablas)
 │
 ├── nginx/
 │   └── default.conf                 ✅ Reverse Proxy + Gzip + WebSocket
@@ -116,9 +116,10 @@ Passly/
 - ✅ **Rate Limiting** por endpoint (login, register, forgot-password, API global)
 - ✅ **express-validator** para validaciones estrictas de inputs
 - ✅ **Sanitización de inputs** (prevención XSS con limpieza de `<>`)
+- ✅ **MFA (2FA)** integrado con TOTP (Google Authenticator)
 - ✅ **Compresión** con compression middleware
 - ✅ **Socket.IO** para actualizaciones en tiempo real
-- ✅ **Nodemailer** para recuperación de contraseña por email
+- ✅ **Nodemailer** para notificaciones automáticas (Bienvenida, Invitación, Alerta MFA, Recovery)
 - ✅ **Multer** para subida de fotos de perfil (JPG/PNG, máx 2MB)
 - ✅ **QRCode** para generación de códigos QR
 - ✅ **Swagger** para documentación interactiva de API
@@ -129,6 +130,7 @@ Passly/
 ```
 ✅ POST   /api/auth/register         - Registrar usuario (con validaciones hardened)
 ✅ POST   /api/auth/login            - Iniciar sesión (con verificación de rol y estado)
+✅ POST   /api/auth/mfa/login       - Verificar código TOTP para completar login
 ✅ POST   /api/auth/forgot-password  - Solicitar código de recuperación
 ✅ POST   /api/auth/reset-password   - Restablecer contraseña con código
 ✅ GET    /api/usuarios              - Listar todos los usuarios
@@ -196,11 +198,12 @@ Passly/
 ✅ estados            - Diccionario de estados (Activo, Inactivo, Mantenimiento, Bloqueado)
 ✅ clientes           - Unidades residenciales / empresas
 ✅ roles              - Roles de usuario (Admin, Usuario, Seguridad)
-✅ usuarios           - Gestión de usuarios con credenciales encriptadas
+✅ usuarios           - Gestión de usuarios con credenciales encriptadas, fotos y MFA
 ✅ medios_transporte  - Catálogo (Vehículo, Motocicleta, Bicicleta, Peatonal)
 ✅ dispositivos       - Dispositivos vinculados a usuarios
 ✅ accesos            - Historial de entradas/salidas
-✅ recovery_codes     - Códigos de recuperación de contraseña
+✅ logs_sistema        - Registro de auditoría inmutable
+✅ recovery_codes     - Códigos de recuperación de contraseña con expiración
 ```
 
 ---
@@ -229,7 +232,8 @@ Passly/
 - ✅ **Prepared statements** (prevención SQL injection)
 - ✅ **Verificación de estado** de usuario en cada request autenticado
 - ✅ **Validación de propósito JWT** (tokens de recovery no sirven para sesión)
-- ✅ **Docker** con redes aisladas (solo Nginx expuesto)
+✅ **MFA (2FA)** obligatorio para usuarios con 2FA activo
+✅ **Docker** con redes aisladas (solo Nginx expuesto)
 - ✅ **Variables de entorno** para secretos (fuera del código)
 
 ---
@@ -247,11 +251,11 @@ Passly/
 
 - ✅ **Docker Compose** con 3 servicios (API, MySQL, Nginx)
 - ✅ **Dockerfile** optimizado (Node 18-slim, --omit=dev)
-- ✅ **Nginx** como reverse proxy con Gzip y WebSocket proxy
-- ✅ **Volúmenes persistentes** para datos MySQL
+- ✅ **Nginx** como reverse proxy con Gzip y terminación SSL nativa
+- ✅ **Volúmenes persistentes** para datos MySQL y certificados Certbot
 - ✅ **Restart always** en todos los servicios
 - ✅ **Inicialización automática** de BD con SQL dump
-- ✅ **Configuración HTTPS** preparada (comentada, lista para certificados SSL)
+- ✅ **Certificados SSL** automatizados con Let's Encrypt (Certbot)
 
 ---
 
@@ -333,18 +337,10 @@ Passly/
 
 ## 🚀 ROADMAP DE MEJORAS FUTURAS
 
-### **Fase 1: Mejoras Pendientes (Opcionales)**
-- [ ] Implementar gestión completa de Medios de Transporte en frontend
-- [ ] Implementar gestión multi-cliente (multi-tenant completo)
-- [ ] Mostrar fotos de perfil en toda la interfaz (tabla, dashboard, accesos)
-- [ ] Configurar credenciales de email reales para recuperación
-
-### **Fase 2: Mejoras Avanzadas**
-- [ ] Certificados SSL (Let's Encrypt) para HTTPS
-- [ ] CI/CD con GitHub Actions
-- [ ] Aumentar test coverage al 80%+
-- [ ] MFA para cuentas de administradores
+### **Fase 2: Expansión**
 - [ ] Integración con hardware (lectores QR/RFID)
+- [ ] Implementar gestión multi-cliente (multi-tenant completo)
+- [ ] Aumentar test coverage al 80%+
 
 ### **Fase 3: Producción**
 - [ ] Deploy a servidor de producción
@@ -361,7 +357,7 @@ Passly/
 **Passly es un sistema profesional y completo** que cumple con estándares de seguridad, rendimiento y usabilidad.
 
 ### **Fortalezas Principales:**
-1. ✅ **Seguridad Hardened** - Helmet, Rate Limiting, JWT, Bcrypt, Sanitización
+1. ✅ **Seguridad Hardened** - Helmet, Rate Limiting, JWT, Bcrypt, Sanitización, MFA
 2. ✅ **Dashboard en tiempo real** - WebSockets, Chart.js, estadísticas live
 3. ✅ **Sistema QR completo** - Generación, validación, invitaciones, escáner
 4. ✅ **Deployment listo** - Docker Compose con 3 servicios

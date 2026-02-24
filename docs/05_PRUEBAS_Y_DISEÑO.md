@@ -19,6 +19,8 @@ El sistema cumple estrictamente con los mockups aprobados, manteniendo una relac
 | **Login** | Ingreso con credenciales válidas y rol correcto | ✅ ÉXITO |
 | **Login** | Ingreso con rol incorrecto (no coincide con cuenta) | ✅ BLOQUEADO |
 | **Login** | Ingreso con usuario inactivo o bloqueado | ✅ BLOQUEADO (Estado 403) |
+| **Login MFA** | Ingreso con contraseña correcta pero código TOTP inválido | ✅ RECHAZADO |
+| **Login MFA** | Ingreso con contraseña y código TOTP correctos | ✅ ÉXITO |
 | **Registro** | Intento de inyectar scripts `<script>` en el nombre | ✅ BLOQUEADO (Sanitización) |
 | **Registro** | Email en mayúsculas o dominio no permitido | ✅ RECHAZADO (express-validator) |
 | **Registro** | Contraseña sin complejidad requerida | ✅ RECHAZADO (Regex estricto) |
@@ -34,6 +36,10 @@ El sistema cumple estrictamente con los mockups aprobados, manteniendo una relac
 | **Socket.IO** | Actualización de dashboard tras nuevo acceso | ✅ ÉXITO (< 100ms) |
 | **Foto Perfil** | Subida de imagen JPG/PNG < 2MB | ✅ ÉXITO |
 | **Foto Perfil** | Intento de subir archivo no permitido | ✅ RECHAZADO (solo JPG/PNG) |
+| **Email** | Envío de bienvenida tras registro | ✅ ÉXITO |
+| **Email** | Envío de invitación con QR a huésped | ✅ ÉXITO |
+| **Email** | Alerta tras activar MFA | ✅ ÉXITO |
+| **Auditoría** | Verificación de log tras eliminación de usuario | ✅ REGISTRADO |
 
 ### 2.2 Pruebas de Aceptación y Usuario
 *   **Aceptación**: El sistema permite registrar un acceso en menos de 3 clicks (Cumplido).
@@ -60,6 +66,7 @@ El sistema cumple estrictamente con los mockups aprobados, manteniendo una relac
 | **Escalamiento de Privilegios** | Verificación de propósito del JWT (tokens de recovery rechazados para sesión) | ✅ ACTIVO |
 | **SQL Injection** | Prepared statements en todas las consultas MySQL | ✅ ACTIVO |
 | **Enumeración de Usuarios** | Respuestas genéricas en forgot-password ("Si el correo está registrado...") | ✅ ACTIVO |
+| **Ataque de Intersección** | MFA (2FA) vía TOTP obligatorio si está configurado | ✅ ACTIVO |
 
 ---
 
@@ -77,9 +84,8 @@ El sistema cumple estrictamente con los mockups aprobados, manteniendo una relac
 ---
 
 ## 🚀 ROADMAP (MEJORAS FUTURAS)
-1.  **MFA**: Autenticación de dos factores para cuentas de administradores.
-2.  **Integración de Hardware**: API para lectores de códigos QR físicos o tarjetas RFID.
-3.  **Sistema Multi-tenant**: Gestión completa de múltiples clientes/unidades residenciales.
-4.  **Reportes Avanzados**: Gráficas en PDF, reportes semanales automáticos.
-5.  **CI/CD**: Pipeline con GitHub Actions para testing y deploy automático.
-6.  **HTTPS**: Certificados SSL con Let's Encrypt para producción.
+1.  **Integración de Hardware**: API para lectores de códigos QR físicos o tarjetas RFID.
+2.  **Sistema Multi-tenant**: Gestión completa de múltiples clientes/unidades residenciales.
+3.  **Reportes Avanzados**: Gráficas en PDF, reportes semanales automáticos.
+4.  **CI/CD**: Pipeline con GitHub Actions para testing y deploy automático.
+5.  **HTTPS**: Certificados SSL con Let's Encrypt para producción.

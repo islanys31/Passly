@@ -5,6 +5,7 @@ const { logAction } = require('../utils/logger');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { trackFailedAttempt, resetAttempts } = require('../middleware/ipBlocker');
+const emailService = require('../services/email.service');
 
 exports.register = async (req, res) => {
     try {
@@ -33,6 +34,9 @@ exports.register = async (req, res) => {
 
         const { getIO } = require('../config/socket');
         getIO().emit('stats_update');
+
+        // Enviar correo de bienvenida (No bloqueante)
+        emailService.sendWelcomeEmail(email, nombre).catch(err => console.error('Error enviando bienvenida:', err));
 
         res.status(201).json({ message: 'Usuario registrado exitosamente', userId: result.insertId });
     } catch (error) {
@@ -270,6 +274,10 @@ exports.mfaVerify = async (req, res) => {
         if (isValid) {
             await db.query('UPDATE usuarios SET mfa_enabled = TRUE WHERE id = ?', [userId]);
             await logAction(userId, 'MFA Habilitado', 'Seguridad', 'MFA activado correctamente', req.ip);
+
+            // Enviar alerta de seguridad (No bloqueante)
+            emailService.sendSecurityAlert(req.user.email, req.user.nombre, 'Autenticación de Dos Factores Activada', 'Has habilitado con éxito el MFA vía TOTP en tu cuenta.').catch(err => console.error('Error enviando alerta MFA:', err));
+
             res.json({ success: true, message: 'MFA habilitado correctamente' });
         } else {
             res.status(400).json({ error: 'Código inválido' });

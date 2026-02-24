@@ -12,7 +12,9 @@
 - ✓ Login con JWT y roles (Admin, Usuario, Seguridad)
 - ✓ Verificación de rol como tercera credencial
 - ✓ Verificación de estado del usuario (activo/inactivo/bloqueado)
+- ✓ Autenticación de dos factores (MFA/2FA) con TOTP
 - ✓ Recuperación de contraseña por email con códigos de 6 dígitos
+- ✓ Notificaciones automáticas: Bienvenida, Invitaciones, Alertas de seguridad
 - ✓ Validaciones hardened (email @gmail/@hotmail, contraseñas complejas 8-12 chars)
 - ✓ Rate limiting por endpoint (login, register, recovery)
 
@@ -69,6 +71,7 @@
 - ✓ Sanitización de inputs (eliminación de tags HTML)
 - ✓ Validaciones estrictas con express-validator
 - ✓ JWT con verificación de propósito y estado
+- ✓ MFA (2FA) integrado con TOTP
 - ✓ Bcrypt salt factor 10 para contraseñas
 - ✓ CORS configurado para producción
 - ✓ Prepared statements (SQL injection)
@@ -122,23 +125,15 @@
 
 ---
 
-### 🚧 **3. Escáner QR**
-**Estado**: 100% funcional en localhost y HTTPS
+### ✅ **11. Servidor de Email**
+- ✓ Backend y frontend 100% funcionales (Bienvenida, Recuperación, Invitaciones, Alertas)
+- ✓ Configuración SMTP dinámica (Host, Puerto, Seguridad) lista para producción
+- ✓ Plantillas HTML profesionales y responsive integradas
 
-**Limitación**:
-- ⚠️ La cámara solo funciona en HTTPS o localhost (restricción del navegador, no del sistema)
-- ⚠️ En producción sin HTTPS, el navegador bloquea el acceso a la cámara
-
-**Solución**: Configurar HTTPS con certificados SSL (Let's Encrypt).
-
----
-
-### 🚧 **4. Recuperación por Email**
-**Estado**: Backend y frontend 100% funcional
-
-**Limitación**:
-- ⚠️ Requiere configurar credenciales de Gmail en `.env` (EMAIL_USER, EMAIL_PASS)
-- ⚠️ Se necesita una "Contraseña de Aplicación" de Google
+### ✅ **12. Seguridad SSL (HTTPS)**
+- ✓ Configuración Nginx con soporte nativo para TLS 1.2/1.3
+- ✓ Redirección automática HTTP → HTTPS
+- ✓ Integración con Certbot (Let's Encrypt) para renovación automática de certificados
 
 **Impacto**: Los códigos se generan y validan correctamente. Solo falta la configuración del servidor SMTP para envío real.
 
@@ -159,15 +154,16 @@
 10. Documentación completa (README, Swagger, docs/)
 
 ### ⚠️ **Lo que FUNCIONA pero necesita configuración**:
-1. Recuperación de contraseña (falta configurar credenciales de email)
-2. Escáner QR (requiere HTTPS en producción)
+1. Escáner QR (Soporta cámara activada gracias a HTTPS)
+2. Certificados SSL (Automatizado con Docker + Certbot)
+3. Servidor de Email (Configuración lista en .env)
 
 ### 🟡 **Mejoras opcionales futuras**:
 1. CRUD de Medios de Transporte en frontend
 2. Gestión Multi-tenant completa
 3. Certificados SSL (Let's Encrypt)
 4. CI/CD con GitHub Actions
-5. MFA para administradores
+5. Integración con hardware QR/RFID empresarial
 
 ---
 

@@ -20,6 +20,8 @@ useCaseDiagram
         usecase "Escanear QR" as UC8
         usecase "Exportar Reportes" as UC9
         usecase "Subir Foto de Perfil" as UC10
+        usecase "Configurar MFA (2FA)" as UC11
+        usecase "Ver Logs de Auditoría" as UC12
     }
 
     Admin --> UC1
@@ -28,6 +30,8 @@ useCaseDiagram
     Admin --> UC7
     Admin --> UC8
     Admin --> UC9
+    Admin --> UC12
+    User --> UC11
     User --> UC5
     User --> UC6
     User --> UC10
@@ -53,10 +57,13 @@ classDiagram
         +int cliente_id
         +int estado_id
         +string foto_url
+        +boolean mfa_enabled
+        +string mfa_secret
         +login()
         +register()
         +resetPassword()
         +uploadPhoto()
+        +enableMFA()
     }
     class Dispositivo {
         +int id
@@ -81,9 +88,18 @@ classDiagram
         +dateTime expires_at
         +boolean used
     }
+    class LogAuditoria {
+        +int id
+        +int usuario_id
+        +string accion
+        +string modulo
+        +string ip_address
+    }
     class AuthController {
         +register()
         +login()
+        +mfaLogin()
+        +mfaVerify()
         +forgotPassword()
         +resetPassword()
     }
@@ -109,6 +125,7 @@ classDiagram
 
     Usuario "1" -- "0..*" Dispositivo : posee
     Usuario "1" -- "0..*" Acceso : realiza
+    Usuario "1" -- "0..*" LogAuditoria : genera
     Dispositivo "0..1" -- "0..*" Acceso : vinculado_a
     Usuario "1" -- "0..*" RecoveryCode : solicita
     AuthController ..> Usuario : gestiona
@@ -123,23 +140,23 @@ Arquitectura física y red.
 
 ```mermaid
 graph TD
-    Client[Navegador del Usuario] -- "Puerto 80/443" --> Nginx[Contenedor Nginx Proxy]
+    Client[Navegador del Usuario] -- "Puerto 443 (SSL)" --> Nginx[Contenedor Nginx SSL]
     Nginx -- "Proxy Pass /api (Red Interna)" --> API[Contenedor Node.js API]
     Nginx -- "Proxy Pass /socket.io" --> API
+    Certbot[Contenedor Certbot] -- "Renovación Certs" --> Nginx
     API -- "TCP 3306" --> DB[Contenedor MySQL 8.0]
     API -- "WebSockets (Socket.IO)" --> Client
     subgraph "Docker Network (passly-network)"
         Nginx
         API
         DB
+        Certbot
     end
-    subgraph "Componentes API"
+    subgraph "Capas de Seguridad"
+        API --> MFA[MFA Provider]
+        API --> Audit[Audit Logger]
         API --> Helmet[Helmet.js]
         API --> RateLimit[Rate Limiting]
-        API --> JWT[JWT Auth]
-        API --> SocketIO[Socket.IO]
-        API --> Nodemailer[Email Service]
-        API --> QRCode[QR Generator]
     end
 ```
 

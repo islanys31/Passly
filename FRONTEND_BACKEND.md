@@ -35,12 +35,10 @@ npm run dev
 
 | URL | Descripción |
 |-----|-------------|
-| `http://localhost:3000` | **Frontend** - Página de login/registro |
-| `http://localhost:3000/dashboard.html` | Dashboard completo (requiere login) |
-| `http://localhost:3000/scanner.html` | Escáner QR con cámara (requiere login) |
-| `http://localhost:3000/forgot.html` | Recuperar contraseña |
-| `http://localhost:3000/reset.html` | Restablecer contraseña |
-| `http://localhost:3000/api` | **API** - Información del backend (JSON) |
+| `http://localhost:3000` | **Frontend** - Login/Registro |
+| `https://localhost` | **Producción** - Conexión Segura (SSL) |
+| `http://localhost:3000/dashboard.html` | Dashboard (requiere login/MFA) |
+| `http://localhost:3000/scanner.html` | Escáner QR (Soporta cámara vía HTTPS) |
 | `http://localhost:3000/api-docs` | **Swagger** - Documentación interactiva |
 
 ---
@@ -60,7 +58,8 @@ http://localhost:3000/
 │
 └── /api/                          → API REST (JSON)
     ├── /api/auth/register         → POST - Registrar usuario
-    ├── /api/auth/login            → POST - Login con JWT
+    ├── /api/auth/login            → POST - Login inicial
+    ├── /api/auth/mfa/login       → POST - Verificación TOTP
     ├── /api/auth/forgot-password  → POST - Solicitar código
     ├── /api/auth/reset-password   → POST - Restablecer contraseña
     ├── /api/usuarios              → CRUD - Usuarios
@@ -98,9 +97,10 @@ docker-compose up -d --build
 
 | Servicio | Puerto | Función |
 |----------|--------|---------|
-| Nginx | 80 | Reverse proxy + assets estáticos |
-| API | 3000 (interno) | Backend Express + Socket.IO |
+| Nginx | 80 / 443 | Reverse proxy + SSL + Assets |
+| API | 3000 (interno) | Backend + Socket.IO |
 | MySQL | 3306 (interno) | Base de datos |
+| Certbot | N/A | Renovación SSL automática |
 
 ---
 

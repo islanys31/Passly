@@ -28,7 +28,7 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | **Base de Datos** | MySQL 8.0 | Persistencia con pool optimizado (10 conexiones) |
 | **Seguridad** | JWT, Bcrypt, Helmet, express-rate-limit, express-validator | Autenticación, hashing, headers y validaciones |
 | **Tiempo Real** | Socket.IO | Notificaciones en vivo en Dashboard |
-| **Email** | Nodemailer (Gmail) | Códigos de recuperación y confirmaciones |
+| **Email** | Nodemailer (Gmail) | Bienvenida, Invitaciones, Alertas MFA y Recovery |
 | **QR** | QRCode (backend) + html5-qrcode (frontend) | Generación y escaneo de códigos QR |
 | **Reportes** | jsPDF | Exportación de reportes en PDF profesional |
 | **Gráficas** | Chart.js | Visualización de tráfico por horas |
@@ -56,6 +56,7 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | **SQL Injection** | **Prepared Statements** | Todas las queries usan parámetros ? de mysql2 |
 | **Multi-tenancy** | **Aislamiento Estricto** | Cada usuario solo ve y edita datos de su propio `cliente_id` (vía JWT mapping) |
 | **Auditoría** | **Logs de Sistema** | Registro histórico inmutable de acciones administrativas (CRUD, Login, Recovery) |
+| **MFA (2FA)** | **Seguridad TOTP** | Autenticación de dos factores integrada con Google Authenticator y similares. |
 | **Contenedores** | **Red Aislada** | MySQL y API sin acceso público; solo Nginx expuesto (80/443) |
 
 ---
@@ -96,7 +97,7 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 *   **Aislamiento de Datos:** Arquitectura multi-inquilino donde cada cliente (`cliente_id`) tiene sus datos aislados.
 *   **Sistema de Logs:** Módulo de Auditoría que registra IP, Usuario y Acción.
 *   **Dashboard Administrativo:** Vista de Auditoría integrada.
-*   **MFA-Ready:** Base de datos preparada con campos para 2FA.
+*   **MFA (2FA):** Implementación completa de segundo factor de autenticación con TOTP y visualización de QR.
 
 ---
 
@@ -110,17 +111,21 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | **Escalamiento de Privilegios** | ✅ Mitigado | JWT verificado por rol y propósito; verificado contra cliente_id. |
 | **Fuga de Información** | ✅ Protegido | Logs de auditoría permiten trazar cualquier acceso no autorizado. |
 | **Email con Dominio No Autorizado** | ✅ Rechazado | Solo @gmail y @hotmail permitidos. |
+| **MFA Bypass** | ✅ Bloqueado | El sistema exige el token TOTP si el 2FA está activo para la cuenta. |
 
 ---
 
 ## 📝 7. CONCLUSIONES Y RECOMENDACIONES
-El sistema **Passly** se encuentra en un estado de **Alta Disponibilidad y Seguridad**. Se han completado todas las tareas de endurecimiento planificadas, incluyendo el sistema de multi-arrendamiento y auditoría.
+El sistema **Passly** se encuentra en un estado de **Alta Disponibilidad y Seguridad de Grado Industrial**. Se han completado todas las tareas de endurecimiento, incluyendo multi-arrendamiento, auditoría, certificados SSL y SMTP dinámico.
+
+**Logros Finales:**
+1.  **HTTPS Real**: Certificados SSL automáticos con Let's Encrypt (Certbot).
+2.  **SMTP Dinámico**: Desbloqueo de comunicación total mediante configuración en `.env`.
+3.  **Cámara Activa**: El escáner QR ahora funciona en cualquier navegador gracias a SSL.
 
 **Recomendaciones para el siguiente nivel:**
-1. Instalar certificados SSL (Let's Encrypt) para activar HTTPS real y habilitar el escáner QR en producción.
-2. Configurar credenciales de email reales para que la recuperación de contraseña envíe códigos por email.
-3. Activar el sistema MFA (ya preparado en BD) para cuentas de administradores.
-4. Implementar CI/CD con GitHub Actions para testing y deploy automático.
+1.  Aumentar test coverage al 80%+
+2.  Implementar CI/CD con GitHub Actions para testing y deploy automático.
 
 ---
 **Documento generado para el Proyecto Passly**  

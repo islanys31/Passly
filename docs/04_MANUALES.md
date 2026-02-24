@@ -78,6 +78,7 @@
 ```
 POST /api/auth/register          - Registrar usuario
 POST /api/auth/login             - Iniciar sesión
+POST /api/auth/mfa/login         - Verificar código MFA para login
 POST /api/auth/forgot-password   - Solicitar código de recuperación
 POST /api/auth/reset-password    - Restablecer contraseña
 GET  /api/usuarios               - Listar usuarios
@@ -105,13 +106,32 @@ GET  /api/stats                  - Estadísticas generales
 ## 👥 3. MANUAL DE USUARIO (CLIENTE)
 
 ### 3.1 Inicio de Sesión
-Ingrese su correo electrónico, contraseña y seleccione su rol. Si falla 3 veces, el sistema mostrará un enlace para recuperar contraseña.
+Ingrese su correo electrónico, contraseña y seleccione su rol. 
+*   **MFA (2FA)**: Si su cuenta tiene activada la autenticación de dos factores, el sistema le solicitará un código de 6 dígitos generado por su aplicación (Google Authenticator, Authy, etc.) después de validar su contraseña.
+*   **Intentos**: Si falla 3 veces, el sistema mostrará un enlace para recuperar contraseña.
 
 ### 3.2 Recuperación de Contraseña
 1.  Haga clic en "¿Olvidaste tu contraseña?"
 2.  Ingrese su correo electrónico.
 3.  Recibirá un código de 6 dígitos en su email (válido por 15 minutos).
 4.  Ingrese el código y su nueva contraseña.
+
+### 3.3 Registro y Bienvenida
+Al ser registrado en el sistema (por usted mismo o por un administrador), recibirá un correo electrónico de bienvenida con un enlace al Dashboard y un resumen de las funcionalidades iniciales.
+
+### 3.4 Autenticación de Dos Factores (MFA)
+El sistema Passly soporta seguridad avanzada vía TOTP.
+1.  **Configuración**: Diríjase a la sección "Seguridad" en su perfil y active el MFA.
+2.  **Vinculación**: Escanee el código QR proporcionado con una aplicación como Google Authenticator.
+3.  **Alertas**: Recibirá un correo de seguridad notificando que el 2FA ha sido activado.
+4.  **Uso**: Cada vez que inicie sesión, abra su aplicación y escriba el código de 6 dígitos que aparece en pantalla.
+
+### 3.5 Invitaciones para Huéspedes
+Si desea invitar a alguien:
+1.  Vaya a "Accesos" → "+ Manual".
+2.  Ingrese el nombre y el **email** del invitado.
+3.  Seleccione el tiempo de expiración.
+4.  El invitado recibirá automáticamente un correo con su código QR de acceso.
 
 ### 3.3 Uso del Dashboard
 *   **Estadísticas**: El panel superior muestra usuarios activos, accesos del día, dispositivos activos y alertas en tiempo real.

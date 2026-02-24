@@ -91,10 +91,46 @@ function initEventListeners() {
     document.getElementById("btnRegistrar").onclick = handleRegister;
 }
 
+let currentMfaToken = null;
+
 async function handleLogin() {
-    const email = document.getElementById("emailLogin").value.trim();
-    const password = document.getElementById("passLogin").value;
-    const rol_id = document.getElementById("rolLogin").value;
+    const emailEl = document.getElementById("emailLogin");
+    const passwordEl = document.getElementById("passLogin");
+    const rolEl = document.getElementById("rolLogin");
+    const errorEl = document.getElementById("loginError");
+    const resetLink = document.getElementById("resetLink");
+
+    // Si estamos en el paso de verificación de MFA
+    if (currentMfaToken) {
+        const mfaInput = document.getElementById("mfaCode");
+        const code = mfaInput?.value.trim();
+
+        if (!code) {
+            showToast("Ingresa el código MFA de 6 dígitos.", "error");
+            return;
+        }
+
+        setLoading("btnLogin", true);
+        const { ok, data, error } = await apiRequest("/auth/mfa/login", "POST", {
+            mfaToken: currentMfaToken,
+            code
+        });
+        setLoading("btnLogin", false);
+
+        if (ok) {
+            localStorage.setItem("usuario_activo", JSON.stringify(data.user));
+            localStorage.setItem("auth_token", data.token);
+            showToast("¡Verificación exitosa!", "success");
+            setTimeout(() => window.location.href = "dashboard.html", 1000);
+        } else {
+            showToast(data?.error || "Código MFA incorrecto", "error");
+        }
+        return;
+    }
+
+    const email = emailEl.value.trim();
+    const password = passwordEl.value;
+    const rol_id = rolEl.value;
 
     if (!email || !password || !rol_id) {
         showToast("Por favor, completa todos los campos de acceso.", "error");
@@ -103,27 +139,63 @@ async function handleLogin() {
 
     setLoading("btnLogin", true);
     const { ok, data, error } = await apiRequest("/auth/login", "POST", { email, password, rol_id });
-    setLoading("btnLogin", false);
 
     if (ok) {
+        // Caso A: Requiere MFA
+        if (data.mfaRequired) {
+            setLoading("btnLogin", false);
+            currentMfaToken = data.mfaToken;
+
+            // Transformar UI para MFA
+            emailEl.style.display = 'none';
+            passwordEl.style.display = 'none';
+            rolEl.style.display = 'none';
+            document.querySelector('.checkbox-row').style.display = 'none';
+            if (resetLink) resetLink.style.display = 'none';
+
+            // Insertar campo de código MFA
+            const mfaHtml = `
+                <div id="mfaSection" style="margin-top:20px; text-align:center; animation: fadeInUp 0.5s ease;">
+                    <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">
+                        🛡️ Autenticación de dos factores requerida.
+                    </p>
+                    <input id="mfaCode" type="text" placeholder="000000" maxlength="6" 
+                           style="text-align:center; font-size:24px; letter-spacing:5px; font-weight:bold;">
+                </div>
+            `;
+
+            const loginCard = document.getElementById('loginCard');
+            loginCard.insertBefore(
+                document.createRange().createContextualFragment(mfaHtml),
+                errorEl
+            );
+
+            document.getElementById('btnLogin').textContent = "Verificar Código";
+            loginCard.querySelector('h1').textContent = "Paso de Seguridad";
+            showToast("Se requiere código MFA", "info");
+            return;
+        }
+
+        // Caso B: Login directo
         localStorage.setItem("usuario_activo", JSON.stringify(data.user));
         localStorage.setItem("auth_token", data.token);
+        setLoading("btnLogin", false);
         showToast("¡Bienvenido a Passly!", "success");
         setTimeout(() => window.location.href = "dashboard.html", 1000);
     } else {
+        setLoading("btnLogin", false);
         intentos++;
         const errorMsg = data?.error || (data?.errors ? data.errors[0].message : null) || error || `Credenciales incorrectas (${intentos}/3)`;
 
-        const loginErrorEl = document.getElementById("loginError");
-        if (loginErrorEl) {
-            loginErrorEl.textContent = errorMsg;
-            loginErrorEl.style.display = "block";
-            loginErrorEl.classList.add("shake");
-            setTimeout(() => loginErrorEl.classList.remove("shake"), 500);
+        if (errorEl) {
+            errorEl.textContent = errorMsg;
+            errorEl.style.display = "block";
+            errorEl.classList.add("shake");
+            setTimeout(() => errorEl.classList.remove("shake"), 500);
         }
 
-        if (intentos >= 3) {
-            document.getElementById("resetLink").style.display = "block";
+        if (intentos >= 3 && resetLink) {
+            resetLink.style.display = "block";
             showToast("Demasiados intentos. Usa la opción de recuperación.", "error");
         } else {
             showToast(errorMsg, "error");

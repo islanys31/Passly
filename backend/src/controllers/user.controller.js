@@ -1,6 +1,7 @@
 const { pool: db } = require('../config/db');
 const bcrypt = require('bcrypt');
 const { logAction } = require('../utils/logger');
+const emailService = require('../services/email.service');
 
 exports.getAllUsers = async (req, res) => {
     try {
@@ -40,6 +41,10 @@ exports.createUser = async (req, res) => {
         await logAction(req.user.id, 'Crear Usuario', 'Usuarios', { email, rol_id }, req.ip);
 
         require('../config/socket').getIO().emit('stats_update');
+
+        // Enviar correo de bienvenida al nuevo usuario (No bloqueante)
+        emailService.sendWelcomeEmail(email, nombre).catch(err => console.error('Error enviando bienvenida manual:', err));
+
         res.status(201).json({ ok: true, id: result.insertId });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });

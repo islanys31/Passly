@@ -1,4 +1,5 @@
 const { pool: db } = require('../config/db');
+const emailService = require('../services/email.service');
 
 exports.getAllAccess = async (req, res) => {
     try {
@@ -106,11 +107,26 @@ exports.createGuestInvitation = async (req, res) => {
             margin: 2
         });
 
+        const expiresAt = new Date(Date.now() + expirationHours * 3600000);
+
+        // Enviar correo si se proporciona guestEmail
+        const { guestEmail } = req.body;
+        if (guestEmail) {
+            emailService.sendInvitationEmail(
+                guestEmail,
+                guestName,
+                req.user.nombre,
+                guestToken,
+                expiresAt
+            ).catch(err => console.error('Error enviando invitación por email:', err));
+        }
+
         res.json({
             ok: true,
             qr: qrImage,
             token: guestToken,
-            expiresAt: new Date(Date.now() + expirationHours * 3600000).toLocaleString()
+            expiresAt: expiresAt.toLocaleString(),
+            sentByEmail: !!guestEmail
         });
     } catch (error) {
         console.error('Invitation Error:', error);
