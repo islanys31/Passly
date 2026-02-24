@@ -15,8 +15,10 @@
 ### 🔐 Autenticación y Seguridad (Hardened)
 - ✅ Login seguro con JWT y verificación de rol
 - ✅ Registro con validaciones estrictas (frontend + backend espejo)
-- ✅ Autenticación de dos factores (MFA/2FA) vía TOTP
+- ✅ Autenticación de dos factores (MFA/2FA) vía TOTP (con alerta de seguridad por email)
 - ✅ Recuperación de contraseña por email con códigos de 6 dígitos
+- ✅ Email de Bienvenida automático para nuevos usuarios
+- ✅ Invitaciones de acceso enviadas directamente al correo del huésped
 - ✅ Helmet.js (CSP, HSTS 1 año + preload, X-Frame-Options)
 - ✅ Rate Limiting por endpoint (login, register, recovery, API)
 - ✅ Sanitización de inputs (prevención XSS)
@@ -144,7 +146,7 @@ Passly/
 │   ├── reset.html           # Restablecer contraseña
 │   └── service-worker.js    # PWA
 ├── database/
-│   └── passly.sql           # Schema completo (8 tablas)
+│   └── passly.sql           # Schema completo (9 tablas)
 ├── nginx/
 │   └── default.conf         # Reverse Proxy + Gzip + WebSocket
 ├── docker-compose.yml       # 3 servicios
@@ -232,10 +234,11 @@ GET    /api/stats                - Estadísticas generales
 | `estados` | Diccionario: Activo, Inactivo, Mantenimiento, Bloqueado |
 | `clientes` | Unidades residenciales / empresas |
 | `roles` | Admin, Usuario, Seguridad |
-| `usuarios` | Gestión con credenciales encriptadas y foto |
+| `usuarios` | Gestión con credenciales encriptadas, foto y MFA |
 | `medios_transporte` | Vehículo, Motocicleta, Bicicleta, Peatonal |
 | `dispositivos` | Bienes vinculados a usuarios |
 | `accesos` | Log histórico de entradas/salidas |
+| `logs_sistema` | Registro de auditoría administrativa |
 | `recovery_codes` | Códigos de recuperación con expiración |
 
 ---

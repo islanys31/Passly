@@ -31,6 +31,7 @@
 ✅ **Dashboard completo** en tiempo real con WebSockets y Chart.js  
 ✅ **Sistema QR Premium** - Generación, validación, invitaciones temporales, escáner  
 ✅ **Recuperación de contraseña** por email con códigos de 6 dígitos  
+✅ **Sistema de Notificaciones** - Bienvenida, Invitaciones y Alertas MFA  
 ✅ **Seguridad MFA (2FA)** integrada con TOTP y generación de QR  
 ✅ **Integración funcional** frontend ↔ backend ↔ MySQL ↔ Socket.IO  
 ✅ **Diseño profesional** con glassmorphism y modo oscuro/claro  

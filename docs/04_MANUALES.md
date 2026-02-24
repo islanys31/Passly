@@ -116,11 +116,22 @@ Ingrese su correo electrónico, contraseña y seleccione su rol.
 3.  Recibirá un código de 6 dígitos en su email (válido por 15 minutos).
 4.  Ingrese el código y su nueva contraseña.
 
-### 3.3 Autenticación de Dos Factores (MFA)
+### 3.3 Registro y Bienvenida
+Al ser registrado en el sistema (por usted mismo o por un administrador), recibirá un correo electrónico de bienvenida con un enlace al Dashboard y un resumen de las funcionalidades iniciales.
+
+### 3.4 Autenticación de Dos Factores (MFA)
 El sistema Passly soporta seguridad avanzada vía TOTP.
-1.  **Configuración**: Contacte a un administrador para habilitar el MFA en su cuenta.
+1.  **Configuración**: Diríjase a la sección "Seguridad" en su perfil y active el MFA.
 2.  **Vinculación**: Escanee el código QR proporcionado con una aplicación como Google Authenticator.
-3.  **Uso**: Cada vez que inicie sesión, abra su aplicación y escriba el código de 6 dígitos que aparece en pantalla.
+3.  **Alertas**: Recibirá un correo de seguridad notificando que el 2FA ha sido activado.
+4.  **Uso**: Cada vez que inicie sesión, abra su aplicación y escriba el código de 6 dígitos que aparece en pantalla.
+
+### 3.5 Invitaciones para Huéspedes
+Si desea invitar a alguien:
+1.  Vaya a "Accesos" → "+ Manual".
+2.  Ingrese el nombre y el **email** del invitado.
+3.  Seleccione el tiempo de expiración.
+4.  El invitado recibirá automáticamente un correo con su código QR de acceso.
 
 ### 3.3 Uso del Dashboard
 *   **Estadísticas**: El panel superior muestra usuarios activos, accesos del día, dispositivos activos y alertas en tiempo real.

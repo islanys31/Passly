@@ -52,7 +52,7 @@ Passly/
 │   │   │   ├── transport.routes.js  ✅ Listado
 │   │   │   └── user.routes.js       ✅ CRUD + Photo Upload
 │   │   ├── services/
-│   │   │   └── email.service.js     ✅ Nodemailer (Recovery + Confirmación)
+│   │   │   └── email.service.js     ✅ Nodemailer (Bienvenida, Invitaciones, Alertas, Recovery)
 │   │   ├── utils/
 │   │   │   └── backup.js           ✅ Backups programados (cron)
 │   │   └── app.js                   ✅ Express + Helmet + CORS + Compression
@@ -84,7 +84,7 @@ Passly/
 │   └── package.json                 ✅ Configuración
 │
 ├── database/
-│   └── passly.sql                   ✅ Schema completo (7 tablas)
+│   └── passly.sql                   ✅ Schema completo (9 tablas)
 │
 ├── nginx/
 │   └── default.conf                 ✅ Reverse Proxy + Gzip + WebSocket
@@ -119,7 +119,7 @@ Passly/
 - ✅ **MFA (2FA)** integrado con TOTP (Google Authenticator)
 - ✅ **Compresión** con compression middleware
 - ✅ **Socket.IO** para actualizaciones en tiempo real
-- ✅ **Nodemailer** para recuperación de contraseña por email
+- ✅ **Nodemailer** para notificaciones automáticas (Bienvenida, Invitación, Alerta MFA, Recovery)
 - ✅ **Multer** para subida de fotos de perfil (JPG/PNG, máx 2MB)
 - ✅ **QRCode** para generación de códigos QR
 - ✅ **Swagger** para documentación interactiva de API
@@ -202,7 +202,8 @@ Passly/
 ✅ medios_transporte  - Catálogo (Vehículo, Motocicleta, Bicicleta, Peatonal)
 ✅ dispositivos       - Dispositivos vinculados a usuarios
 ✅ accesos            - Historial de entradas/salidas
-✅ recovery_codes     - Códigos de recuperación de contraseña
+✅ logs_sistema        - Registro de auditoría inmutable
+✅ recovery_codes     - Códigos de recuperación de contraseña con expiración
 ```
 
 ---
@@ -340,7 +341,7 @@ Passly/
 - [ ] Implementar gestión completa de Medios de Transporte en frontend
 - [ ] Implementar gestión multi-cliente (multi-tenant completo)
 - [ ] Mostrar fotos de perfil en toda la interfaz (tabla, dashboard, accesos)
-- [ ] Configurar credenciales de email reales para recuperación
+- [ ] Configurar credenciales de email reales en el entorno de producción (Nodemailer listo)
 
 ### **Fase 2: Mejoras Avanzadas**
 - [ ] Certificados SSL (Let's Encrypt) para HTTPS

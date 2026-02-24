@@ -36,6 +36,10 @@ El sistema cumple estrictamente con los mockups aprobados, manteniendo una relac
 | **Socket.IO** | Actualización de dashboard tras nuevo acceso | ✅ ÉXITO (< 100ms) |
 | **Foto Perfil** | Subida de imagen JPG/PNG < 2MB | ✅ ÉXITO |
 | **Foto Perfil** | Intento de subir archivo no permitido | ✅ RECHAZADO (solo JPG/PNG) |
+| **Email** | Envío de bienvenida tras registro | ✅ ÉXITO |
+| **Email** | Envío de invitación con QR a huésped | ✅ ÉXITO |
+| **Email** | Alerta tras activar MFA | ✅ ÉXITO |
+| **Auditoría** | Verificación de log tras eliminación de usuario | ✅ REGISTRADO |
 
 ### 2.2 Pruebas de Aceptación y Usuario
 *   **Aceptación**: El sistema permite registrar un acceso en menos de 3 clicks (Cumplido).

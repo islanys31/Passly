@@ -14,6 +14,7 @@
 - ✓ Verificación de estado del usuario (activo/inactivo/bloqueado)
 - ✓ Autenticación de dos factores (MFA/2FA) con TOTP
 - ✓ Recuperación de contraseña por email con códigos de 6 dígitos
+- ✓ Notificaciones automáticas: Bienvenida, Invitaciones, Alertas de seguridad
 - ✓ Validaciones hardened (email @gmail/@hotmail, contraseñas complejas 8-12 chars)
 - ✓ Rate limiting por endpoint (login, register, recovery)
 
@@ -135,12 +136,14 @@
 
 ---
 
-### 🚧 **4. Recuperación por Email**
-**Estado**: Backend y frontend 100% funcional
+### 🚧 **4. Servidor de Email**
+- ✓ Backend y frontend 100% funcionales (Bienvenida, Recuperación, Invitaciones, Alertas)
+- ✓ Plantillas HTML profesionales y responsive integradas
+- ✓ Sistema de recuperación con códigos de un solo uso
 
 **Limitación**:
-- ⚠️ Requiere configurar credenciales de Gmail en `.env` (EMAIL_USER, EMAIL_PASS)
-- ⚠️ Se necesita una "Contraseña de Aplicación" de Google
+- ⚠️ Requiere configurar credenciales reales de Gmail en `.env` para el transporte real de correos.
+- ⚠️ Se necesita una "Contraseña de Aplicación" de Google.
 
 **Impacto**: Los códigos se generan y validan correctamente. Solo falta la configuración del servidor SMTP para envío real.
 

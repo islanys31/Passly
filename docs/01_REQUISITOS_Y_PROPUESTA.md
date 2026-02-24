@@ -3,7 +3,9 @@
 ## 1. LEVANTAMIENTO DE REQUISITOS
 
 ### 1.1 Requisitos Funcionales (RF)
-*   **RF-01: Gestión de Identidad**: El sistema debe permitir el registro, login, autenticación de dos factores (MFA/2FA) vía TOTP y recuperación de contraseña de usuarios mediante códigos de verificación enviados por email.
+*   **RF-01: Gestión de Identidad**: El sistema debe permitir el registro (con email de bienvenida), login, autenticación de dos factores (MFA/2FA) vía TOTP y recuperación de contraseña de usuarios mediante códigos de verificación enviados por email.
+*   **RF-10: Notificaciones por Email**: Envío automático de invitaciones a huéspedes y alertas de seguridad por cambios en la cuenta (MFA activado).
+*   **RF-11: Auditoría de Sistema**: Registro automático de acciones administrativas críticas con IP y marca de tiempo.
 *   **RF-02: Control de Dispositivos**: Los administradores deben poder registrar y asignar medios de transporte (vehículos, motocicletas, bicicletas) a usuarios.
 *   **RF-03: Registro de Accesos**: Captura en tiempo real de entradas y salidas con marca de tiempo, observaciones y notificación vía WebSockets.
 *   **RF-04: Dashboard de Estadísticas**: Visualización dinámica de usuarios activos, dispositivos, accesos del día y alertas de seguridad con gráficas de tráfico por horas.
@@ -49,4 +51,5 @@ El dominio se centra en la triada **Usuario ↔ Dispositivo ↔ Acceso**.
 *   El **Cliente** (Empresa/Unidad Residencial) agrupa a los usuarios.
 *   Los **Roles** (Admin, Usuario, Seguridad) definen los permisos en el sistema.
 *   Los **Estados** (Activo, Inactivo, Mantenimiento, Bloqueado) controlan la disponibilidad de cada entidad.
-*   Los **Códigos de Recuperación** permiten restablecer contraseñas mediante verificación por email con expiración de 15 minutos.
+*   **Códigos de Recuperación**: Permiten restablecer contraseñas mediante verificación por email con expiración de 15 minutos.
+*   **Logs de Sistema**: Registro inmutable de cada acción administrativa para cumplir con estándares de auditoría.

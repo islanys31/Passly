@@ -10,6 +10,7 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 *   **MEDIOS_TRANSPORTE**: Catálogo de medios (Vehículo Particular, Motocicleta, Bicicleta, Peatonal).
 *   **DISPOSITIVOS**: Bienes muebles asignados a usuarios con identificador único.
 *   **ACCESOS**: Log histórico de movimientos (Entrada/Salida) con marca de tiempo.
+*   **LOGS_SISTEMA**: Registro inmutable de auditoría para acciones críticas (Crear, Editar, Eliminar, Login).
 *   **RECOVERY_CODES**: Códigos de recuperación de contraseña con expiración de 15 minutos.
 
 ---
@@ -119,6 +120,17 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 | used | BOOLEAN | DEFAULT FALSE |
 | created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
 
+### 3.9 Tabla `logs_sistema`
+| Campo | Tipo | Restricción |
+|-------|------|-------------|
+| id | INT AUTO_INCREMENT | PRIMARY KEY |
+| usuario_id | INT | FK → usuarios(id), NULLABLE (para acciones de sistema) |
+| accion | VARCHAR(255) | NOT NULL |
+| modulo | VARCHAR(100) | NOT NULL |
+| detalles | TEXT | NULLABLE (JSON de cambios) |
+| ip_address | VARCHAR(45) | NULLABLE |
+| fecha_hora | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
+
 ---
 
 ## 4. RESTRICCIONES DE INTEGRIDAD
@@ -144,3 +156,4 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 *   `dispositivos.estado_id` → `estados.id`
 *   `accesos.usuario_id` → `usuarios.id`
 *   `accesos.dispositivo_id` → `dispositivos.id`
+*   `logs_sistema.usuario_id` → `usuarios.id`

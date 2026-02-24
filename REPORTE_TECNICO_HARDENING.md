@@ -28,7 +28,7 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | **Base de Datos** | MySQL 8.0 | Persistencia con pool optimizado (10 conexiones) |
 | **Seguridad** | JWT, Bcrypt, Helmet, express-rate-limit, express-validator | Autenticación, hashing, headers y validaciones |
 | **Tiempo Real** | Socket.IO | Notificaciones en vivo en Dashboard |
-| **Email** | Nodemailer (Gmail) | Códigos de recuperación y confirmaciones |
+| **Email** | Nodemailer (Gmail) | Bienvenida, Invitaciones, Alertas MFA y Recovery |
 | **QR** | QRCode (backend) + html5-qrcode (frontend) | Generación y escaneo de códigos QR |
 | **Reportes** | jsPDF | Exportación de reportes en PDF profesional |
 | **Gráficas** | Chart.js | Visualización de tráfico por horas |
@@ -120,9 +120,8 @@ El sistema **Passly** se encuentra en un estado de **Alta Disponibilidad y Segur
 
 **Recomendaciones para el siguiente nivel:**
 1. Instalar certificados SSL (Let's Encrypt) para activar HTTPS real y habilitar el escáner QR en producción.
-2. Configurar credenciales de email reales para que la recuperación de contraseña envíe códigos por email.
-3. Activar el sistema MFA (ya preparado en BD) para cuentas de administradores.
-4. Implementar CI/CD con GitHub Actions para testing y deploy automático.
+2. Configurar credenciales de email reales en `.env` para habilitar el envío masivo de notificaciones.
+3. Implementar CI/CD con GitHub Actions para testing y deploy automático.
 
 ---
 **Documento generado para el Proyecto Passly**  
