@@ -45,6 +45,10 @@
 ✅ WebSockets (Socket.IO) para tiempo real  
 ✅ API REST completa con Swagger (/api-docs)  
 ✅ Seguridad Hardened (Helmet, Rate Limiting, Sanitización)  
+✅ MFA (2FA) con TOTP activa  
+✅ Auditoría administrativa inmutable  
+✅ Certificados SSL automáticos (Let's Encrypt)  
+✅ Redirección 301 forzada a HTTPS  
 
 ### **Endpoints Disponibles**
 
@@ -69,7 +73,9 @@
 | GET | `/api/accesos/qr` | Generar QR personal | ✅ Autenticado |
 | POST | `/api/accesos/invitation` | Crear invitación QR | ✅ Autenticado |
 | POST | `/api/accesos/scan` | Validar escaneo QR | ✅ + Socket.IO |
-| GET | `/api/stats` | Estadísticas generales | ✅ Autenticado |
+| GET | `/api/stats` | Estadísticas generales | ✅ Conectado |
+| POST | `/api/auth/mfa/login` | Verificar código TOTP | ✅ Autenticado |
+| GET | `/api/logs` | Ver auditoría (Admin) | ✅ Auditoría |
 
 ### **Flujo de Datos**
 
@@ -110,6 +116,9 @@
 - [x] Recuperación de contraseña (3 pasos)
 - [x] Modo oscuro/claro persistente
 - [x] Responsive design
+- [x] MFA (2FA) - Configuración y Login
+- [x] Alertas de Seguridad por Email
+- [x] Auditoría en Tiempo Real
 
 ### ✅ Flujos End-to-End Validados
 - [x] **Registro** → Validación → Backend → BD → Socket → Dashboard
@@ -117,8 +126,10 @@
 - [x] **Acceso Manual** → Backend → BD → Socket → Dashboard en tiempo real
 - [x] **QR Personal** → Generación → Descarga PNG
 - [x] **QR Invitado** → JWT firmado → QR temporal con expiración
-- [x] **Escaneo QR** → Validación → Registro automático → Notificación
+- [x] **Escaneo QR** → Validación → Registro automático → Notificación (HTTPS)
 - [x] **Recuperación** → Código 6 dígitos → Email → Verificación → Reset
+- [x] **MFA Login** → Token Pendiente → Código App → Login Exitoso
+- [x] **Auditoría** → Acción Administrativa → Registro en logs_sistema
 - [x] **Exportación** → CSV/PDF con datos filtrados
 
 ---

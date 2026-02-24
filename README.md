@@ -227,8 +227,7 @@ GET    /api/stats                - Estadísticas generales
 ---
 
 ## 🗄️ Base de Datos
-
-### Tablas (8)
+### Tablas (9)
 | Tabla | Descripción |
 |-------|-------------|
 | `estados` | Diccionario: Activo, Inactivo, Mantenimiento, Bloqueado |
@@ -298,9 +297,10 @@ GET    /api/stats                - Estadísticas generales
 ### Servicios
 | Servicio | Imagen | Puerto | Función |
 |----------|--------|--------|---------|
-| `passly-web` | Nginx Alpine | 80 | Reverse Proxy + Gzip |
+| `passly-web` | Nginx Alpine | 80/443 | Reverse Proxy + SSL + Gzip |
 | `passly-api` | Node 18-slim | 3000 (interno) | API + Socket.IO |
 | `passly-db` | MySQL 8.0 | 3306 (interno) | Base de datos |
+| `passly-certbot` | Certbot | N/A | Renovación SSL automática |
 
 ### Comandos
 ```bash
@@ -337,12 +337,17 @@ JWT_SECRET=tu_clave_secreta_segura
 PORT=3000
 NODE_ENV=development
 
-# Email (Opcional - para recuperación de contraseña)
+# Email (Configuración SMTP Flexible)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
 EMAIL_USER=tu_correo@gmail.com
 EMAIL_PASS=contraseña_de_aplicacion_gmail
 
-# Frontend (Solo producción)
-FRONTEND_URL=http://localhost:3000
+# Producción
+DOMAIN_NAME=passly.com
+EMAIL_ADMIN=admin@passly.com
+FRONTEND_URL=https://passly.com
 ```
 
 ---

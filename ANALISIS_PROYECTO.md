@@ -251,11 +251,11 @@ Passly/
 
 - ✅ **Docker Compose** con 3 servicios (API, MySQL, Nginx)
 - ✅ **Dockerfile** optimizado (Node 18-slim, --omit=dev)
-- ✅ **Nginx** como reverse proxy con Gzip y WebSocket proxy
-- ✅ **Volúmenes persistentes** para datos MySQL
+- ✅ **Nginx** como reverse proxy con Gzip y terminación SSL nativa
+- ✅ **Volúmenes persistentes** para datos MySQL y certificados Certbot
 - ✅ **Restart always** en todos los servicios
 - ✅ **Inicialización automática** de BD con SQL dump
-- ✅ **Configuración HTTPS** preparada (comentada, lista para certificados SSL)
+- ✅ **Certificados SSL** automatizados con Let's Encrypt (Certbot)
 
 ---
 
@@ -337,17 +337,10 @@ Passly/
 
 ## 🚀 ROADMAP DE MEJORAS FUTURAS
 
-### **Fase 1: Mejoras Pendientes (Opcionales)**
-- [ ] Implementar gestión completa de Medios de Transporte en frontend
-- [ ] Implementar gestión multi-cliente (multi-tenant completo)
-- [ ] Mostrar fotos de perfil en toda la interfaz (tabla, dashboard, accesos)
-- [ ] Configurar credenciales de email reales en el entorno de producción (Nodemailer listo)
-
-### **Fase 2: Mejoras Avanzadas**
-- [ ] Certificados SSL (Let's Encrypt) para HTTPS
-- [ ] CI/CD con GitHub Actions
-- [ ] Aumentar test coverage al 80%+
+### **Fase 2: Expansión**
 - [ ] Integración con hardware (lectores QR/RFID)
+- [ ] Implementar gestión multi-cliente (multi-tenant completo)
+- [ ] Aumentar test coverage al 80%+
 
 ### **Fase 3: Producción**
 - [ ] Deploy a servidor de producción
