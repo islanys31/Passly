@@ -56,6 +56,7 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | **SQL Injection** | **Prepared Statements** | Todas las queries usan parámetros ? de mysql2 |
 | **Multi-tenancy** | **Aislamiento Estricto** | Cada usuario solo ve y edita datos de su propio `cliente_id` (vía JWT mapping) |
 | **Auditoría** | **Logs de Sistema** | Registro histórico inmutable de acciones administrativas (CRUD, Login, Recovery) |
+| **MFA (2FA)** | **Seguridad TOTP** | Autenticación de dos factores integrada con Google Authenticator y similares. |
 | **Contenedores** | **Red Aislada** | MySQL y API sin acceso público; solo Nginx expuesto (80/443) |
 
 ---
@@ -96,7 +97,7 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 *   **Aislamiento de Datos:** Arquitectura multi-inquilino donde cada cliente (`cliente_id`) tiene sus datos aislados.
 *   **Sistema de Logs:** Módulo de Auditoría que registra IP, Usuario y Acción.
 *   **Dashboard Administrativo:** Vista de Auditoría integrada.
-*   **MFA-Ready:** Base de datos preparada con campos para 2FA.
+*   **MFA (2FA):** Implementación completa de segundo factor de autenticación con TOTP y visualización de QR.
 
 ---
 
@@ -110,6 +111,7 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 | **Escalamiento de Privilegios** | ✅ Mitigado | JWT verificado por rol y propósito; verificado contra cliente_id. |
 | **Fuga de Información** | ✅ Protegido | Logs de auditoría permiten trazar cualquier acceso no autorizado. |
 | **Email con Dominio No Autorizado** | ✅ Rechazado | Solo @gmail y @hotmail permitidos. |
+| **MFA Bypass** | ✅ Bloqueado | El sistema exige el token TOTP si el 2FA está activo para la cuenta. |
 
 ---
 

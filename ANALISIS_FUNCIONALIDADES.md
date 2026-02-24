@@ -12,6 +12,7 @@
 - ✓ Login con JWT y roles (Admin, Usuario, Seguridad)
 - ✓ Verificación de rol como tercera credencial
 - ✓ Verificación de estado del usuario (activo/inactivo/bloqueado)
+- ✓ Autenticación de dos factores (MFA/2FA) con TOTP
 - ✓ Recuperación de contraseña por email con códigos de 6 dígitos
 - ✓ Validaciones hardened (email @gmail/@hotmail, contraseñas complejas 8-12 chars)
 - ✓ Rate limiting por endpoint (login, register, recovery)
@@ -69,6 +70,7 @@
 - ✓ Sanitización de inputs (eliminación de tags HTML)
 - ✓ Validaciones estrictas con express-validator
 - ✓ JWT con verificación de propósito y estado
+- ✓ MFA (2FA) integrado con TOTP
 - ✓ Bcrypt salt factor 10 para contraseñas
 - ✓ CORS configurado para producción
 - ✓ Prepared statements (SQL injection)
@@ -167,7 +169,7 @@
 2. Gestión Multi-tenant completa
 3. Certificados SSL (Let's Encrypt)
 4. CI/CD con GitHub Actions
-5. MFA para administradores
+5. Integración con hardware QR/RFID empresarial
 
 ---
 

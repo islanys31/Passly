@@ -15,6 +15,7 @@
 ### 🔐 Autenticación y Seguridad (Hardened)
 - ✅ Login seguro con JWT y verificación de rol
 - ✅ Registro con validaciones estrictas (frontend + backend espejo)
+- ✅ Autenticación de dos factores (MFA/2FA) vía TOTP
 - ✅ Recuperación de contraseña por email con códigos de 6 dígitos
 - ✅ Helmet.js (CSP, HSTS 1 año + preload, X-Frame-Options)
 - ✅ Rate Limiting por endpoint (login, register, recovery, API)
@@ -164,6 +165,7 @@ Passly/
 ```
 POST /api/auth/register          - Registrar usuario
 POST /api/auth/login             - Iniciar sesión (JWT)
+POST /api/auth/mfa/login         - Verificar código TOTP para login
 POST /api/auth/forgot-password   - Solicitar código de recuperación
 POST /api/auth/reset-password    - Restablecer contraseña
 ```
@@ -213,6 +215,7 @@ GET    /api/stats                - Estadísticas generales
 | **express-validator** | Email: @gmail/@hotmail, Password: 8-12 chars complejos, Nombre: solo letras y acentos |
 | **Sanitización** | Eliminación de tags HTML (`<>`) en todos los inputs |
 | **JWT Hardened** | Verificación de propósito + estado del usuario en BD |
+| **MFA (2FA)** | Segundo factor de autenticación TOTP integrado |
 | **Bcrypt** | Salt factor 10 para hash irreversible |
 | **CORS** | Origen restringido en producción |
 | **SQL** | Prepared statements (parámetros ?) |
