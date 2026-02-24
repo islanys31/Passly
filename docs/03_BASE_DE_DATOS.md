@@ -71,6 +71,8 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 | cliente_id | INT | FK → clientes(id), NULLABLE |
 | rol_id | INT | FK → roles(id), NOT NULL |
 | estado_id | INT | FK → estados(id), DEFAULT 1 |
+| mfa_enabled | BOOLEAN | DEFAULT FALSE |
+| mfa_secret | VARCHAR(255) | DEFAULT NULL |
 | foto_url | VARCHAR(255) | DEFAULT NULL |
 | created_at | TIMESTAMP | AUTO |
 | updated_at | TIMESTAMP | AUTO ON UPDATE |

@@ -3,7 +3,7 @@
 ## 1. LEVANTAMIENTO DE REQUISITOS
 
 ### 1.1 Requisitos Funcionales (RF)
-*   **RF-01: Gestión de Identidad**: El sistema debe permitir el registro, login y recuperación de contraseña de usuarios mediante códigos de verificación enviados por email.
+*   **RF-01: Gestión de Identidad**: El sistema debe permitir el registro, login, autenticación de dos factores (MFA/2FA) vía TOTP y recuperación de contraseña de usuarios mediante códigos de verificación enviados por email.
 *   **RF-02: Control de Dispositivos**: Los administradores deben poder registrar y asignar medios de transporte (vehículos, motocicletas, bicicletas) a usuarios.
 *   **RF-03: Registro de Accesos**: Captura en tiempo real de entradas y salidas con marca de tiempo, observaciones y notificación vía WebSockets.
 *   **RF-04: Dashboard de Estadísticas**: Visualización dinámica de usuarios activos, dispositivos, accesos del día y alertas de seguridad con gráficas de tráfico por horas.
@@ -14,7 +14,7 @@
 *   **RF-09: Gestión de Fotos**: Subida de fotos de perfil para identificación visual de usuarios (JPG/PNG, máximo 2MB).
 
 ### 1.2 Requisitos No Funcionales (RNF)
-*   **RNF-01: Seguridad (Hardening)**: Encriptación con Bcrypt (salt 10), protección de headers con Helmet.js (CSP, HSTS), Rate Limiting por endpoint, sanitización de inputs y validaciones estrictas con express-validator.
+*   **RNF-01: Seguridad (Hardening)**: Encriptación con Bcrypt (salt 10), protección de headers con Helmet.js (CSP, HSTS), Rate Limiting por endpoint, sanitización de inputs, autenticación de dos factores (MFA/TOTP) y validaciones estrictas con express-validator.
 *   **RNF-02: Disponibilidad**: Despliegue en contenedores Docker con restart automático y Nginx como reverse proxy.
 *   **RNF-03: Desempeño**: Respuestas optimizadas con Gzip (compression middleware + Nginx), caché de assets (7 días + ETags), latencia < 400ms.
 *   **RNF-04: Escalabilidad**: Arquitectura MVC orientada a servicios con pool de conexiones MySQL (10 conexiones), WebSockets para tiempo real.
