@@ -1,42 +1,52 @@
 /**
- * Passly - Panel de Control Principal (Versión Hardened & Modular)
+ * @file dashboard.js
+ * @description Controlador principal del Panel de Control (Dashboard) de Passly.
+ * Maneja la navegación entre módulos, carga de datos dinámica, WebSockets y gestión de sesión.
  */
 import { apiRequest, checkAuth, handleLogout } from './api.js';
 import { initTheme } from './theme.js';
 import { showToast, escapeHTML, validarEmail, validarPassword } from './utils.js';
 
-let userData = null;
-let currentData = [];
-let currentView = 'overview';
+let userData = null;      // Datos del usuario logueado
+let currentData = [];     // Datos del módulo actual para filtrado/búsqueda
+let currentView = 'overview'; // Nombre de la vista activa
 
-// Global exposure for event handlers
+// Exposición al objeto global 'window' para que los botones con onclick en HTML funcionen con módulos ES
 window.closeModal = closeModal;
 window.loadView = loadView;
 window.handleLogout = handleLogout;
 window.showModal = showModal;
-window.showUserDetail = (id) => showUserDetail(id); // Exposición global inmediata
-// Fallback para botones en HTML que no pueden esperar a que el módulo cargue
-if (!window.closeModal) window.closeModal = () => {
-    const o = document.getElementById('modalOverlay');
-    if (o) o.style.display = 'none';
-};
+window.showUserDetail = (id) => showUserDetail(id);
 
+/**
+ * CICLO DE VIDA INICIAL:
+ * Se ejecuta cuando el navegador termina de procesar el HTML.
+ */
 document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Verificar seguridad: ¿Hay un usuario autenticado?
     userData = checkAuth();
-    if (!userData) return;
+    if (!userData) return; // checkAuth se encarga de redirigir al login si no hay token
 
-    initTheme();
-    setupUI();
-    setupSidebarToggle(); // Nueva función
+    // 2. Inicializar componentes visuales
+    initTheme();          // Cargar modo oscuro/claro preferido
+    setupUI();            // Personalizar el Sidebar con el nombre y rol del usuario
+    setupSidebarToggle(); // Permitir colapsar el menú lateral
+
+    // 3. Cargar la vista por defecto (Resumen)
     await loadView('overview');
+
+    // 4. Conectar WebSockets para actualizaciones en tiempo real
     setupSocket();
 });
 
+/**
+ * Configura el comportamiento de colapso del menú lateral para optimizar espacio.
+ */
 function setupSidebarToggle() {
     const sidebar = document.querySelector('.sidebar');
     const toggleBtn = document.getElementById('toggleSidebar');
 
-    // Recuperar estado previo
+    // Recuperar el último estado guardado (collapsed o expanded)
     const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
     if (isCollapsed) sidebar.classList.add('collapsed');
 
@@ -46,20 +56,21 @@ function setupSidebarToggle() {
     };
 }
 
+/**
+ * Personaliza los elementos de la interfaz según el perfil del usuario.
+ */
 function setupUI() {
     if (!userData) return;
 
-    // Etiquetas de sección para el menú estático
     const navMenu = document.querySelector('.nav-menu');
     const items = navMenu.querySelectorAll('.nav-item');
 
-    // Insertar "OPERACIONES" al inicio
+    // Inyección dinámica de cabeceras en el menú según la importancia
     const opHeader = document.createElement('div');
     opHeader.className = 'nav-section';
     opHeader.textContent = 'Gestión Principal';
     navMenu.insertBefore(opHeader, items[0]);
 
-    // Insertar "SISTEMA" antes de Auditoría (que es el item 5 originalmente, ahora 6 con Operaciones)
     const sysHeader = document.createElement('div');
     sysHeader.className = 'nav-section';
     sysHeader.textContent = 'Seguridad y Logs';
@@ -68,6 +79,7 @@ function setupUI() {
     const nombre = userData.nombre || 'Usuario';
     const apellido = userData.apellido || '';
 
+    // Mostrar nombre completo y avatar (o inicial)
     document.getElementById('userName').textContent = `${nombre} ${apellido}`;
     const avatarEl = document.getElementById('userInitial');
     if (userData.foto_url) {
@@ -75,10 +87,13 @@ function setupUI() {
     } else {
         avatarEl.textContent = nombre.charAt(0).toUpperCase();
     }
+
+    // Mostrar etiqueta de Rol traducida
     document.getElementById('userRole').textContent =
         userData.rol_id === 1 ? 'Administrador' :
             (userData.rol_id === 3 ? 'Seguridad' : 'Usuario');
 
+    // Configurar los botones de navegación del Sidebar
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
     const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security'];
 
@@ -86,12 +101,14 @@ function setupUI() {
         if (!navItems[index]) return;
         item.onclick = (e) => {
             e.preventDefault();
-            loadView(views[index]);
+            loadView(views[index]); // Carga la sección correspondiente sin recargar la página
         };
     });
 
+    /**
+     * ACCESO RÁPIDO: Si el usuario es Admin o Seguridad, añadimos botón al Escáner QR.
+     */
     if (userData.rol_id === 1 || userData.rol_id === 3) {
-        // Sección divisor "Recuerda"
         const divider = document.createElement('div');
         divider.className = 'nav-section';
         divider.style.marginTop = '20px';
@@ -107,18 +124,20 @@ function setupUI() {
         navMenu.appendChild(scannerBtn);
     }
 
+    // Botón de Cerrar Sesión con confirmación
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
         if (confirm('¿Deseas cerrar sesión?')) handleLogout();
     };
-
-    // Vincular botón cancelar del modal de forma segura
-    const cancelBtn = document.querySelector('#modalOverlay .btn-table[onclick="closeModal()"]');
-    if (cancelBtn) {
-        cancelBtn.removeAttribute('onclick');
-        cancelBtn.addEventListener('click', closeModal);
-    }
 }
 
+/**
+ * NAVEGACIÓN SPA (Single Page Application):
+ * Carga el contenido de un módulo dinámicamente en el contenedor central.
+ * Evita la recarga de toda la página para una experiencia más fluida.
+ * 
+ * @param {string} view - Nombre del módulo a cargar
+ * @param {boolean} force - Si se debe recargar el contenido incluso si ya está cargado
+ */
 async function loadView(view, force = false) {
     if (currentView === view && view !== 'overview' && !force) return;
     currentView = view;
@@ -126,18 +145,19 @@ async function loadView(view, force = false) {
     const content = document.getElementById('view-content');
     const title = document.getElementById('view-title');
 
-    // Transición ultra-rápida
+    // Reset de estilos para animación de entrada
     content.style.opacity = '0';
     content.style.transform = 'translateY(5px)';
     content.style.transition = 'all 0.15s ease-out';
 
+    // Actualizar estado 'active' en el Sidebar
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
     navItems.forEach(i => i.classList.remove('active'));
 
     let activeItem = [...navItems].find(item => item.textContent.toLowerCase().includes(view.toLowerCase()));
     if (activeItem) activeItem.classList.add('active');
 
-    // Mostrar skeleton inmediatamente para feedback visual
+    // Mostrar cargador visual (Skeleton) mientras llegan los datos
     renderSkeleton(content, view);
 
     try {

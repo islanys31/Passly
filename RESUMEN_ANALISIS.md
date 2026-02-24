@@ -32,7 +32,8 @@
 ✅ **Sistema QR Premium** - Generación, validación, invitaciones temporales, escáner  
 ✅ **Recuperación de contraseña** por email con códigos de 6 dígitos  
 ✅ **Sistema de Notificaciones** - Bienvenida, Invitaciones y Alertas MFA  
-✅ **Seguridad MFA (2FA)** integrada con TOTP y generación de QR  
+✅ **Código Autodocumentado**: El proyecto ha sido comentado exhaustivamente en español, funcionando como una guía de estudio para comprender la implementación de seguridad, flujos asíncronos y WebSockets.  
+✅ **Seguridad Hardened** integrada con TOTP y generación de QR  
 ✅ **Integración funcional** frontend ↔ backend ↔ MySQL ↔ Socket.IO  
 ✅ **Diseño profesional** con glassmorphism y modo oscuro/claro  
 ✅ **Exportación** a CSV y PDF profesional  
@@ -61,7 +62,7 @@
 |---------|--------|----------|-----|
 | Arquitectura | ✅ 100% | 100% | 0% |
 | Seguridad | ✅ 100% | 95% | **+5%** |
-| Testing | ✅ Configurado | 80% coverage | Coverage pendiente |
+| Código Autodocumentado | ✅ Para Estudio | N/A | N/A |
 | Docs | ✅ 100% | 70% | **+30%** |
 | Performance | ✅ 95% | 90% | **+5%** |
 | Deployment | ✅ 100% | 90% | **+10%** |

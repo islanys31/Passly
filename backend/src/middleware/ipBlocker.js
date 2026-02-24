@@ -1,17 +1,23 @@
+/**
+ * @file ipBlocker.js
+ * @description Mecanismo de defensa contra ataques de Fuerza Bruta.
+ * Este middleware protege los endpoints de autenticación bloqueando direcciones IP
+ * que excedan un número máximo de intentos fallidos en un periodo de tiempo.
+ */
+
 const { pool: db } = require('../config/db');
 
 /**
- * Middleware para bloquear IPs tras varios intentos fallidos de login.
+ * Middleware que verifica si la IP del solicitante está bajo bloqueo temporal.
+ * Se aplica habitualmente en las rutas de Login y Recuperación de Contraseña.
  */
 const ipBlocker = async (req, res, next) => {
-    const ip = req.ip;
-    const blockTimeMinutes = 15;
-    const maxAttempts = 5;
+    const ip = req.ip; // Identificador del cliente
+    const blockTimeMinutes = 15; // Tiempo de castigo: 15 minutos
+    const maxAttempts = 5;       // Intentos permitidos antes del bloqueo
 
     try {
-        // Limpiar intentos antiguos (opcional, pero ayuda a mantener la tabla limpia)
-        // await db.query('DELETE FROM login_attempts WHERE last_attempt < NOW() - INTERVAL 24 HOUR');
-
+        // Consultar el historial de intentos para esta dirección IP
         const [rows] = await db.query(
             'SELECT attempts, last_attempt FROM login_attempts WHERE ip_address = ?',
             [ip]
@@ -20,25 +26,34 @@ const ipBlocker = async (req, res, next) => {
         if (rows.length > 0) {
             const { attempts, last_attempt } = rows[0];
             const now = new Date();
-            const timeDiff = (now - new Date(last_attempt)) / 1000 / 60; // diferencia en minutos
+            const timeDiff = (now - new Date(last_attempt)) / 1000 / 60; // Diferencia en minutos
 
+            /**
+             * REGLA DE BLOQUEO: 
+             * Si ha superado el máximo de intentos y el último intento fue hace 
+             * menos de 'blockTimeMinutes' minutos, rechazamos la petición.
+             */
             if (attempts >= maxAttempts && timeDiff < blockTimeMinutes) {
                 const waitTime = Math.ceil(blockTimeMinutes - timeDiff);
                 return res.status(429).json({
-                    error: `Demasiados intentos fallidos. Su IP está bloqueada temporalmente. Intente de nuevo en ${waitTime} minutos.`
+                    error: `⚠️ Seguridad: Demasiados intentos fallidos. Su IP está bloqueada temporalmente. Intente de nuevo en ${waitTime} minutos.`
                 });
             }
         }
 
+        // Si no está bloqueado, permitimos que pase al siguiente middleware o controlador
         next();
     } catch (error) {
-        console.error('IP Blocker Error:', error);
-        next(); // Continuar si hay error en el bloqueo para no impedir el login legal
+        console.error('❌ Error en el sistema de IP Blocker:', error);
+        next(); // En caso de fallo crítico del sistema de seguridad, dejamos pasar para no romper el servicio
     }
 };
 
 /**
- * Registra un intento fallido para una IP.
+ * Registra o incrementa un intento fallido para una IP específica.
+ * Se llama desde el controlador cuando las credenciales no coinciden.
+ * 
+ * @param {string} ip - IP a penalizar
  */
 const trackFailedAttempt = async (ip) => {
     try {
@@ -48,18 +63,22 @@ const trackFailedAttempt = async (ip) => {
             ON DUPLICATE KEY UPDATE attempts = attempts + 1, last_attempt = NOW()
         `, [ip]);
     } catch (error) {
-        console.error('Track Failed Attempt Error:', error);
+        console.error('Error al rastrear intento fallido:', error);
     }
 };
 
 /**
- * Limpia los intentos al tener un login exitoso.
+ * Elimina el registro de penalización para una IP.
+ * Se llama cuando un usuario logra autenticarse exitosamente, 
+ * reseteando su 'historial criminal' desde esa IP.
+ * 
+ * @param {string} ip - IP a perdonar
  */
 const resetAttempts = async (ip) => {
     try {
         await db.query('DELETE FROM login_attempts WHERE ip_address = ?', [ip]);
     } catch (error) {
-        console.error('Reset Attempts Error:', error);
+        console.error('Error al resetear intentos de IP:', error);
     }
 };
 

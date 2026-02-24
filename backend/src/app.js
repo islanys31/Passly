@@ -1,6 +1,16 @@
+/**
+ * @file app.js
+ * @description Configuración central de la aplicación Express.
+ * Aquí se definen los middlewares de seguridad, rutas, compresión y manejo de errores.
+ * Funciona como el 'cerebro' que orquesta cómo se procesan las peticiones.
+ */
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const compression = require('compression');
+
+// Importación de rutas de la API
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const deviceRoutes = require('./routes/device.routes');
@@ -9,28 +19,40 @@ const accessRoutes = require('./routes/access.routes');
 const statsRoutes = require('./routes/stats.routes');
 const logRoutes = require('./routes/log.routes');
 
-// Importar middlewares de seguridad
+// Importar middlewares de seguridad reforzada (Hardening)
 const {
-    helmetConfig,
-    apiLimiter,
-    sanitizeInput
+    helmetConfig, // Protege contra vulnerabilidades web comunes mediante cabeceras HTTP
+    apiLimiter,    // Controla el número de peticiones para evitar ataques de denegación de servicio o fuerza bruta
+    sanitizeInput  // Limpia los datos de entrada para prevenir ataques XSS (Inyección de Scripts)
 } = require('./middlewares/security.middleware');
 
-const compression = require('compression');
+// Documentación de API con Swagger
 const { swaggerUi, swaggerDocs } = require('./config/swagger');
 
 const app = express();
 
-// Optimización - Compresión
+/**
+ * OPTIMIZACIÓN: Compresión Gzip.
+ * Reduce el tamaño de las respuestas HTTP, acelerando la carga para el usuario.
+ */
 app.use(compression());
 
-// Seguridad - Headers de seguridad
+/**
+ * SEGURIDAD: Helmet.
+ * Configura múltiples cabeceras HTTP de seguridad para blindar la aplicación.
+ */
 app.use(helmetConfig);
 
-// Documentación de API
+/**
+ * DOCUMENTACIÓN: Swagger UI.
+ * Expone una interfaz interactiva en /api-docs para probar los endpoints.
+ */
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// CORS configurado
+/**
+ * CORS (Cross-Origin Resource Sharing).
+ * Define quién puede consumir esta API. En producción se restringe al dominio del frontend.
+ */
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
         ? process.env.FRONTEND_URL
@@ -38,73 +60,87 @@ app.use(cors({
     credentials: true
 }));
 
-// Body parser
+/**
+ * PARSERS: Lectura de datos.
+ * Permite que el servidor entienda datos en formato JSON y formularios URL-encoded.
+ */
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Sanitización de inputs (prevenir XSS)
+/**
+ * SEGURIDAD: Sanitización de inputs.
+ * Middleware personalizado que recorre req.body, req.query y req.params eliminando caracteres peligrosos.
+ */
 app.use(sanitizeInput);
 
-// Rate limiting global para API
+/**
+ * SEGURIDAD: Rate Limiting.
+ * Limita el tráfico global a la API para evitar abusos.
+ */
 app.use('/api', apiLimiter);
 
 // ============================================
-// SERVIR FRONTEND
+// SERVIR ARCHIVOS ESTÁTICOS (FRONTEND)
 // ============================================
 
-// Servir archivos estáticos del frontend con caché optimizada
+/**
+ * Sirve los archivos de la carpeta 'frontend'.
+ * Incluye una política de caché de 7 días para mejorar el rendimiento.
+ */
 app.use(express.static(path.join(__dirname, '../../frontend'), {
-    maxAge: '7d', // Cache de 7 días para assets estáticos
+    maxAge: '7d',
     etag: true
 }));
+
+/**
+ * Sirve las fotos de perfil subidas por los usuarios.
+ */
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ============================================
-// RUTAS API
+// REGISTRO DE RUTAS DE LA API
 // ============================================
 
-app.use('/api/auth', authRoutes);
-app.use('/api/usuarios', userRoutes);
-app.use('/api/dispositivos', deviceRoutes);
-app.use('/api/transportes', transportRoutes);
-app.use('/api/accesos', accessRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/logs', logRoutes);
+app.use('/api/auth', authRoutes);         // Registro, Login, MFA, Password Recovery
+app.use('/api/usuarios', userRoutes);     // CRUD de Usuarios y fotos
+app.use('/api/dispositivos', deviceRoutes); // CRUD de Vehículos y dispositivos
+app.use('/api/transportes', transportRoutes); // Listado de medios (Coche, Moto, etc)
+app.use('/api/accesos', accessRoutes);     // Registro de entradas/salidas y QR
+app.use('/api/stats', statsRoutes);       // Datos para las gráficas del Dashboard
+app.use('/api/logs', logRoutes);           // Historial de auditoría para administradores
 
 // ============================================
-// RUTAS FRONTEND
+// MANEJO DE RUTAS DEL FRONTEND
 // ============================================
 
-// Ruta raíz - Servir el frontend
+/**
+ * Ruta raíz: Envía el archivo index.html (Página de Login/Registro).
+ */
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/index.html'));
 });
 
-// Ruta de prueba de API
-app.get('/api', (req, res) => {
-    res.json({
-        message: 'Welcome to Passly API',
-        status: 'running',
-        version: '1.0.0',
-        security: 'enabled'
-    });
-});
-
 // ============================================
-// MANEJO DE ERRORES GLOBAL
+// SISTEMA DE CONTROL DE ERRORES (GLOBAL)
 // ============================================
 
-// 404 - Ruta no encontrada
+/**
+ * Middleware para capturar rutas que no existen (404).
+ */
 app.use((req, res) => {
     res.status(404).json({
         success: false,
-        message: 'Ruta no encontrada'
+        message: 'La ruta solicitada no existe en el servidor Passly'
     });
 });
 
-// Error handler global
+/**
+ * Error Handler Centralizado.
+ * Captura cualquier error ocurrido en los controladores y envía una respuesta controlada.
+ * En desarrollo muestra el 'stack trace', en producción solo el mensaje de error.
+ */
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    console.error('💣 Error detectado:', err.message);
     res.status(err.status || 500).json({
         success: false,
         message: err.message || 'Error interno del servidor',
