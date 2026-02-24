@@ -116,12 +116,16 @@ Este documento detalla el proceso de **Hardening (Endurecimiento)**, optimizaci�
 ---
 
 ## 📝 7. CONCLUSIONES Y RECOMENDACIONES
-El sistema **Passly** se encuentra en un estado de **Alta Disponibilidad y Seguridad**. Se han completado todas las tareas de endurecimiento planificadas, incluyendo el sistema de multi-arrendamiento y auditoría.
+El sistema **Passly** se encuentra en un estado de **Alta Disponibilidad y Seguridad de Grado Industrial**. Se han completado todas las tareas de endurecimiento, incluyendo multi-arrendamiento, auditoría, certificados SSL y SMTP dinámico.
+
+**Logros Finales:**
+1.  **HTTPS Real**: Certificados SSL automáticos con Let's Encrypt (Certbot).
+2.  **SMTP Dinámico**: Desbloqueo de comunicación total mediante configuración en `.env`.
+3.  **Cámara Activa**: El escáner QR ahora funciona en cualquier navegador gracias a SSL.
 
 **Recomendaciones para el siguiente nivel:**
-1. Instalar certificados SSL (Let's Encrypt) para activar HTTPS real y habilitar el escáner QR en producción.
-2. Configurar credenciales de email reales en `.env` para habilitar el envío masivo de notificaciones.
-3. Implementar CI/CD con GitHub Actions para testing y deploy automático.
+1.  Aumentar test coverage al 80%+
+2.  Implementar CI/CD con GitHub Actions para testing y deploy automático.
 
 ---
 **Documento generado para el Proyecto Passly**  

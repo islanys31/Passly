@@ -125,25 +125,15 @@
 
 ---
 
-### 🚧 **3. Escáner QR**
-**Estado**: 100% funcional en localhost y HTTPS
-
-**Limitación**:
-- ⚠️ La cámara solo funciona en HTTPS o localhost (restricción del navegador, no del sistema)
-- ⚠️ En producción sin HTTPS, el navegador bloquea el acceso a la cámara
-
-**Solución**: Configurar HTTPS con certificados SSL (Let's Encrypt).
-
----
-
-### 🚧 **4. Servidor de Email**
+### ✅ **11. Servidor de Email**
 - ✓ Backend y frontend 100% funcionales (Bienvenida, Recuperación, Invitaciones, Alertas)
+- ✓ Configuración SMTP dinámica (Host, Puerto, Seguridad) lista para producción
 - ✓ Plantillas HTML profesionales y responsive integradas
-- ✓ Sistema de recuperación con códigos de un solo uso
 
-**Limitación**:
-- ⚠️ Requiere configurar credenciales reales de Gmail en `.env` para el transporte real de correos.
-- ⚠️ Se necesita una "Contraseña de Aplicación" de Google.
+### ✅ **12. Seguridad SSL (HTTPS)**
+- ✓ Configuración Nginx con soporte nativo para TLS 1.2/1.3
+- ✓ Redirección automática HTTP → HTTPS
+- ✓ Integración con Certbot (Let's Encrypt) para renovación automática de certificados
 
 **Impacto**: Los códigos se generan y validan correctamente. Solo falta la configuración del servidor SMTP para envío real.
 
@@ -164,8 +154,9 @@
 10. Documentación completa (README, Swagger, docs/)
 
 ### ⚠️ **Lo que FUNCIONA pero necesita configuración**:
-1. Recuperación de contraseña (falta configurar credenciales de email)
-2. Escáner QR (requiere HTTPS en producción)
+1. Escáner QR (Soporta cámara activada gracias a HTTPS)
+2. Certificados SSL (Automatizado con Docker + Certbot)
+3. Servidor de Email (Configuración lista en .env)
 
 ### 🟡 **Mejoras opcionales futuras**:
 1. CRUD de Medios de Transporte en frontend

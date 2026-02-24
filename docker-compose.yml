@@ -38,11 +38,26 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       - api
 
+  certbot:
+    image: certbot/certbot
+    container_name: passly-certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - /var/www/certbot:/var/www/certbot:rw
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${EMAIL_ADMIN:-admin@passly.com} --agree-tos --no-eff-email -d ${DOMAIN_NAME:-localhost}
+
 volumes:
   mysql_data:
+  certbot-etc:
+  certbot-var:
