@@ -450,10 +450,11 @@ async function updateMFAStatus(container) {
 
 // REST OF THE MINIMAL FUNCTIONS TO KEEP DASHBOARD WORKING
 async function renderDispositivos(container) {
-    const { ok, data } = await apiRequest('/dispositivos');
+    // Ahora usa su propio endpoint /equipos (tabla separada de vehículos)
+    const { ok, data } = await apiRequest('/equipos');
     if (!ok) return;
-    // Filtrar: Solo dispositivos sin medio de transporte (tecnología)
-    const techData = (data.data || data).filter(d => !d.medio_transporte_id);
+    const techData = data.data || data;
+    currentData = techData;
 
     renderModuleHeader(container, { buttonId: 'btnAddDevice', buttonText: '+ Dispositivo', buttonColor: 'var(--accent-blue)', searchPlaceholder: 'Buscar equipo...', module: 'dispositivos' });
     const div = document.createElement('div');

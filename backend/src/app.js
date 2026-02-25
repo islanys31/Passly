@@ -14,6 +14,7 @@ const compression = require('compression');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const deviceRoutes = require('./routes/device.routes');
+const equipoRoutes = require('./routes/equipo.routes'); // Equipos tecnológicos (tabla propia)
 const transportRoutes = require('./routes/transport.routes');
 const accessRoutes = require('./routes/access.routes');
 const statsRoutes = require('./routes/stats.routes');
@@ -103,7 +104,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth', authRoutes);         // Registro, Login, MFA, Password Recovery
 app.use('/api/usuarios', userRoutes);     // CRUD de Usuarios y fotos
-app.use('/api/dispositivos', deviceRoutes); // CRUD de Vehículos y dispositivos
+app.use('/api/dispositivos', deviceRoutes); // CRUD de Vehículos
+app.use('/api/equipos', equipoRoutes);    // CRUD de Equipos Tecnológicos (Tabla separada)
 app.use('/api/transportes', transportRoutes); // Listado de medios (Coche, Moto, etc)
 app.use('/api/accesos', accessRoutes);     // Registro de entradas/salidas y QR
 app.use('/api/stats', statsRoutes);       // Datos para las gráficas del Dashboard
