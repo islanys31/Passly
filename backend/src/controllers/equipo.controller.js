@@ -7,6 +7,7 @@
 
 const { pool: db } = require('../config/db');
 const { logAction } = require('../utils/logger');
+const { getPagination, paginatedResponse } = require('../utils/pagination');
 
 /**
  * Obtiene todos los equipos tecnológicos de la organización del usuario autenticado.
@@ -15,14 +16,30 @@ const { logAction } = require('../utils/logger');
 exports.getAllEquipos = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
+        const { page, limit, offset } = getPagination(req.query, 20, 100);
+
+        // Búsqueda server-side por nombre del equipo o serial
+        const search = req.query.search ? `%${req.query.search}%` : null;
+        const searchFilter = search ? 'AND (e.nombre LIKE ? OR e.serial LIKE ?)' : '';
+        const searchParams = search ? [search, search] : [];
+
+        const [[{ total }]] = await db.query(`
+            SELECT COUNT(*) AS total
+            FROM equipos e
+            INNER JOIN usuarios u ON e.usuario_id = u.id
+            WHERE u.cliente_id = ? ${searchFilter}
+        `, [tenantId, ...searchParams]);
+
         const [rows] = await db.query(`
             SELECT e.*, u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, u.foto_url AS usuario_foto
             FROM equipos e
             INNER JOIN usuarios u ON e.usuario_id = u.id
-            WHERE u.cliente_id = ?
+            WHERE u.cliente_id = ? ${searchFilter}
             ORDER BY e.created_at DESC
-        `, [tenantId]);
-        res.json({ ok: true, data: rows });
+            LIMIT ? OFFSET ?
+        `, [tenantId, ...searchParams, limit, offset]);
+
+        res.json(paginatedResponse(rows, total, page, limit));
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }

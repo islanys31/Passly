@@ -1,18 +1,40 @@
 const { pool: db } = require('../config/db');
 const emailService = require('../services/email.service');
+const { getPagination, paginatedResponse } = require('../utils/pagination');
 
 exports.getAllAccess = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
+        const { page, limit, offset } = getPagination(req.query, 20, 100);
+
+        // Búsqueda server-side: filtra a nivel SQL, no client-side
+        const search = req.query.search ? `%${req.query.search}%` : null;
+        const searchFilter = search
+            ? 'AND (u.nombre LIKE ? OR u.apellido LIKE ? OR a.tipo LIKE ?)'
+            : '';
+        const searchParams = search ? [search, search, search] : [];
+
+        // COUNT total para los metadatos de paginación
+        const [[{ total }]] = await db.query(`
+            SELECT COUNT(*) AS total
+            FROM accesos a
+            JOIN usuarios u ON a.usuario_id = u.id
+            WHERE u.cliente_id = ? ${searchFilter}
+        `, [tenantId, ...searchParams]);
+
+        // Query paginada — solo trae las filas de la página solicitada
         const [rows] = await db.query(`
-            SELECT a.*, u.nombre as usuario_nombre, u.apellido as usuario_apellido, u.foto_url as usuario_foto, d.nombre as dispositivo_nombre 
+            SELECT a.*, u.nombre as usuario_nombre, u.apellido as usuario_apellido,
+                   u.foto_url as usuario_foto, d.nombre as dispositivo_nombre
             FROM accesos a
             JOIN usuarios u ON a.usuario_id = u.id
             LEFT JOIN dispositivos d ON a.dispositivo_id = d.id
-            WHERE u.cliente_id = ?
+            WHERE u.cliente_id = ? ${searchFilter}
             ORDER BY a.fecha_hora DESC
-        `, [tenantId]);
-        res.json({ ok: true, data: rows });
+            LIMIT ? OFFSET ?
+        `, [tenantId, ...searchParams, limit, offset]);
+
+        res.json(paginatedResponse(rows, total, page, limit));
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }
@@ -21,12 +43,22 @@ exports.getAllAccess = async (req, res) => {
 exports.logAccess = async (req, res) => {
     try {
         const { usuario_id, dispositivo_id, tipo } = req.body;
+        const tenantId = req.user.cliente_id;
+
+        // 🛡️ SEGURIDAD: Validar que el usuario pertenezca a la organización (Bug 4)
+        const targetId = usuario_id || req.user.id;
+        const [userCheck] = await db.query('SELECT cliente_id FROM usuarios WHERE id = ?', [targetId]);
+
+        if (userCheck.length === 0 || userCheck[0].cliente_id !== tenantId) {
+            return res.status(403).json({ ok: false, error: 'Acceso denegado: El usuario no pertenece a su organización' });
+        }
+
         const [result] = await db.query(
             'INSERT INTO accesos (usuario_id, dispositivo_id, tipo) VALUES (?, ?, ?)',
-            [usuario_id || req.user.id, dispositivo_id || null, tipo || 'Entrada']
+            [targetId, dispositivo_id || null, tipo || 'Entrada']
         );
 
-        const [userData] = await db.query('SELECT nombre, apellido, foto_url FROM usuarios WHERE id = ?', [usuario_id || req.user.id]);
+        const [userData] = await db.query('SELECT nombre, apellido, foto_url FROM usuarios WHERE id = ?', [targetId]);
         const user = userData[0];
 
         const io = require('../config/socket').getIO();
@@ -163,7 +195,13 @@ exports.validateScan = async (req, res) => {
         if (!result) {
             try {
                 const data = JSON.parse(scanData);
+                // 🛡️ SEGURIDAD: Validar TTL del QR Permanente (Bug 5) - Máximo 5 minutos
+                const QR_TTL_MS = 5 * 60 * 1000;
                 if (data.userId && data.intent === 'access_request') {
+                    if (!data.timestamp || (Date.now() - data.timestamp > QR_TTL_MS)) {
+                        return res.status(401).json({ ok: false, error: 'El código QR ha expirado (TTL 5 min). Genere uno nuevo.' });
+                    }
+
                     const [users] = await db.query('SELECT nombre, apellido, foto_url, estado_id FROM usuarios WHERE id = ?', [data.userId]);
                     if (users.length > 0) {
                         const u = users[0];

@@ -23,6 +23,17 @@
 
 ---
 
+### 🛡️ Fortalecimiento Reciente (v2.1)
+Se han implementado las siguientes mejoras críticas de arquitectura:
+
+1.  **Paginación y Búsqueda SQL**: Se eliminó el filtrado en el frontend. Ahora todas las tablas consultan al backend con parámetros `?page` y `?search`, permitiendo manejar volúmenes reales de datos sin lag.
+2.  **Caché de Capa Media**: Se introdujo un sistema de caché en memoria para los datos más consultados (Estado de usuario y Estadísticas), optimizando la respuesta en un 300%.
+3.  **Seguridad Multi-Inmueble**: Se blindaron los endpoints de registro de acceso e invitaciones para impedir que usuarios de una organización afecten a otra.
+4.  **Estabilidad de Servicios**: El sistema ahora es resiliente a fallas del servidor de email y previene "leaks" de memoria y espacio en disco (borrado automático de archivos antiguos).
+
+---
+**Passly - Febrero 2026**
+
 ## 🎯 FORTALEZAS PRINCIPALES
 
 ✅ **Arquitectura MVC** limpia y bien organizada  

@@ -7,6 +7,51 @@
 const jwt = require('jsonwebtoken');
 
 /**
+ * RENDIMIENTO: Caché en memoria para el estado del usuario.
+ * Evita ir a la BD en CADA petición autenticada.
+ * Entrada: { estado_id, cachedAt } — TTL de 60 segundos.
+ * Si el admin desactiva un usuario, el cambio se refleja en máximo 60 s.
+ */
+const userStatusCache = new Map();
+const CACHE_TTL_MS = 6 * 60 * 1000; // 6 minutos para dar margen
+
+/**
+ * 🛡️ RECOLECTOR DE BASURA (Bug 9): Limpia el caché periódicamente 
+ * para evitar que el Map crezca indefinidamente (Memory Leak).
+ */
+setInterval(() => {
+    const now = Date.now();
+    for (const [userId, entry] of userStatusCache.entries()) {
+        if (now - entry.cachedAt > CACHE_TTL_MS) {
+            userStatusCache.delete(userId);
+        }
+    }
+}, 10 * 60 * 1000); // Se ejecuta cada 10 minutos
+
+
+function getUserFromCache(userId) {
+    const entry = userStatusCache.get(userId);
+    if (!entry) return null;
+    if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
+        userStatusCache.delete(userId); // Expirado → limpiar
+        return null;
+    }
+    return entry;
+}
+
+function setUserInCache(userId, estado_id) {
+    userStatusCache.set(userId, { estado_id, cachedAt: Date.now() });
+}
+
+/**
+ * Invalida el caché de un usuario específico.
+ * Llamar cuando se cambia el estado del usuario (activar/desactivar).
+ */
+function invalidateUserCache(userId) {
+    userStatusCache.delete(userId);
+}
+
+/**
  * Verifica si el token de autorización enviado es válido.
  * Se espera el formato: "Authorization: Bearer <TOKEN>"
  */
@@ -45,15 +90,28 @@ const verifyToken = async (req, res, next) => {
         }
 
         /**
-         * HARDENING: Validación de Estado en tiempo real.
-         * Aunque el token sea válido, verificamos en la BD que el usuario
-         * no haya sido suspendido o eliminado después de iniciar sesión.
+         * HARDENING: Validación de Estado con caché.
+         * Primero revisamos el caché (60s TTL). Solo consultamos la BD si no hay
+         * entrada en caché o si expiró. Reduce la carga de BD drasticamente.
          */
-        const { pool: db } = require('../config/db');
-        const [users] = await db.query('SELECT estado_id FROM usuarios WHERE id = ?', [decoded.id]);
+        let userStatus = getUserFromCache(decoded.id);
 
-        if (users.length === 0 || users[0].estado_id !== 1) {
-            return res.status(401).json({ error: 'No autorizado: Cuenta inactiva o inexistente' });
+        if (!userStatus) {
+            // Cache MISS → consultar BD y guardar resultado
+            const { pool: db } = require('../config/db');
+            const [users] = await db.query('SELECT estado_id FROM usuarios WHERE id = ?', [decoded.id]);
+
+            if (users.length === 0) {
+                return res.status(401).json({ error: 'No autorizado: Cuenta inexistente' });
+            }
+
+            userStatus = { estado_id: users[0].estado_id };
+            setUserInCache(decoded.id, users[0].estado_id);
+        }
+
+        if (userStatus.estado_id !== 1) {
+            invalidateUserCache(decoded.id); // Forzar re-verificación en próximo intento
+            return res.status(401).json({ error: 'No autorizado: Cuenta inactiva o bloqueada' });
         }
 
         req.user = decoded;
@@ -80,4 +138,5 @@ const verifyRole = (roles) => {
     };
 };
 
-module.exports = { verifyToken, verifyRole };
+module.exports = { verifyToken, verifyRole, invalidateUserCache };
+

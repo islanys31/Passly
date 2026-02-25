@@ -13,8 +13,11 @@ const { pool: db } = require('../config/db');
  */
 const ipBlocker = async (req, res, next) => {
     const ip = req.ip; // Identificador del cliente
-    const blockTimeMinutes = 15; // Tiempo de castigo: 15 minutos
-    const maxAttempts = 5;       // Intentos permitidos antes del bloqueo
+
+    // 🛡️ COHERENCIA: max 5 intentos / 15 minutos (Bug 1)
+    const blockTimeMinutes = 15;
+    const maxAttempts = 5;
+
 
     try {
         // Consultar el historial de intentos para esta dirección IP

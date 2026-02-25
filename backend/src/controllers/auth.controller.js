@@ -195,7 +195,8 @@ exports.forgotPassword = async (req, res) => {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: 'El correo es obligatorio' });
 
-        const [users] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+        // SEGURIDAD: Solo traemos los campos necesarios, NO SELECT *
+        const [users] = await db.query('SELECT id, nombre, estado_id FROM usuarios WHERE email = ?', [email]);
         if (users.length === 0) {
             // SEGURIDAD: No revelamos que el correo no existe para evitar enumeración de usuarios
             return res.json({ success: true, message: 'Si el correo está registrado, recibirás un código de recuperación.' });
@@ -355,7 +356,11 @@ exports.mfaLogin = async (req, res) => {
             return res.status(401).json({ error: 'Token de MFA inválido' });
         }
 
-        const [users] = await db.query('SELECT * FROM usuarios WHERE id = ?', [decoded.id]);
+        // Solo traemos los campos necesarios para generar el JWT y verificar el TOTP
+        const [users] = await db.query(
+            'SELECT id, email, nombre, apellido, rol_id, cliente_id, mfa_secret, foto_url FROM usuarios WHERE id = ?',
+            [decoded.id]
+        );
         const user = users[0];
 
         // 2. Verificar el código de 6 dígitos de la App contra el secreto del usuario

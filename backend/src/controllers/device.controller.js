@@ -1,21 +1,38 @@
 const { pool: db } = require('../config/db');
 const { logAction } = require('../utils/logger');
+const { getPagination, paginatedResponse } = require('../utils/pagination');
 
 exports.getAllDevices = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
+        const { page, limit, offset } = getPagination(req.query, 20, 100);
+
+        // ?soloVehiculos=true → solo dispositivos con medio de transporte (vehículos)
+        const soloVehiculos = req.query.soloVehiculos === 'true';
+        const vehiculoFilter = soloVehiculos ? 'AND d.medio_transporte_id IS NOT NULL' : '';
+
+        const [[{ total }]] = await db.query(`
+            SELECT COUNT(*) AS total
+            FROM dispositivos d
+            INNER JOIN usuarios u ON d.usuario_id = u.id
+            WHERE u.cliente_id = ? ${vehiculoFilter}
+        `, [tenantId]);
+
         const [rows] = await db.query(`
             SELECT d.*, u.nombre as usuario_nombre, u.foto_url as usuario_foto, m.nombre as medio_transporte
             FROM dispositivos d
             INNER JOIN usuarios u ON d.usuario_id = u.id
             LEFT JOIN medios_transporte m ON d.medio_transporte_id = m.id
-            WHERE u.cliente_id = ?
-        `, [tenantId]);
-        res.json({ ok: true, data: rows });
+            WHERE u.cliente_id = ? ${vehiculoFilter}
+            LIMIT ? OFFSET ?
+        `, [tenantId, limit, offset]);
+
+        res.json(paginatedResponse(rows, total, page, limit));
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }
 };
+
 
 exports.createDevice = async (req, res) => {
     try {

@@ -1,13 +1,37 @@
 const { pool: db } = require('../config/db');
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 const { logAction } = require('../utils/logger');
 const emailService = require('../services/email.service');
+const { getPagination, paginatedResponse } = require('../utils/pagination');
+const { invalidateUserCache } = require('../middlewares/authMiddleware');
+
 
 exports.getAllUsers = async (req, res) => {
     try {
-        // Multi-tenant: Filtrar por cliente_id del administrador
-        const [rows] = await db.query('SELECT id, nombre, apellido, email, rol_id, estado_id, foto_url, created_at FROM usuarios WHERE cliente_id = ?', [req.user.cliente_id]);
-        res.json({ ok: true, data: rows });
+        const tenantId = req.user.cliente_id;
+        const { page, limit, offset } = getPagination(req.query, 20, 100);
+
+        // Búsqueda server-side por nombre, apellido o email
+        const search = req.query.search ? `%${req.query.search}%` : null;
+        const searchFilter = search
+            ? 'AND (nombre LIKE ? OR apellido LIKE ? OR email LIKE ?)'
+            : '';
+        const searchParams = search ? [search, search, search] : [];
+
+        const [[{ total }]] = await db.query(
+            `SELECT COUNT(*) AS total FROM usuarios WHERE cliente_id = ? ${searchFilter}`,
+            [tenantId, ...searchParams]
+        );
+
+        const [rows] = await db.query(
+            `SELECT id, nombre, apellido, email, rol_id, estado_id, foto_url, created_at
+             FROM usuarios WHERE cliente_id = ? ${searchFilter} LIMIT ? OFFSET ?`,
+            [tenantId, ...searchParams, limit, offset]
+        );
+
+        res.json(paginatedResponse(rows, total, page, limit));
     } catch (error) {
         res.status(500).json({ ok: false, error: 'Error al obtener usuarios' });
     }
@@ -28,6 +52,17 @@ exports.createUser = async (req, res) => {
         const { nombre, apellido, email, password, rol_id } = req.body;
         const tenantId = req.user.cliente_id;
 
+        // 🛡️ VALIDACIÓN: Email y Password requeridos (Bug 3)
+        if (!email || !password) {
+            return res.status(400).json({ ok: false, error: 'Email y contraseña son obligatorios' });
+        }
+
+        // 🛡️ SEGURIDAD: Verificar duplicados (Bug 2)
+        const [existing] = await db.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({ ok: false, error: 'El correo electrónico ya está registrado en el sistema' });
+        }
+
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -36,6 +71,7 @@ exports.createUser = async (req, res) => {
             'INSERT INTO usuarios (nombre, apellido, email, password, rol_id, cliente_id, estado_id) VALUES (?, ?, ?, ?, ?, ?, 1)',
             [nombre, apellido, email, hashedPassword, rol_id, tenantId]
         );
+
 
         // Audit Log
         await logAction(req.user.id, 'Crear Usuario', 'Usuarios', { email, rol_id }, req.ip);
@@ -71,6 +107,9 @@ exports.updateUser = async (req, res) => {
         // Audit Log
         await logAction(req.user.id, 'Actualizar Usuario', 'Usuarios', { target_id: id, email }, req.ip);
 
+        // Si cambió el estado del usuario, invalidar su caché de autenticación
+        invalidateUserCache(parseInt(id));
+
         require('../config/socket').getIO().emit('stats_update');
         res.json({ ok: true });
     } catch (error) {
@@ -94,6 +133,9 @@ exports.deleteUser = async (req, res) => {
         // Audit Log
         await logAction(req.user.id, 'Eliminar Usuario', 'Usuarios', { target_id: id }, req.ip);
 
+        // Forzar cierre de sesión inmediato del usuario desactivado
+        invalidateUserCache(parseInt(id));
+
         require('../config/socket').getIO().emit('stats_update');
         res.json({ ok: true });
     } catch (error) {
@@ -115,6 +157,14 @@ exports.uploadPhoto = async (req, res) => {
         const [target] = await db.query('SELECT cliente_id FROM usuarios WHERE id = ?', [id]);
         if (target.length === 0 || target[0].cliente_id !== tenantId) {
             return res.status(403).json({ ok: false, error: 'No autorizado' });
+        }
+
+        // 🛡️ RECURSOS: Borrar foto anterior para no llenar el disco (Bug 8)
+        if (target[0].foto_url && target[0].foto_url.startsWith('/uploads/')) {
+            const oldPath = path.join(__dirname, '../../', target[0].foto_url);
+            if (fs.existsSync(oldPath)) {
+                fs.unlink(oldPath, (err) => { if (err) console.error('Error al borrar foto vieja:', err); });
+            }
         }
 
         await db.query('UPDATE usuarios SET foto_url = ? WHERE id = ?', [photoUrl, id]);

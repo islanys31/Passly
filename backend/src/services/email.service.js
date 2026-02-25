@@ -11,15 +11,30 @@ const nodemailer = require('nodemailer');
  * Configuración del transportador SMTP.
  * Se alimenta de variables de entorno para mayor seguridad y flexibilidad.
  */
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === 'true', // true para puerto 465, false para otros
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // Contraseña de aplicación si se usa Gmail
-    }
-});
+let transporter;
+try {
+    transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    });
+
+    // 🛡️ NO bloqueamos el inicio de la App si el email falla
+    transporter.verify((error) => {
+        if (error) {
+            console.warn('⚠️ Advertencia: El servicio de correos no está disponible. Verifique SMTP.');
+        } else {
+            console.log('📧 Correo: El servidor está listo para enviar mensajes.');
+        }
+    });
+} catch (e) {
+    console.error('❌ Error fatal al inicializar Nodemailer:', e.message);
+}
+
 
 // Colores institucionales de la marca Passly para las plantillas HTML
 const APP_COLOR_PRIMARY = '#2E7D32'; // Verde
