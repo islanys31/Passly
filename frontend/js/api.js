@@ -16,30 +16,30 @@ const API_BASE = "/api"; // URL base para todas las llamadas a la API REST
  * @param {object} body - Datos a enviar en el cuerpo de la petición (opcional)
  */
 export async function apiRequest(endpoint, method = 'GET', body = null) {
-    // 1. Recuperar el token de acceso guardado en el navegador
-    const token = localStorage.getItem('auth_token');
+    /**
+     * SEGURIDAD: 'credentials: include' es clave.
+     * Le indica al navegador que envíe automáticamente la cookie httpOnly
+     * con cada petición. El token JWT ya NO se lee desde localStorage.
+     * El servidor lo extraerá directamente de la cookie, que es inaccesible
+     * para cualquier script malicioso.
+     */
+    const token = localStorage.getItem('auth_token'); // Fallback para compatibilidad MFA
 
     try {
         const options = {
             method,
+            credentials: 'include', // 🍪 Envía y recibe cookies httpOnly automáticamente
             headers: {
                 'Content-Type': 'application/json',
-                // 2. Si hay un token, se adjunta automáticamente en la cabecera de la petición
+                // Fallback: si hay token en localStorage (flujo MFA), se adjunta en el header
                 ...(token && { 'Authorization': `Bearer ${token}` })
             }
         };
 
-        // 3. Si se envían datos, se convierten a cadena JSON
         if (body) options.body = JSON.stringify(body);
 
-        // 4. Realizar la petición Fetch
         const response = await fetch(API_BASE + endpoint, options);
 
-        /**
-         * 5. MANEJO AUTOMÁTICO DE SESIÓN EXPIRADA:
-         * Si el servidor responde con un 401 (No autorizado), significa que el token
-         * ha vencido o es inválido. Cerramos sesión automáticamente.
-         */
         if (response.status === 401) {
             handleLogout();
             return null;
@@ -47,7 +47,6 @@ export async function apiRequest(endpoint, method = 'GET', body = null) {
 
         const data = await response.json();
 
-        // 6. Retornamos un objeto con el estado de la respuesta y los datos
         return {
             ok: response.ok,
             status: response.status,
@@ -62,11 +61,13 @@ export async function apiRequest(endpoint, method = 'GET', body = null) {
 /**
  * Cierra la sesión del usuario eliminando rastro del navegador y redirigiendo al login.
  */
-export function handleLogout() {
+export async function handleLogout() {
+    // Limpiar datos del usuario del navegador
     localStorage.removeItem('auth_token');
     localStorage.removeItem('usuario_activo');
-    localStorage.removeItem('theme'); // Opcional: reiniciar tema
-    window.location.href = "index.html";
+    // Pedir al servidor que elimine la cookie httpOnly (el cliente no puede hacerlo por sí solo)
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch (_) { }
+    window.location.href = 'index.html';
 }
 
 /**

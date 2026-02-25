@@ -4,9 +4,10 @@
 
 // --- VALIDACIONES ---
 export function validarEmail(email) {
-    const hasUpperCase = /[A-Z]/.test(email);
-    if (hasUpperCase) return false;
-    const regexEmail = /^[a-z0-9._%+-]+@(gmail|hotmail)\.[a-z]{2,}(\.[a-z]{2,})?$/;
+    if (!email) return false;
+    if (/[A-Z]/.test(email)) return false;
+    // Acepta cualquier dominio válido: gmail, hotmail, outlook, yahoo, empresariales, etc.
+    const regexEmail = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
     return regexEmail.test(email.trim());
 }
 

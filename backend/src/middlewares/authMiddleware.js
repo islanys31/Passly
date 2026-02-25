@@ -11,34 +11,43 @@ const jwt = require('jsonwebtoken');
  * Se espera el formato: "Authorization: Bearer <TOKEN>"
  */
 const verifyToken = async (req, res, next) => {
-    // 1. Obtener el token de la cabecera 'authorization'
-    const token = req.headers['authorization'];
+    /**
+     * SEGURIDAD: Leer token desde Cookie httpOnly (primera prioridad).
+     * Las cookies httpOnly son inaccesibles desde JavaScript del navegador,
+     * lo que las hace inmunes a ataques XSS.
+     * Como fallback, también se acepta el header Authorization para compatibilidad.
+     */
+    let bearerToken = req.cookies?.auth_token; // 🍪 Fuente principal: Cookie httpOnly
 
-    if (!token) {
+    if (!bearerToken) {
+        // Fallback: Authorization header (Bearer <token>)
+        const authHeader = req.headers['authorization'];
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            bearerToken = authHeader.split(' ')[1];
+        }
+    }
+
+    if (!bearerToken) {
         return res.status(403).json({ error: 'Acceso denegado: No se proporcionó un token de seguridad' });
     }
 
     try {
-        // 2. Extraer el token después de la palabra 'Bearer'
-        const bearer = token.split(' ');
-        const bearerToken = bearer[1];
-
-        // 3. SEGURIDAD: Verificar la firma del JWT con la clave secreta del servidor
+        // SEGURIDAD: Verificar la firma del JWT con la clave secreta del servidor
         const decoded = jwt.verify(bearerToken, process.env.JWT_SECRET);
 
         /**
-         * 4. HARDENING: Validación de Propósito.
-         * Evitamos que un token generado para 'recuperación de contraseña' sea usado 
-         * para navegar por el Dashboard. Cada token debe tener un fin específico.
+         * HARDENING: Validación de Propósito.
+         * Evitamos que un token de 'recuperación de contraseña' se use para
+         * acceder al Dashboard. Cada token debe tener un fin específico.
          */
         if (decoded.purpose === 'password_reset') {
             return res.status(401).json({ error: 'No autorizado: El propósito del token es inválido para esta ruta' });
         }
 
         /**
-         * 5. HARDENING: Validación de Estado en tiempo real.
-         * Incluso si el token es válido, consultamos la BD para asegurar que el usuario 
-         * NO haya sido suspendido o eliminado recientemente.
+         * HARDENING: Validación de Estado en tiempo real.
+         * Aunque el token sea válido, verificamos en la BD que el usuario
+         * no haya sido suspendido o eliminado después de iniciar sesión.
          */
         const { pool: db } = require('../config/db');
         const [users] = await db.query('SELECT estado_id FROM usuarios WHERE id = ?', [decoded.id]);
@@ -47,9 +56,8 @@ const verifyToken = async (req, res, next) => {
             return res.status(401).json({ error: 'No autorizado: Cuenta inactiva o inexistente' });
         }
 
-        // 6. Si todo está bien, guardamos la info decodificada en req.user para usarla en los controladores
         req.user = decoded;
-        next(); // Permitir que la petición continúe al siguiente paso (controlador)
+        next();
     } catch (err) {
         return res.status(401).json({ error: 'No autorizado: Token inválido o expirado' });
     }

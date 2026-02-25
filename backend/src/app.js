@@ -9,6 +9,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const compression = require('compression');
+const cookieParser = require('cookie-parser'); // Permite leer cookies httpOnly del navegador
 
 // Importación de rutas de la API
 const authRoutes = require('./routes/auth.routes');
@@ -37,6 +38,12 @@ const app = express();
  * Reduce el tamaño de las respuestas HTTP, acelerando la carga para el usuario.
  */
 app.use(compression());
+
+/**
+ * SEGURIDAD: Cookie Parser.
+ * Necesario para leer el JWT almacenado en cookies httpOnly (más seguro que localStorage).
+ */
+app.use(cookieParser());
 
 /**
  * SEGURIDAD: Helmet.

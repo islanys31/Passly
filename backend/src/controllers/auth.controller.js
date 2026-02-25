@@ -59,6 +59,20 @@ exports.register = async (req, res) => {
 };
 
 /**
+ * Cierra la sesión eliminando la cookie httpOnly del servidor.
+ * El cliente (JS) no puede borrar cookies httpOnly por sí solo.
+ * @route POST /api/auth/logout
+ */
+exports.logout = (req, res) => {
+    res.clearCookie('auth_token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict'
+    });
+    res.json({ success: true, message: 'Sesión cerrada correctamente' });
+};
+
+/**
  * Inicio de sesión del usuario. Soporta MFA si está activado.
  * @route POST /api/auth/login
  */
@@ -70,8 +84,11 @@ exports.login = async (req, res) => {
             return res.status(400).json({ error: 'Correo, contraseña y rol son obligatorios' });
         }
 
-        // 1. Buscar el usuario en la BD
-        const [users] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+        // 1. Buscar el usuario en la BD (solo los campos necesarios, no SELECT *)
+        const [users] = await db.query(
+            'SELECT id, email, password, nombre, apellido, rol_id, estado_id, cliente_id, mfa_enabled, mfa_secret, foto_url FROM usuarios WHERE email = ?',
+            [email]
+        );
 
         if (users.length === 0) {
             await trackFailedAttempt(req.ip); // Registra fallo para bloqueo por IP
@@ -131,9 +148,25 @@ exports.login = async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
+        /**
+         * SEGURIDAD: Cookie httpOnly.
+         * El token se guarda en una cookie httpOnly para que JavaScript del navegador
+         * NO pueda acceder a él (protege contra ataques XSS).
+         * - httpOnly: true  → inaccesible desde JS del cliente
+         * - secure: true    → solo se envía por HTTPS (en producción)
+         * - sameSite: Strict → no se envía en peticiones cross-site (protege contra CSRF)
+         */
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.cookie('auth_token', token, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'Strict',
+            maxAge: 24 * 60 * 60 * 1000 // 24 horas en milisegundos
+        });
+
         res.json({
             message: 'Login exitoso',
-            token,
+            token, // Se mantiene en body para compatibilidad con flujo MFA del frontend
             user: {
                 id: user.id,
                 nombre: user.nombre,

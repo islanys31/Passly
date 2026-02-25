@@ -65,10 +65,10 @@ const validateRegister = [
     body('email')
         .trim()
         .toLowerCase()
+        .isEmail()
+        .withMessage('El formato del correo no es válido')
         .custom(value => {
             if (/[A-Z]/.test(value)) throw new Error('El correo debe estar en minúsculas');
-            const regex = /^[a-z0-9._%+-]+@(gmail|hotmail)\.[a-z]{2,}(\.[a-z]{2,})?$/;
-            if (!regex.test(value)) throw new Error('Solo se permiten correos @gmail.com o @hotmail.com');
             return true;
         }),
 
