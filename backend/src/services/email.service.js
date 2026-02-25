@@ -1,18 +1,51 @@
+/**
+ * @file email.service.js
+ * @description Servicio centralizado para el envío de correos electrónicos.
+ * Utiliza Nodemailer para conectar con un servidor SMTP (como Gmail) y enviar plantillas HTML.
+ * Incluye funciones para: Bienvenida, Invitaciones, Alertas de seguridad y Recuperación.
+ */
+
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === 'true', // true para puerto 465, false para otros
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+/**
+ * Configuración del transportador SMTP.
+ * Se alimenta de variables de entorno para mayor seguridad y flexibilidad.
+ */
+let transporter;
+try {
+    transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: process.env.EMAIL_SECURE === 'true',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    });
 
-const APP_COLOR_PRIMARY = '#2E7D32';
-const APP_COLOR_ACCENT = '#2979FF';
+    // 🛡️ NO bloqueamos el inicio de la App si el email falla
+    transporter.verify((error) => {
+        if (error) {
+            console.warn('⚠️ Advertencia: El servicio de correos no está disponible. Verifique SMTP.');
+        } else {
+            console.log('📧 Correo: El servidor está listo para enviar mensajes.');
+        }
+    });
+} catch (e) {
+    console.error('❌ Error fatal al inicializar Nodemailer:', e.message);
+}
 
+
+// Colores institucionales de la marca Passly para las plantillas HTML
+const APP_COLOR_PRIMARY = '#2E7D32'; // Verde
+const APP_COLOR_ACCENT = '#2979FF';  // Azul
+
+/**
+ * Envía un código de 6 dígitos para la recuperación de contraseña.
+ * @param {string} to - Email del destinatario
+ * @param {string} code - Código de seguridad generado
+ * @param {string} userName - Nombre del usuario para personalización
+ */
 exports.sendRecoveryCode = async (to, code, userName) => {
     const mailOptions = {
         from: `"Passly Security" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
@@ -42,10 +75,7 @@ exports.sendRecoveryCode = async (to, code, userName) => {
                     
                     <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #f1f5f9; text-align: center;">
                         <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                            Estás recibiendo este correo porque tienes una cuenta en nuestro sistema de seguridad Passly.
-                        </p>
-                        <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0; font-weight: bold;">
-                            © ${new Date().getFullYear()} Passly Inc.
+                            © ${new Date().getFullYear()} Passly Inc. Todos los derechos reservados.
                         </p>
                     </div>
                 </div>
@@ -57,11 +87,14 @@ exports.sendRecoveryCode = async (to, code, userName) => {
         await transporter.sendMail(mailOptions);
         return { success: true };
     } catch (error) {
-        console.error('Error sending email:', error);
+        console.error('Error al enviar email de recuperación:', error);
         return { success: false, error: error.message };
     }
 };
 
+/**
+ * Notifica al usuario que su contraseña ha sido cambiada.
+ */
 exports.sendPasswordChangeConfirmation = async (to, userName) => {
     const mailOptions = {
         from: `"Passly Security" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
@@ -70,7 +103,7 @@ exports.sendPasswordChangeConfirmation = async (to, userName) => {
         html: `
             <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 16px;">
                 <div style="background: linear-gradient(135deg, #059669, #10b981); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                    <div style="background: white; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                    <div style="background: white; width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px;">
                         <span style="font-size: 30px;">✅</span>
                     </div>
                     <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 800;">Passly</h1>
@@ -81,18 +114,8 @@ exports.sendPasswordChangeConfirmation = async (to, userName) => {
                     <p style="color: #444; line-height: 1.6; font-size: 16px;">
                         Te notificamos que la contraseña de tu cuenta ha sido <strong>cambiada exitosamente</strong>.
                     </p>
-                    
-                    <div style="background: #ecfdf5; border: 1px solid #10b981; border-radius: 12px; padding: 20px; margin: 25px 0;">
-                        <p style="color: #065f46; margin: 0; font-size: 14px;">
-                            <strong>Detalles de la actividad:</strong><br>
-                            Fecha: ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
-                            Hora: ${new Date().toLocaleTimeString('es-ES')}<br>
-                            Estado: Completado ✓
-                        </p>
-                    </div>
-                    
                     <p style="color: #dc2626; line-height: 1.6; font-size: 14px; font-weight: bold;">
-                        ⚠️ Si tú no realizaste esta acción, tu cuenta podría estar en riesgo. Por favor contacta a soporte de inmediato.
+                        ⚠️ Si tú no realizaste esta acción, por favor contacta a soporte de inmediato.
                     </p>
                 </div>
             </div>
@@ -101,13 +124,14 @@ exports.sendPasswordChangeConfirmation = async (to, userName) => {
 
     try {
         await transporter.sendMail(mailOptions);
-        return { success: true };
     } catch (error) {
-        console.error('Error sending confirmation email:', error);
-        return { success: false, error: error.message };
+        console.error('Error al enviar confirmación de contraseña:', error);
     }
 };
 
+/**
+ * Envía un correo de bienvenida a un nuevo usuario registrado.
+ */
 exports.sendWelcomeEmail = async (to, userName) => {
     const mailOptions = {
         from: `"Passly Security" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
@@ -117,34 +141,19 @@ exports.sendWelcomeEmail = async (to, userName) => {
             <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 16px;">
                 <div style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); padding: 50px 20px; text-align: center; border-radius: 12px 12px 0 0;">
                     <h1 style="color: white; margin: 0; font-size: 40px; font-weight: 900;">¡Hola ${userName}!</h1>
-                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 18px;">Tu viaje hacia una seguridad inteligente comienza aquí.</p>
+                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 18px;">Bienvenido a la seguridad inteligente.</p>
                 </div>
                 
                 <div style="background: white; padding: 40px; border-radius: 0 0 12px 12px; border: 1px solid #eee; border-top: none;">
                     <p style="color: #444; line-height: 1.6; font-size: 16px;">
-                        Estamos muy emocionados de tenerte con nosotros. Passly es la plataforma definitiva para gestionar accesos de forma rápida, segura y moderna.
+                        Passly está listo para ayudarte a gestionar tus accesos de forma rápida y moderna. Escanea, entra y mantente seguro.
                     </p>
-                    
-                    <div style="margin: 30px 0; padding: 25px; background: #f0fdf4; border-radius: 12px; border-left: 5px solid ${APP_COLOR_PRIMARY};">
-                        <h3 style="color: ${APP_COLOR_PRIMARY}; margin-top: 0;">¿Qué puedes hacer ahora?</h3>
-                        <ul style="color: #166534; padding-left: 20px; margin-bottom: 0;">
-                            <li>Generar tu propio <strong>Código QR</strong> personal.</li>
-                            <li>Crear invitaciones temporales para tus visitas.</li>
-                            <li>Gestionar tus dispositivos y medios de transporte.</li>
-                            <li>Monitorear tus accesos en tiempo real.</li>
-                        </ul>
-                    </div>
-                    
                     <div style="text-align: center; margin: 40px 0;">
                         <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" 
-                           style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); color: white; padding: 16px 32px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(41, 121, 255, 0.3);">
-                            Ir al Dashboard
+                           style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); color: white; padding: 16px 32px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 18px;">
+                            Comenzar ahora
                         </a>
                     </div>
-                    
-                    <p style="color: #64748b; font-size: 14px; text-align: center;">
-                        Si tienes alguna duda, nuestro equipo de soporte está siempre listo para ayudarte.
-                    </p>
                 </div>
             </div>
         `
@@ -152,13 +161,14 @@ exports.sendWelcomeEmail = async (to, userName) => {
 
     try {
         await transporter.sendMail(mailOptions);
-        return { success: true };
     } catch (error) {
-        console.error('Error sending welcome email:', error);
-        return { success: false, error: error.message };
+        console.error('Error al enviar bienvenida:', error);
     }
 };
 
+/**
+ * Envía una invitación de acceso a un huésped.
+ */
 exports.sendInvitationEmail = async (to, guestName, hostName, token, expirationDate) => {
     const invitationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/guest.html?token=${token}`;
 
@@ -168,35 +178,16 @@ exports.sendInvitationEmail = async (to, guestName, hostName, token, expirationD
         subject: '🎫 Tienes una invitación de acceso - Passly',
         html: `
             <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f1f5f9; padding: 20px; border-radius: 16px;">
-                <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
                     <div style="background: ${APP_COLOR_ACCENT}; padding: 30px; text-align: center;">
-                        <div style="background: white; width: 50px; height: 50px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px;">
-                            <span style="font-size: 24px;">🎫</span>
-                        </div>
-                        <h2 style="color: white; margin: 0; font-size: 24px;">Invitación de Acceso</h2>
+                        <h2 style="color: white; margin: 0;">🎫 Invitación de Acceso</h2>
                     </div>
-                    
                     <div style="padding: 40px;">
-                        <p style="color: #334155; font-size: 18px; margin-top: 0;">Hola <strong>${guestName}</strong>,</p>
-                        <p style="color: #64748b; line-height: 1.6;">
-                            <strong>${hostName}</strong> ha generado una invitación de acceso para ti en el sistema Passly.
-                        </p>
-                        
-                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 25px; margin: 30px 0; text-align: center;">
-                            <p style="color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 0;">Tu pase vence el:</p>
-                            <p style="color: #1e293b; font-size: 20px; font-weight: bold; margin: 5px 0 20px 0;">
-                                ${new Date(expirationDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                            </p>
-                            
-                            <a href="${invitationLink}" 
-                               style="display: block; background: #1e293b; color: white; padding: 15px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 16px;">
-                                Ver mi Código QR
-                            </a>
-                        </div>
-                        
-                        <p style="color: #64748b; font-size: 13px; font-style: italic;">
-                            * Por favor, presenta este código QR en portería o al personal de seguridad al momento de tu llegada.
-                        </p>
+                        <p style="color: #334155;">Hola <strong>${guestName}</strong>, <strong>${hostName}</strong> te ha invitado.</p>
+                        <p>Usa el siguiente enlace para ver tu código QR de acceso válido hasta el ${new Date(expirationDate).toLocaleDateString()}.</p>
+                        <a href="${invitationLink}" style="display: block; background: #1e293b; color: white; padding: 15px; text-decoration: none; border-radius: 10px; text-align: center; font-weight: bold;">
+                            VER MI CÓDIGO QR
+                        </a>
                     </div>
                 </div>
             </div>
@@ -205,13 +196,14 @@ exports.sendInvitationEmail = async (to, guestName, hostName, token, expirationD
 
     try {
         await transporter.sendMail(mailOptions);
-        return { success: true };
     } catch (error) {
-        console.error('Error sending invitation email:', error);
-        return { success: false, error: error.message };
+        console.error('Error al enviar invitación:', error);
     }
 };
 
+/**
+ * Envía una alerta de seguridad por acciones críticas (como activar MFA).
+ */
 exports.sendSecurityAlert = async (to, userName, action, details) => {
     const mailOptions = {
         from: `"Passly Security" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
@@ -220,25 +212,15 @@ exports.sendSecurityAlert = async (to, userName, action, details) => {
         html: `
             <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #fff1f2; padding: 20px; border-radius: 16px;">
                 <div style="background: #e11d48; padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
-                    <span style="font-size: 40px;">🛡️</span>
-                    <h2 style="color: white; margin: 10px 0 0 0;">Aviso de Seguridad</h2>
+                    <h2 style="color: white; margin: 0;">🛡️ Alerta de Seguridad</h2>
                 </div>
-                
-                <div style="background: white; padding: 40px; border-radius: 0 0 12px 12px; border: 1px solid #fda4af; border-top: none;">
-                    <h3 style="color: #1a1a1a; margin-top: 0;">Hola, ${userName}</h3>
-                    <p style="color: #444; line-height: 1.6; font-size: 16px;">
-                        Te informamos que se ha detectado un cambio importante relacionado con la seguridad de tu cuenta:
-                    </p>
-                    
-                    <div style="background: #f8fafc; border-left: 4px solid #e11d48; padding: 20px; margin: 25px 0;">
-                        <p style="margin: 0; color: #1e293b; font-weight: bold;">Acción: ${action}</p>
-                        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">Detalles: ${details}</p>
-                        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">Fecha: ${new Date().toLocaleString('es-ES')}</p>
+                <div style="background: white; padding: 40px; border-radius: 0 0 12px 12px; border: 1px solid #fda4af;">
+                    <p>Hola <strong>${userName}</strong>,</p>
+                    <p>Se ha detectado la siguiente actividad en tu cuenta:</p>
+                    <div style="background: #f8fafc; border-left: 4px solid #e11d48; padding: 15px;">
+                        <strong>ACCIÓN:</strong> ${action}<br>
+                        <strong>DETALLES:</strong> ${details}
                     </div>
-                    
-                    <p style="color: #64748b; font-size: 14px;">
-                        Si has sido tú, puedes ignorar este mensaje. De lo contrario, por favor cambia tu contraseña y contacta al administrador de inmediato.
-                    </p>
                 </div>
             </div>
         `
@@ -246,10 +228,7 @@ exports.sendSecurityAlert = async (to, userName, action, details) => {
 
     try {
         await transporter.sendMail(mailOptions);
-        return { success: true };
     } catch (error) {
-        console.error('Error sending security alert:', error);
-        return { success: false, error: error.message };
+        console.error('Error al enviar alerta de seguridad:', error);
     }
 };
-

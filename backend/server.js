@@ -1,15 +1,44 @@
-require('dotenv').config();
-const http = require('http');
-const app = require('./src/app');
-const { initIO } = require('./src/config/socket');
-const { scheduleBackups } = require('./src/utils/backup');
+/**
+ * @file server.js
+ * @description Punto de entrada principal del servidor Passly.
+ * Este archivo se encarga de inicializar el servidor HTTP, configurar WebSockets
+ * y arrancar las tareas programadas como los backups.
+ */
 
+require('dotenv').config(); // Carga las variables de entorno desde el archivo .env
+const http = require('http');
+const app = require('./src/app'); // Importa la aplicación Express configurada
+const { initIO } = require('./src/config/socket'); // Importa el inicializador de Socket.IO
+const { scheduleBackups } = require('./src/utils/backup'); // Tareas programadas de respaldo
+
+/**
+ * Crea el servidor HTTP utilizando la aplicación Express.
+ * Se separa el servidor de la 'app' para permitir que Socket.IO corra sobre el mismo puerto.
+ */
 const server = http.createServer(app);
+
+/**
+ * Inicializa Socket.IO para permitir comunicación en tiempo real.
+ * Se utiliza para actualizar el Dashboard instantáneamente cuando ocurre un acceso.
+ */
 initIO(server);
 
+// Define el puerto del servidor (por defecto 3000 si no se encuentra en el .env)
 const PORT = process.env.PORT || 3000;
 
+/**
+ * Arranca el servidor y escucha las peticiones entrantes.
+ */
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`===========================================`);
+    console.log(`🚀 SERVIDOR PASSLY v2.0 EJECUTÁNDOSE`);
+    console.log(`📍 Puerto: ${PORT}`);
+    console.log(`🛡️  Estado: HARDENED (Seguridad Reforzada)`);
+    console.log(`===========================================`);
+
+    /**
+     * Inicia la programación de backups de la base de datos.
+     * Esto asegura que los datos estén protegidos automáticamente.
+     */
     scheduleBackups();
 });

@@ -1,42 +1,53 @@
 /**
- * Passly - Panel de Control Principal (Versión Hardened & Modular)
+ * @file dashboard.js
+ * @description Controlador principal del Panel de Control (Dashboard) de Passly.
+ * Maneja la navegación entre módulos, carga de datos dinámica, WebSockets y gestión de sesión.
  */
 import { apiRequest, checkAuth, handleLogout } from './api.js';
 import { initTheme } from './theme.js';
 import { showToast, escapeHTML, validarEmail, validarPassword } from './utils.js';
 
-let userData = null;
-let currentData = [];
-let currentView = 'overview';
+let userData = null;          // Datos del usuario logueado
+let currentData = [];         // Datos del módulo actual para filtrado/búsqueda
+let currentView = 'overview'; // Nombre de la vista activa
+let currentPagination = null; // Metadatos de paginación de la última respuesta
 
-// Global exposure for event handlers
+// Exposición al objeto global 'window' para que los botones con onclick en HTML funcionen con módulos ES
 window.closeModal = closeModal;
 window.loadView = loadView;
 window.handleLogout = handleLogout;
 window.showModal = showModal;
-window.showUserDetail = (id) => showUserDetail(id); // Exposición global inmediata
-// Fallback para botones en HTML que no pueden esperar a que el módulo cargue
-if (!window.closeModal) window.closeModal = () => {
-    const o = document.getElementById('modalOverlay');
-    if (o) o.style.display = 'none';
-};
+window.showUserDetail = (id) => showUserDetail(id);
 
+/**
+ * CICLO DE VIDA INICIAL:
+ * Se ejecuta cuando el navegador termina de procesar el HTML.
+ */
 document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Verificar seguridad: ¿Hay un usuario autenticado?
     userData = checkAuth();
-    if (!userData) return;
+    if (!userData) return; // checkAuth se encarga de redirigir al login si no hay token
 
-    initTheme();
-    setupUI();
-    setupSidebarToggle(); // Nueva función
+    // 2. Inicializar componentes visuales
+    initTheme();          // Cargar modo oscuro/claro preferido
+    setupUI();            // Personalizar el Sidebar con el nombre y rol del usuario
+    setupSidebarToggle(); // Permitir colapsar el menú lateral
+
+    // 3. Cargar la vista por defecto (Resumen)
     await loadView('overview');
+
+    // 4. Conectar WebSockets para actualizaciones en tiempo real
     setupSocket();
 });
 
+/**
+ * Configura el comportamiento de colapso del menú lateral para optimizar espacio.
+ */
 function setupSidebarToggle() {
     const sidebar = document.querySelector('.sidebar');
     const toggleBtn = document.getElementById('toggleSidebar');
 
-    // Recuperar estado previo
+    // Recuperar el último estado guardado (collapsed o expanded)
     const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
     if (isCollapsed) sidebar.classList.add('collapsed');
 
@@ -46,28 +57,36 @@ function setupSidebarToggle() {
     };
 }
 
+/**
+ * Personaliza los elementos de la interfaz según el perfil del usuario.
+ */
 function setupUI() {
     if (!userData) return;
 
-    // Etiquetas de sección para el menú estático
     const navMenu = document.querySelector('.nav-menu');
     const items = navMenu.querySelectorAll('.nav-item');
 
-    // Insertar "OPERACIONES" al inicio
+    // Inyección dinámica de cabeceras en el menú según la importancia
     const opHeader = document.createElement('div');
     opHeader.className = 'nav-section';
     opHeader.textContent = 'Gestión Principal';
     navMenu.insertBefore(opHeader, items[0]);
 
-    // Insertar "SISTEMA" antes de Auditoría (que es el item 5 originalmente, ahora 6 con Operaciones)
     const sysHeader = document.createElement('div');
     sysHeader.className = 'nav-section';
     sysHeader.textContent = 'Seguridad y Logs';
-    navMenu.insertBefore(sysHeader, document.getElementById('navAudit'));
+    const auditItem = document.getElementById('navAudit');
+    if (auditItem) {
+        navMenu.insertBefore(sysHeader, auditItem);
+    } else {
+        navMenu.appendChild(sysHeader);
+    }
+
 
     const nombre = userData.nombre || 'Usuario';
     const apellido = userData.apellido || '';
 
+    // Mostrar nombre completo y avatar (o inicial)
     document.getElementById('userName').textContent = `${nombre} ${apellido}`;
     const avatarEl = document.getElementById('userInitial');
     if (userData.foto_url) {
@@ -75,10 +94,13 @@ function setupUI() {
     } else {
         avatarEl.textContent = nombre.charAt(0).toUpperCase();
     }
+
+    // Mostrar etiqueta de Rol traducida
     document.getElementById('userRole').textContent =
         userData.rol_id === 1 ? 'Administrador' :
             (userData.rol_id === 3 ? 'Seguridad' : 'Usuario');
 
+    // Configurar los botones de navegación del Sidebar
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
     const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security'];
 
@@ -86,12 +108,14 @@ function setupUI() {
         if (!navItems[index]) return;
         item.onclick = (e) => {
             e.preventDefault();
-            loadView(views[index]);
+            loadView(views[index]); // Carga la sección correspondiente sin recargar la página
         };
     });
 
+    /**
+     * ACCESO RÁPIDO: Si el usuario es Admin o Seguridad, añadimos botón al Escáner QR.
+     */
     if (userData.rol_id === 1 || userData.rol_id === 3) {
-        // Sección divisor "Recuerda"
         const divider = document.createElement('div');
         divider.className = 'nav-section';
         divider.style.marginTop = '20px';
@@ -107,18 +131,20 @@ function setupUI() {
         navMenu.appendChild(scannerBtn);
     }
 
+    // Botón de Cerrar Sesión con confirmación
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
         if (confirm('¿Deseas cerrar sesión?')) handleLogout();
     };
-
-    // Vincular botón cancelar del modal de forma segura
-    const cancelBtn = document.querySelector('#modalOverlay .btn-table[onclick="closeModal()"]');
-    if (cancelBtn) {
-        cancelBtn.removeAttribute('onclick');
-        cancelBtn.addEventListener('click', closeModal);
-    }
 }
 
+/**
+ * NAVEGACIÓN SPA (Single Page Application):
+ * Carga el contenido de un módulo dinámicamente en el contenedor central.
+ * Evita la recarga de toda la página para una experiencia más fluida.
+ * 
+ * @param {string} view - Nombre del módulo a cargar
+ * @param {boolean} force - Si se debe recargar el contenido incluso si ya está cargado
+ */
 async function loadView(view, force = false) {
     if (currentView === view && view !== 'overview' && !force) return;
     currentView = view;
@@ -126,18 +152,19 @@ async function loadView(view, force = false) {
     const content = document.getElementById('view-content');
     const title = document.getElementById('view-title');
 
-    // Transición ultra-rápida
+    // Reset de estilos para animación de entrada
     content.style.opacity = '0';
     content.style.transform = 'translateY(5px)';
     content.style.transition = 'all 0.15s ease-out';
 
+    // Actualizar estado 'active' en el Sidebar
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
     navItems.forEach(i => i.classList.remove('active'));
 
     let activeItem = [...navItems].find(item => item.textContent.toLowerCase().includes(view.toLowerCase()));
     if (activeItem) activeItem.classList.add('active');
 
-    // Mostrar skeleton inmediatamente para feedback visual
+    // Mostrar cargador visual (Skeleton) mientras llegan los datos
     renderSkeleton(content, view);
 
     try {
@@ -202,13 +229,13 @@ function renderSkeleton(container, view) {
 }
 
 async function renderOverview(container) {
-    const [statsRes, accessRes] = await Promise.all([
+    const [statsRes, trafficRes] = await Promise.all([
         apiRequest('/stats'),
-        apiRequest('/accesos')
+        apiRequest('/stats/traffic')
     ]);
 
     const stats = statsRes?.data?.stats || { users: 0, accessToday: 0, devices: 0, alerts: 0 };
-    const recentAccess = (accessRes?.data?.data || accessRes?.data || []).slice(0, 5);
+    const recentAccess = (trafficRes?.data?.data || []).slice(0, 5);
 
     const grid = [
         { label: 'Usuarios Activos', val: stats.users, icon: '👥', color: 'var(--accent-blue)' },
@@ -291,7 +318,7 @@ async function renderOverview(container) {
     `;
 
     setTimeout(() => {
-        renderPeakHoursChart(accessRes?.data?.data || accessRes?.data || []);
+        renderPeakHoursChart(trafficRes?.data?.data || []);
         setupQRButton();
     }, 100);
 }
@@ -354,17 +381,58 @@ function renderModuleHeader(container, config) {
     `;
 }
 
-async function renderUsuarios(container) {
-    const { ok, data } = await apiRequest('/usuarios');
+/**
+ * Renderiza controles de paginación bajo la tabla del módulo activo.
+ * @param {object} pagination - Objeto { total, page, limit, totalPages, hasNext, hasPrev }
+ * @param {Function} onPageChange - Callback que recibe el nuevo número de página
+ */
+function renderPagination(pagination, onPageChange) {
+    const existing = document.getElementById('paginationControls');
+    if (existing) existing.remove();
+    if (!pagination || pagination.totalPages <= 1) return;
+
+    const nav = document.createElement('div');
+    nav.id = 'paginationControls';
+    nav.style.cssText = 'display:flex; align-items:center; justify-content:center; gap:12px; margin:18px 0; font-size:13px;';
+    nav.innerHTML = `
+        <button id="pgPrev" class="btn-table" style="padding:6px 14px; ${!pagination.hasPrev ? 'opacity:0.4; cursor:not-allowed;' : ''}" ${!pagination.hasPrev ? 'disabled' : ''}>
+            ← Anterior
+        </button>
+        <span style="color:var(--text-muted)">
+            Página <strong style="color:var(--text-primary)">${pagination.page}</strong> de <strong style="color:var(--text-primary)">${pagination.totalPages}</strong>
+            &nbsp;·&nbsp; <span style="opacity:0.6">${pagination.total} registros</span>
+        </span>
+        <button id="pgNext" class="btn-table" style="padding:6px 14px; ${!pagination.hasNext ? 'opacity:0.4; cursor:not-allowed;' : ''}" ${!pagination.hasNext ? 'disabled' : ''}>
+            Siguiente →
+        </button>
+    `;
+
+    const tableContainer = document.getElementById('moduleTableContainer');
+    if (tableContainer) tableContainer.after(nav);
+
+    if (pagination.hasPrev) nav.querySelector('#pgPrev').onclick = () => onPageChange(pagination.page - 1);
+    if (pagination.hasNext) nav.querySelector('#pgNext').onclick = () => onPageChange(pagination.page + 1);
+}
+
+async function renderUsuarios(container, page = 1) {
+    const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    const { ok, data } = await apiRequest(`/usuarios?page=${page}&limit=20${searchParam}`);
     if (!ok) return;
     currentData = data.data || data;
-    renderModuleHeader(container, { buttonId: 'btnAddUser', buttonText: '+ Usuario', buttonColor: 'var(--accent-green)', searchPlaceholder: 'Buscar...', module: 'usuarios' });
+    currentPagination = data.pagination || null;
+    if (page === 1 && !search) {
+        renderModuleHeader(container, { buttonId: 'btnAddUser', buttonText: '+ Usuario', buttonColor: 'var(--accent-green)', searchPlaceholder: 'Buscar nombre, email...', module: 'usuarios' });
+    }
     const div = document.createElement('div');
     div.className = "data-table-container";
     div.id = "moduleTableContainer";
     div.innerHTML = generateUserTable(currentData);
-    container.appendChild(div);
+    const existing = document.getElementById('moduleTableContainer');
+    if (existing) existing.replaceWith(div);
+    else container.appendChild(div);
     setupModuleEvents(container, 'usuarios');
+    renderPagination(currentPagination, (p) => renderUsuarios(container, p));
 }
 
 function generateUserTable(data) {
@@ -429,61 +497,89 @@ async function updateMFAStatus(container) {
 }
 
 // REST OF THE MINIMAL FUNCTIONS TO KEEP DASHBOARD WORKING
-async function renderDispositivos(container) {
-    const { ok, data } = await apiRequest('/dispositivos');
-    if (!ok) return;
-    // Filtrar: Solo dispositivos sin medio de transporte (tecnología)
-    const techData = (data.data || data).filter(d => !d.medio_transporte_id);
-
-    renderModuleHeader(container, { buttonId: 'btnAddDevice', buttonText: '+ Dispositivo', buttonColor: 'var(--accent-blue)', searchPlaceholder: 'Buscar equipo...', module: 'dispositivos' });
-    const div = document.createElement('div');
-    div.className = "data-table-container";
-    div.id = "moduleTableContainer";
-    div.innerHTML = generateDeviceTable(techData);
-    container.appendChild(div);
-    setupModuleEvents(container, 'dispositivos');
-}
-
-async function renderVehiculos(container) {
-    const { ok, data } = await apiRequest('/dispositivos');
-    if (!ok) return;
-    // Filtrar: Solo aquellos que tienen medio de transporte
-    const vehicleData = (data.data || data).filter(d => d.medio_transporte_id);
-
-    renderModuleHeader(container, { buttonId: 'btnAddVehicle', buttonText: '+ Vehículo', buttonColor: 'var(--accent-lavender)', searchPlaceholder: 'Buscar placa...', module: 'vehiculos' });
-    const div = document.createElement('div');
-    div.className = "data-table-container";
-    div.id = "moduleTableContainer";
-    div.innerHTML = generateVehicleTable(vehicleData);
-    container.appendChild(div);
-    setupModuleEvents(container, 'vehiculos');
-}
-
-async function renderAccesos(container) {
-    const { ok, data } = await apiRequest('/accesos');
+async function renderDispositivos(container, page = 1) {
+    const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    const { ok, data } = await apiRequest(`/equipos?page=${page}&limit=20${searchParam}`);
     if (!ok) return;
     currentData = data.data || data;
-    renderModuleHeader(container, { buttonId: 'btnLogAccess', buttonText: '+ Manual', buttonColor: 'var(--accent-emerald)', searchPlaceholder: 'Filtrar...', module: 'accesos', hasExport: true, hasDateFilter: true });
+    currentPagination = data.pagination || null;
+
+    if (page === 1 && !search) {
+        renderModuleHeader(container, { buttonId: 'btnAddDevice', buttonText: '+ Dispositivo', buttonColor: 'var(--accent-blue)', searchPlaceholder: 'Buscar equipo, serial...', module: 'dispositivos' });
+    }
+    const div = document.createElement('div');
+    div.className = "data-table-container";
+    div.id = "moduleTableContainer";
+    div.innerHTML = generateDeviceTable(currentData);
+    const existing = document.getElementById('moduleTableContainer');
+    if (existing) existing.replaceWith(div);
+    else container.appendChild(div);
+    setupModuleEvents(container, 'dispositivos');
+    renderPagination(currentPagination, (p) => renderDispositivos(container, p));
+}
+
+async function renderVehiculos(container, page = 1) {
+    const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    const { ok, data } = await apiRequest(`/dispositivos?page=${page}&limit=20&soloVehiculos=true${searchParam}`);
+    if (!ok) return;
+    currentData = data.data || data;
+    currentPagination = data.pagination || null;
+
+    if (page === 1 && !search) {
+        renderModuleHeader(container, { buttonId: 'btnAddVehicle', buttonText: '+ Vehículo', buttonColor: 'var(--accent-lavender)', searchPlaceholder: 'Buscar placa, marca...', module: 'vehiculos' });
+    }
+    const div = document.createElement('div');
+    div.className = "data-table-container";
+    div.id = "moduleTableContainer";
+    div.innerHTML = generateVehicleTable(currentData);
+    const existing = document.getElementById('moduleTableContainer');
+    if (existing) existing.replaceWith(div);
+    else container.appendChild(div);
+    setupModuleEvents(container, 'vehiculos');
+    renderPagination(currentPagination, (p) => renderVehiculos(container, p));
+}
+
+async function renderAccesos(container, page = 1) {
+    const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    const { ok, data } = await apiRequest(`/accesos?page=${page}&limit=25${searchParam}`);
+    if (!ok) return;
+    currentData = data.data || data;
+    currentPagination = data.pagination || null;
+    if (page === 1 && !search) {
+        renderModuleHeader(container, { buttonId: 'btnLogAccess', buttonText: '+ Manual', buttonColor: 'var(--accent-emerald)', searchPlaceholder: 'Filtrar usuario, tipo...', module: 'accesos', hasExport: true, hasDateFilter: true });
+    }
     const div = document.createElement('div');
     div.className = "data-table-container";
     div.id = "moduleTableContainer";
     div.innerHTML = generateAccessTable(currentData);
-    container.appendChild(div);
+    const existing = document.getElementById('moduleTableContainer');
+    if (existing) existing.replaceWith(div);
+    else container.appendChild(div);
     setupModuleEvents(container, 'accesos');
+    renderPagination(currentPagination, (p) => renderAccesos(container, p));
 }
 
-async function renderAuditLogs(container) {
+async function renderAuditLogs(container, page = 1) {
     if (userData.rol_id !== 1) return container.innerHTML = "Acceso denegado";
-    const { ok, data } = await apiRequest('/logs');
+    const { ok, data } = await apiRequest(`/logs?page=${page}&limit=50`);
     if (!ok) return;
     currentData = data.data || data;
-    renderModuleHeader(container, { buttonId: 'btnRefreshLogs', buttonText: '🔄 Actualizar', buttonColor: 'var(--bg-secondary)', searchPlaceholder: 'Buscar logs...', module: 'logs' });
+    currentPagination = data.pagination || null;
+    if (page === 1) {
+        renderModuleHeader(container, { buttonId: 'btnRefreshLogs', buttonText: '🔄 Actualizar', buttonColor: 'var(--bg-secondary)', searchPlaceholder: 'Buscar logs...', module: 'logs' });
+    }
     const div = document.createElement('div');
     div.className = "data-table-container";
     div.id = "moduleTableContainer";
     div.innerHTML = generateAuditTable(currentData);
-    container.appendChild(div);
+    const existing = document.getElementById('moduleTableContainer');
+    if (existing) existing.replaceWith(div);
+    else container.appendChild(div);
     setupModuleEvents(container, 'logs');
+    renderPagination(currentPagination, (p) => renderAuditLogs(container, p));
 }
 
 function generateDeviceTable(data) {
@@ -610,14 +706,29 @@ function setupModuleEvents(container, type) {
 
     if (!searchInput || !tableContainer) return;
 
+    /**
+     * BÚSQUEDA SERVER-SIDE con debounce de 350ms.
+     * Antes: filtraba solo currentData (la página actual) → incompleto.
+     * Ahora: envía ?search= al backend y recarga la vista desde la primera página.
+     */
+    let searchDebounce = null;
+    const renderFnMap = {
+        'usuarios': (c, p) => renderUsuarios(c, p),
+        'dispositivos': (c, p) => renderDispositivos(c, p),
+        'vehiculos': (c, p) => renderVehiculos(c, p),
+        'accesos': (c, p) => renderAccesos(c, p),
+        'logs': (c, p) => renderAuditLogs(c, p),
+    };
+
     searchInput.oninput = () => {
-        const term = searchInput.value.toLowerCase();
-        const filtered = currentData.filter(item => JSON.stringify(item).toLowerCase().includes(term));
-        if (type === 'usuarios') tableContainer.innerHTML = generateUserTable(filtered);
-        else if (type === 'dispositivos') tableContainer.innerHTML = generateDeviceTable(filtered);
-        else if (type === 'vehiculos') tableContainer.innerHTML = generateVehicleTable(filtered);
-        else if (type === 'accesos') tableContainer.innerHTML = generateAccessTable(filtered);
-        else if (type === 'logs') tableContainer.innerHTML = generateAuditTable(filtered);
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            const term = searchInput.value.trim();
+            // Guardar término activo para que las funciones de render lo usen
+            searchInput.dataset.activeSearch = term;
+            const renderFn = renderFnMap[type];
+            if (renderFn) renderFn(container, 1); // Siempre vuelve a página 1 al buscar
+        }, 350);
     };
 
     const addBtnMap = {

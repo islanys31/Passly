@@ -1,6 +1,6 @@
 # 🔐 Passly - Sistema de Control de Accesos Inteligente
 
-![Version](https://img.shields.io/badge/version-2.0.0-green.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-green.svg)
 ![Node](https://img.shields.io/badge/node-18.x-blue.svg)
 ![MySQL](https://img.shields.io/badge/mysql-8.0-orange.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
@@ -12,19 +12,16 @@
 
 ## 🌟 Características Principales
 
-### 🔐 Autenticación y Seguridad (Hardened)
+### 🔐 Autenticación y Seguridad (Hardened v2.1)
+- ✅ **Paginación Real**: Todos los listados están paginados en el servidor para soportar miles de registros.
+- ✅ **Búsqueda Server-Side**: Filtrado eficiente directamente en SQL (nombre, email, serial, etc.).
+- ✅ **Caché Inteligente**: Reducción drástica de carga en BD mediante caché en memoria con TTL.
 - ✅ Login seguro con JWT y verificación de rol
-- ✅ Registro con validaciones estrictas (frontend + backend espejo)
-- ✅ Autenticación de dos factores (MFA/2FA) vía TOTP (con alerta de seguridad por email)
-- ✅ Recuperación de contraseña por email con códigos de 6 dígitos
-- ✅ Email de Bienvenida automático para nuevos usuarios
-- ✅ Invitaciones de acceso enviadas directamente al correo del huésped
-- ✅ Helmet.js (CSP, HSTS 1 año + preload, X-Frame-Options)
-- ✅ Rate Limiting por endpoint (login, register, recovery, API)
-- ✅ Sanitización de inputs (prevención XSS)
-- ✅ express-validator con reglas de negocio estrictas
-- ✅ Bcrypt salt factor 10 para hash de contraseñas
-- ✅ JWT con verificación de propósito y estado de usuario
+- ✅ Autenticación de dos factores (MFA/2FA) vía TOTP
+- ✅ Recuperación de contraseña con códigos de 6 dígitos
+- ✅ Email de Bienvenida y Alertas de Seguridad automáticas
+- ✅ Helmet.js, Rate Limiting estricto (5 intentos login) y Sanitización Global
+- ✅ Aislamiento Multi-tenancy (cada administrador solo ve sus datos)
 
 ### 📊 Dashboard en Tiempo Real
 - ✅ Estadísticas live: usuarios activos, accesos del día, dispositivos, alertas

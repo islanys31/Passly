@@ -2,17 +2,23 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { body, validationResult } = require('express-validator');
 
+/**
+ * SEGURIDAD — Fuerza Bruta en Login.
+ * 5 intentos máximo por ventana de 15 minutos.
+ * Estándar OWASP para protección de endpoints de autenticación.
+ */
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 5,
     message: 'Demasiados intentos de inicio de sesión. Por favor, intenta de nuevo en 15 minutos.',
     standardHeaders: true,
     legacyHeaders: false,
+    skipSuccessfulRequests: true, // No contar intentos exitosos en el límite
 });
 
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
-    max: 50,
+    max: 10,
     message: 'Demasiados registros desde esta IP. Por favor, intenta de nuevo más tarde.',
 });
 
@@ -22,11 +28,17 @@ const forgotPasswordLimiter = rateLimit({
     message: 'Has alcanzado el límite de 3 solicitudes de recuperación por hora. Por favor, intenta más tarde.',
 });
 
+/**
+ * Rate limiter general para la API.
+ * 200 req/15min es razonable para uso normal del dashboard (paginación, navegación, etc).
+ */
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 200,
     message: 'Demasiadas peticiones desde esta IP. Por favor, intenta de nuevo más tarde.',
+    skipSuccessfulRequests: false,
 });
+
 
 const helmetConfig = helmet({
     contentSecurityPolicy: {
@@ -65,10 +77,10 @@ const validateRegister = [
     body('email')
         .trim()
         .toLowerCase()
+        .isEmail()
+        .withMessage('El formato del correo no es válido')
         .custom(value => {
             if (/[A-Z]/.test(value)) throw new Error('El correo debe estar en minúsculas');
-            const regex = /^[a-z0-9._%+-]+@(gmail|hotmail)\.[a-z]{2,}(\.[a-z]{2,})?$/;
-            if (!regex.test(value)) throw new Error('Solo se permiten correos @gmail.com o @hotmail.com');
             return true;
         }),
 
@@ -116,15 +128,24 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 const sanitizeInput = (req, res, next) => {
-    if (req.body) {
-        Object.keys(req.body).forEach(key => {
-            if (typeof req.body[key] === 'string') {
-                req.body[key] = req.body[key]
-                    .replace(/[<>]/g, '')
-                    .trim();
+    /**
+     * SEGURIDAD: Sanitización completa de todos los vectores de entrada.
+     * Antes solo se limpiaba req.body — req.query y req.params quedaban expuestos.
+     * Ahora los tres pasan por el mismo filtro: elimina < > y hace trim().
+     */
+    const sanitizeObject = (obj) => {
+        if (!obj) return;
+        Object.keys(obj).forEach(key => {
+            if (typeof obj[key] === 'string') {
+                obj[key] = obj[key].replace(/[<>]/g, '').trim();
             }
         });
-    }
+    };
+
+    sanitizeObject(req.body);
+    sanitizeObject(req.query);
+    sanitizeObject(req.params);
+
     next();
 };
 
