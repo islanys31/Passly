@@ -1061,20 +1061,52 @@ tr:hover td {
   justify-content: center;
   align-items: center;
   z-index: 10000;
-  animation: fadeIn 0.3s ease;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  display: flex;
+  opacity: 1;
 }
 
 .modal-content {
   background: var(--bg-primary);
   width: 90%;
   max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   padding: 35px;
   border-radius: 24px;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
   position: relative;
-  animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
 }
+
+/* Scrollbar Premium para el modal */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-blue);
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1);
+}
+
 
 @keyframes scaleUp {
   from {

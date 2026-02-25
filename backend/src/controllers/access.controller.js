@@ -176,14 +176,27 @@ exports.validateScan = async (req, res) => {
         let result = null;
         let type = 'Entrada';
 
+        const tenantId = req.user.cliente_id;
+
         // 1. Intentar decodificar como JWT (Invitado)
         try {
             const decoded = jwt.verify(scanData, process.env.JWT_SECRET);
             if (decoded.purpose === 'guest_access') {
+                // 🛡️ SEGURIDAD: Validar que el anfitrión pertenezca a la organización del scanner
+                const [hostCheck] = await db.query('SELECT cliente_id, estado_id FROM usuarios WHERE id = ?', [decoded.hostId]);
+
+                if (hostCheck.length === 0 || hostCheck[0].cliente_id !== tenantId) {
+                    return res.status(403).json({ ok: false, error: 'Invitación no válida para esta organización' });
+                }
+
+                if (hostCheck[0].estado_id !== 1) {
+                    return res.status(403).json({ ok: false, error: 'El anfitrión de esta invitación ya no está autorizado' });
+                }
+
                 result = {
                     esInvitado: true,
                     nombre: decoded.guestName,
-                    id: decoded.hostId, // Atribuir al host o sistema
+                    id: decoded.hostId, // Atribuir al host
                     foto: null
                 };
             }
@@ -202,7 +215,12 @@ exports.validateScan = async (req, res) => {
                         return res.status(401).json({ ok: false, error: 'El código QR ha expirado (TTL 5 min). Genere uno nuevo.' });
                     }
 
-                    const [users] = await db.query('SELECT nombre, apellido, foto_url, estado_id FROM usuarios WHERE id = ?', [data.userId]);
+                    // 🛡️ SEGURIDAD: Validar que el usuario pertenezca a la organización del scanner
+                    const [users] = await db.query(
+                        'SELECT nombre, apellido, foto_url, estado_id FROM usuarios WHERE id = ? AND cliente_id = ?',
+                        [data.userId, tenantId]
+                    );
+
                     if (users.length > 0) {
                         const u = users[0];
                         if (u.estado_id !== 1) return res.status(403).json({ ok: false, error: 'Usuario inactivo o bloqueado' });
@@ -213,6 +231,8 @@ exports.validateScan = async (req, res) => {
                             id: data.userId,
                             foto: u.foto_url
                         };
+                    } else {
+                        return res.status(403).json({ ok: false, error: 'Este usuario no pertenece a su organización' });
                     }
                 }
             } catch (e) { /* No es JSON */ }

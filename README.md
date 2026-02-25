@@ -1,6 +1,6 @@
 # 🔐 Passly - Sistema de Control de Accesos Inteligente
 
-![Version](https://img.shields.io/badge/version-2.1.0-green.svg)
+![Version](https://img.shields.io/badge/version-2.1.1-green.svg)
 ![Node](https://img.shields.io/badge/node-18.x-blue.svg)
 ![MySQL](https://img.shields.io/badge/mysql-8.0-orange.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
@@ -12,7 +12,7 @@
 
 ## 🌟 Características Principales
 
-### 🔐 Autenticación y Seguridad (Hardened v2.1)
+### 🔐 Autenticación y Seguridad (Hardened v2.1.1)
 - ✅ **Paginación Real**: Todos los listados están paginados en el servidor para soportar miles de registros.
 - ✅ **Búsqueda Server-Side**: Filtrado eficiente directamente en SQL (nombre, email, serial, etc.).
 - ✅ **Caché Inteligente**: Reducción drástica de carga en BD mediante caché en memoria con TTL.

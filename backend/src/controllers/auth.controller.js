@@ -263,7 +263,9 @@ exports.resetPassword = async (req, res) => {
         await db.query('UPDATE usuarios SET password = ? WHERE email = ?', [hashedPassword, email]);
 
         // 5. AUDITORÍA: Registrar el cambio exitoso
-        await logAction(null, 'Cambio de Contraseña', 'Seguridad', `Contraseña restablecida para ${email}`, req.ip);
+        const [users] = await db.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+        const userId = users.length > 0 ? users[0].id : null;
+        await logAction(userId, 'Cambio de Contraseña', 'Seguridad', `Contraseña restablecida para ${email}`, req.ip);
 
         // 6. Enviar confirmación al usuario
         emailService.sendPasswordChangeConfirmation(email, email).catch(e => console.error(e));
