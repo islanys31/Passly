@@ -1,16 +1,24 @@
 /**
- * Passly - Utilidades, Validaciones y Notificaciones
+ * Valida un formato de correo electrónico.
+ * Reglas: No mayúsculas, formato estándar usuario@dominio.com
+ * @param {string} email - Correo a validar
+ * @returns {boolean} - True si es válido
  */
-
-// --- VALIDACIONES ---
 export function validarEmail(email) {
     if (!email) return false;
-    if (/[A-Z]/.test(email)) return false;
-    // Acepta cualquier dominio válido: gmail, hotmail, outlook, yahoo, empresariales, etc.
+    if (/[A-Z]/.test(email)) return false; // El sistema bloquea mayúsculas por política de normalización
+
+    // Regex flexible para cualquier dominio de primer nivel
     const regexEmail = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
     return regexEmail.test(email.trim());
 }
 
+/**
+ * Valida la robustez de una contraseña según políticas de seguridad Passly.
+ * Reglas: 8-12 carac, 1 mayus, 1 minus, 1 num, 1 especial.
+ * @param {string} pass - Contraseña a evaluar
+ * @returns {string|null} - Mensaje de error o null si es perfecta
+ */
 export function validarPassword(pass) {
     const tieneEspacios = /\s/.test(pass);
     const tieneMayuscula = /[A-Z]/.test(pass);
@@ -30,6 +38,11 @@ export function validarPassword(pass) {
     return null;
 }
 
+/**
+ * Escapa caracteres HTML para prevenir ataques XSS al renderizar contenido dinámico.
+ * @param {string} str - Texto plano
+ * @returns {string} - Texto sanitizado para HTML
+ */
 export function escapeHTML(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -37,7 +50,13 @@ export function escapeHTML(str) {
 }
 
 // --- SISTEMA DE NOTIFICACIONES (TOASTS) ---
+/**
+ * Sistema de notificaciones visuales (Toasts) estilo premium.
+ * @param {string} message - Texto a mostrar
+ * @param {string} type - 'success', 'error', 'info' o 'warning'
+ */
 export function showToast(message, type = 'info') {
+    // Buscar o crear el contenedor global de notificaciones
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -45,6 +64,7 @@ export function showToast(message, type = 'info') {
         document.body.appendChild(container);
     }
 
+    // Crear la burbuja del toast
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
@@ -54,9 +74,10 @@ export function showToast(message, type = 'info') {
 
     container.appendChild(toast);
 
+    // Animación de salida sincronizada con el progreso visual
     setTimeout(() => {
         toast.classList.add('fade-out');
-        setTimeout(() => toast.remove(), 500);
+        setTimeout(() => toast.remove(), 500); // Eliminar del DOM tras desaparecer
     }, 4000);
 }
 

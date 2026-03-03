@@ -64,10 +64,11 @@ exports.register = async (req, res) => {
  * @route POST /api/auth/logout
  */
 exports.logout = (req, res) => {
+    const isSecure = process.env.HTTPS_ENABLED === 'true';
     res.clearCookie('auth_token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict'
+        secure: isSecure,
+        sameSite: isSecure ? 'Strict' : 'Lax'
     });
     res.json({ success: true, message: 'Sesión cerrada correctamente' });
 };
@@ -156,11 +157,11 @@ exports.login = async (req, res) => {
          * - secure: true    → solo se envía por HTTPS (en producción)
          * - sameSite: Strict → no se envía en peticiones cross-site (protege contra CSRF)
          */
-        const isProduction = process.env.NODE_ENV === 'production';
+        const isSecure = process.env.HTTPS_ENABLED === 'true';
         res.cookie('auth_token', token, {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: 'Strict',
+            secure: isSecure,
+            sameSite: isSecure ? 'Strict' : 'Lax',
             maxAge: 24 * 60 * 60 * 1000 // 24 horas en milisegundos
         });
 
@@ -263,7 +264,9 @@ exports.resetPassword = async (req, res) => {
         await db.query('UPDATE usuarios SET password = ? WHERE email = ?', [hashedPassword, email]);
 
         // 5. AUDITORÍA: Registrar el cambio exitoso
-        await logAction(null, 'Cambio de Contraseña', 'Seguridad', `Contraseña restablecida para ${email}`, req.ip);
+        const [users] = await db.query('SELECT id FROM usuarios WHERE email = ?', [email]);
+        const userId = users.length > 0 ? users[0].id : null;
+        await logAction(userId, 'Cambio de Contraseña', 'Seguridad', `Contraseña restablecida para ${email}`, req.ip);
 
         // 6. Enviar confirmación al usuario
         emailService.sendPasswordChangeConfirmation(email, email).catch(e => console.error(e));
@@ -379,6 +382,14 @@ exports.mfaLogin = async (req, res) => {
             );
 
             await logAction(user.id, 'Login MFA Exitoso', 'Seguridad', 'Verificación de segundo factor completa', req.ip);
+
+            const isSecure = process.env.HTTPS_ENABLED === 'true';
+            res.cookie('auth_token', token, {
+                httpOnly: true,
+                secure: isSecure,
+                sameSite: isSecure ? 'Strict' : 'Lax',
+                maxAge: 24 * 60 * 60 * 1000
+            });
 
             res.json({
                 message: 'Login exitoso',

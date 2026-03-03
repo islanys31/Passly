@@ -23,7 +23,7 @@
 
 ---
 
-### 🛡️ Fortalecimiento Reciente (v2.1)
+### 🛡️ Fortalecimiento Reciente (v2.1.1)
 Se han implementado las siguientes mejoras críticas de arquitectura:
 
 1.  **Paginación y Búsqueda SQL**: Se eliminó el filtrado en el frontend. Ahora todas las tablas consultan al backend con parámetros `?page` y `?search`, permitiendo manejar volúmenes reales de datos sin lag.

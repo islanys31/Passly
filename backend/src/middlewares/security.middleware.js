@@ -2,6 +2,11 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { body, validationResult } = require('express-validator');
 
+const skipLocalhost = (req) => {
+    const ip = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress;
+    return ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1';
+};
+
 /**
  * SEGURIDAD — Fuerza Bruta en Login.
  * 5 intentos máximo por ventana de 15 minutos.
@@ -13,19 +18,22 @@ const loginLimiter = rateLimit({
     message: 'Demasiados intentos de inicio de sesión. Por favor, intenta de nuevo en 15 minutos.',
     standardHeaders: true,
     legacyHeaders: false,
-    skipSuccessfulRequests: true, // No contar intentos exitosos en el límite
+    skipSuccessfulRequests: true,
+    skip: skipLocalhost
 });
 
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
     message: 'Demasiados registros desde esta IP. Por favor, intenta de nuevo más tarde.',
+    skip: skipLocalhost
 });
 
 const forgotPasswordLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 3,
     message: 'Has alcanzado el límite de 3 solicitudes de recuperación por hora. Por favor, intenta más tarde.',
+    skip: skipLocalhost
 });
 
 /**
@@ -37,6 +45,8 @@ const apiLimiter = rateLimit({
     max: 200,
     message: 'Demasiadas peticiones desde esta IP. Por favor, intenta de nuevo más tarde.',
     skipSuccessfulRequests: false,
+    // WHITELIST: No limitar peticiones desde localhost para facilitar el desarrollo
+    skip: skipLocalhost
 });
 
 
@@ -52,11 +62,12 @@ const helmetConfig = helmet({
             childSrc: ["'self'", "blob:"],
         },
     },
-    hsts: {
+    // SEGURIDAD: Solo activar HSTS si HTTPS está habilitado explícitamente (evita fallos en localhost)
+    hsts: (process.env.NODE_ENV === 'production' && process.env.HTTPS_ENABLED === 'true') ? {
         maxAge: 31536000,
         includeSubDomains: true,
         preload: true
-    },
+    } : false,
 });
 
 const validateRegister = [

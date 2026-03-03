@@ -791,9 +791,20 @@ function closeModal() {
     const overlay = document.getElementById('modalOverlay');
     if (overlay) {
         overlay.classList.remove('active');
-        setTimeout(() => overlay.style.display = 'none', 300);
+        // Esperar a que termine la transición de opacidad antes de ocultar el display
+        setTimeout(() => {
+            if (!overlay.classList.contains('active')) {
+                overlay.style.display = 'none';
+            }
+        }, 300);
     }
 }
+
+// Cerrar modales con la tecla Escape (Premium UX)
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+});
+
 
 function renderModalFields(type, item) {
     if (type === 'usuarios') {
@@ -969,6 +980,7 @@ async function showUserDetail(userId) {
 
     body.innerHTML = `<div class="loading-spinner"></div> Consultando historial...`;
     overlay.style.display = 'flex';
+    overlay.classList.add('active');
 
     try {
         const [dRes, aRes] = await Promise.all([
@@ -1005,7 +1017,7 @@ async function showUserDetail(userId) {
                 <div class="card" style="background:rgba(255,255,255,0.02); padding:15px; border:1px solid var(--border-color);">
                     <h4 style="margin-bottom:12px; font-size:14px; display:flex; justify-content:space-between;">
                         🚗 Vehículos 
-                        <button class="btn-table" onclick="closeModal(); showModal('vehiculos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
+                        <button class="btn-table" onclick="window.closeModal(); showModal('vehiculos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
                     </h4>
                     ${userVehicles.length ? userVehicles.map(v => `
                         <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border-color);">
@@ -1015,14 +1027,14 @@ async function showUserDetail(userId) {
                     `).join('') : `
                         <div style="text-align:center; padding:10px; opacity:0.6;">
                             <p style="font-size:11px; margin-bottom:10px;">No tiene vehículos registrados</p>
-                            <button class="btn-table" onclick="closeModal(); showModal('vehiculos')" style="width:100%; border:1px dashed var(--accent-green); color:var(--accent-green);">Vincular primer vehículo</button>
+                            <button class="btn-table" onclick="window.closeModal(); showModal('vehiculos')" style="width:100%; border:1px dashed var(--accent-green); color:var(--accent-green);">Vincular primer vehículo</button>
                         </div>
                     `}
                 </div>
                 <div class="card" style="background:rgba(255,255,255,0.02); padding:15px; border:1px solid var(--border-color);">
                     <h4 style="margin-bottom:12px; font-size:14px; display:flex; justify-content:space-between;">
                         💻 Equipos Tech
-                        <button class="btn-table" onclick="closeModal(); showModal('dispositivos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
+                        <button class="btn-table" onclick="window.closeModal(); showModal('dispositivos')" style="font-size:10px; padding:2px 5px;">+ Añadir</button>
                     </h4>
                     ${userTech.length ? userTech.map(t => `
                         <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-bottom:6px; border:1px solid var(--border-color);">
@@ -1032,7 +1044,7 @@ async function showUserDetail(userId) {
                     `).join('') : `
                         <div style="text-align:center; padding:10px; opacity:0.6;">
                             <p style="font-size:11px; margin-bottom:10px;">Sin equipos tecnológicos</p>
-                            <button class="btn-table" onclick="closeModal(); showModal('dispositivos')" style="width:100%; border:1px dashed var(--accent-blue); color:var(--accent-blue);">Vincular laptop/tablet</button>
+                            <button class="btn-table" onclick="window.closeModal(); showModal('dispositivos')" style="width:100%; border:1px dashed var(--accent-blue); color:var(--accent-blue);">Vincular laptop/tablet</button>
                         </div>
                     `}
                 </div>
@@ -1061,12 +1073,14 @@ async function showUserDetail(userId) {
 
         // Vincular botón editar dentro del detalle
         const btnEditDetail = document.getElementById('btnEditFromDetail');
-        if (btnEditDetail) btnEditDetail.onclick = () => { closeModal(); showModal('usuarios', user); };
+        if (btnEditDetail) btnEditDetail.onclick = () => { window.closeModal(); showModal('usuarios', user); };
 
     } catch (e) {
         body.innerHTML = `<p style="color:var(--error-color)">Error al cargar la ficha técnica.</p>`;
     }
 }
 
+// Al final del archivo, reafirmamos las exportaciones por seguridad
 window.showUserDetail = showUserDetail;
+window.closeModal = closeModal;
 
