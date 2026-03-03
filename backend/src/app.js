@@ -32,6 +32,7 @@ const {
 const { swaggerUi, swaggerDocs } = require('./config/swagger');
 
 const app = express();
+app.set('trust proxy', 1); // Confiar en el primer proxy (Nginx) para obtener la IP real
 
 /**
  * OPTIMIZACIÓN: Compresión Gzip.
@@ -62,9 +63,20 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
  * Define quién puede consumir esta API. En producción se restringe al dominio del frontend.
  */
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-        ? process.env.FRONTEND_URL
-        : '*',
+    origin: (origin, callback) => {
+        // En desarrollo permitimos todo
+        if (process.env.NODE_ENV !== 'production' || !origin) {
+            return callback(null, true);
+        }
+
+        // En producción comparamos con FRONTEND_URL o permitimos localhost si es el mismo host
+        const allowed = [process.env.FRONTEND_URL, 'http://localhost', 'http://127.0.0.1'];
+        if (allowed.includes(origin) || origin.startsWith('http://localhost')) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
     credentials: true
 }));
 

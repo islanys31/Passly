@@ -1,5 +1,8 @@
 /**
- * Passly - Lógica de Autenticación (Login/Registro)
+ * @file auth.js
+ * @description Lógica central de autenticación y registro de usuarios para Passly.
+ * Maneja el flujo de login (incluyendo verificación MFA de dos factores),
+ * validación en tiempo real de formularios, y persistencia de sesión local.
  */
 import { apiRequest, checkAuth } from './api.js';
 import { initTheme } from './theme.js';
@@ -12,17 +15,26 @@ import {
     escapeHTML
 } from './utils.js';
 
+// Contador de intentos de login fallidos para prevención de ataques local
 let intentos = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar el tema (oscuro/claro) según preferencia guardada
     initTheme();
 
-    // Si ya está logueado, ir al dashboard
+    /**
+     * REDIRECCIÓN AUTOMÁTICA
+     * Si el navegador ya tiene un token de sesión válido, el usuario 
+     * ya no necesita ver el login y se le envía al Dashboard directamente.
+     */
     if (localStorage.getItem('auth_token')) {
         window.location.href = "dashboard.html";
     }
 
+    // Configurar listeners de eventos para interactividad
     initEventListeners();
+
+    // Validar estado inicial del botón de registro
     checkRegistrationFormValidity();
 });
 
@@ -93,6 +105,9 @@ function initEventListeners() {
 
 let currentMfaToken = null;
 
+/**
+ * Procesa el inicio de sesión. Soporta flujo de un solo paso o de dos pasos (MFA).
+ */
 async function handleLogin() {
     const emailEl = document.getElementById("emailLogin");
     const passwordEl = document.getElementById("passLogin");
@@ -100,7 +115,10 @@ async function handleLogin() {
     const errorEl = document.getElementById("loginError");
     const resetLink = document.getElementById("resetLink");
 
-    // Si estamos en el paso de verificación de MFA
+    /**
+     * PASO 2: VERIFICACIÓN MFA
+     * Si ya tenemos un token MFA pendiente, enviamos solo el código de 6 dígitos.
+     */
     if (currentMfaToken) {
         const mfaInput = document.getElementById("mfaCode");
         const code = mfaInput?.value.trim();
@@ -118,6 +136,7 @@ async function handleLogin() {
         setLoading("btnLogin", false);
 
         if (ok) {
+            // Guardar sesión y redirigir
             localStorage.setItem("usuario_activo", JSON.stringify(data.user));
             localStorage.setItem("auth_token", data.token);
             showToast("¡Verificación exitosa!", "success");
@@ -128,6 +147,10 @@ async function handleLogin() {
         return;
     }
 
+    /**
+     * PASO 1: LOGIN ESTÁNDAR
+     * Envío de credenciales básicas al servidor.
+     */
     const email = emailEl.value.trim();
     const password = passwordEl.value;
     const rol_id = rolEl.value;

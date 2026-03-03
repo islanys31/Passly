@@ -29,7 +29,18 @@ const PORT = process.env.PORT || 3000;
 /**
  * Arranca el servidor y escucha las peticiones entrantes.
  */
-server.listen(PORT, () => {
+const { pool } = require('./src/config/db');
+
+server.listen(PORT, async () => {
+    try {
+        // Prueba de conexión a la base de datos
+        await pool.query('SELECT 1');
+        console.log(`✅ CONEXIÓN A BASE DE DATOS: EXITOSA`);
+    } catch (err) {
+        console.error(`❌ ERROR DE CONEXIÓN A DB: ${err.message}`);
+        console.log(`👉 Revisa tu archivo .env (DB_HOST, DB_USER, DB_PASSWORD)`);
+    }
+
     console.log(`===========================================`);
     console.log(`🚀 SERVIDOR PASSLY v2.0 EJECUTÁNDOSE`);
     console.log(`📍 Puerto: ${PORT}`);

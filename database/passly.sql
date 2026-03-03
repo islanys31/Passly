@@ -107,6 +107,7 @@ CREATE TABLE `usuarios` (
   `estado_id` int(11) DEFAULT 1,
   `mfa_enabled` tinyint(1) DEFAULT 0,
   `mfa_secret` varchar(255) DEFAULT NULL,
+  `foto_url` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -220,6 +221,19 @@ CREATE TABLE `recovery_codes` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `login_attempts`
+--
+
+CREATE TABLE `login_attempts` (
+  `ip_address` varchar(45) NOT NULL,
+  `attempts` int(11) DEFAULT 0,
+  `last_attempt` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

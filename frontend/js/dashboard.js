@@ -1080,5 +1080,7 @@ async function showUserDetail(userId) {
     }
 }
 
+// Al final del archivo, reafirmamos las exportaciones por seguridad
 window.showUserDetail = showUserDetail;
+window.closeModal = closeModal;
 

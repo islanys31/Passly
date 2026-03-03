@@ -14,6 +14,11 @@ const { pool: db } = require('../config/db');
 const ipBlocker = async (req, res, next) => {
     const ip = req.ip; // Identificador del cliente
 
+    // WHITELIST: No bloquear localhost
+    if (ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1') {
+        return next();
+    }
+
     // 🛡️ COHERENCIA: max 5 intentos / 15 minutos (Bug 1)
     const blockTimeMinutes = 15;
     const maxAttempts = 5;

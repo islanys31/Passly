@@ -15,9 +15,10 @@ exports.shareByWhatsApp = async (req, res) => {
         // En un entorno real, aquí podríamos usar una API de WhatsApp.
         // Por ahora generaremos el enlace "wa.me" para que el usuario comparta manualmente.
 
-        const message = `Hola ${guestName}, te envío tu invitación de acceso para Passly. Puedes usar este código QR al llegar. %0A%0AEnlace de invitación: ${process.env.FRONTEND_URL}/guest.html?token=${token}`;
+        const message = `Hola ${guestName}, te envío tu invitación de acceso para Passly. Puedes usar este código QR al llegar.\n\nEnlace de invitación: ${process.env.FRONTEND_URL}/guest.html?token=${token}`;
 
-        const waLink = `https://api.whatsapp.com/send?text=${message}`;
+        // Usamos wa.me que es más moderno y directo
+        const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
         res.json({ ok: true, waLink });
     } catch (error) {

@@ -212,7 +212,7 @@ exports.validateScan = async (req, res) => {
                 const QR_TTL_MS = 5 * 60 * 1000;
                 if (data.userId && data.intent === 'access_request') {
                     if (!data.timestamp || (Date.now() - data.timestamp > QR_TTL_MS)) {
-                        return res.status(401).json({ ok: false, error: 'El código QR ha expirado (TTL 5 min). Genere uno nuevo.' });
+                        return res.status(400).json({ ok: false, error: 'El código QR ha expirado (TTL 5 min). Genere uno nuevo.' });
                     }
 
                     // 🛡️ SEGURIDAD: Validar que el usuario pertenezca a la organización del scanner
