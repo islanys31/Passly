@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken');
 const { logAction } = require('../utils/logger'); // Utilidad para registrar logs de auditoría en la BD
 const speakeasy = require('speakeasy');           // Librería para generación de secretos TOTP (MFA)
 const QRCode = require('qrcode');                 // Para generar el código QR de configuración de MFA
-const { trackFailedAttempt, resetAttempts } = require('../middleware/ipBlocker'); // Seguridad contra fuerza bruta
+const { trackFailedAttempt, resetAttempts } = require('../middlewares/ipBlocker'); // Seguridad contra fuerza bruta
 const emailService = require('../services/email.service'); // Servicio para notificaciones por correo
 
 /**
