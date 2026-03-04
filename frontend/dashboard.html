@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script type="module" src="/js/dashboard.js"></script>
 </head>
 
@@ -64,8 +65,8 @@
     <div class="modal-content">
       <h2 id="modalTitle" style="margin-bottom:20px;">Acción</h2>
       <div id="modalBody"></div>
-      <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn-table" style="flex:1" onclick="closeModal()">Cancelar</button>
+      <div id="modalFooter" style="display:flex; gap:10px; margin-top:20px;">
+        <button id="btnCancelGlobal" class="btn-table" style="flex:1">Cancelar</button>
         <button id="btnSave" style="flex:1; margin-top:0">Guardar</button>
       </div>
     </div>

@@ -36,6 +36,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 3. Cargar la vista por defecto (Resumen)
     await loadView('overview');
 
+    // 5. Vincular eventos globales (Delegación de eventos para robustez)
+    document.addEventListener('click', (e) => {
+        if (e.target && (e.target.id === 'btnCancelGlobal' || e.target.classList.contains('btn-close-modal'))) {
+            closeModal();
+        }
+    });
+
     // 4. Conectar WebSockets para actualizaciones en tiempo real
     setupSocket();
 });
@@ -102,7 +109,7 @@ function setupUI() {
 
     // Configurar los botones de navegación del Sidebar
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
-    const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security'];
+    const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security', 'scanner'];
 
     navItems.forEach((item, index) => {
         if (!navItems[index]) return;
@@ -131,9 +138,9 @@ function setupUI() {
         navMenu.appendChild(scannerBtn);
     }
 
-    // Botón de Cerrar Sesión con confirmación
+    // Botón de Cerrar Sesión con confirmación Premium
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
-        if (confirm('¿Deseas cerrar sesión?')) handleLogout();
+        showModal('logout_confirm');
     };
 }
 
@@ -197,6 +204,10 @@ async function loadView(view, force = false) {
                 title.textContent = "Seguridad de la Cuenta";
                 await renderSecurity(content);
                 break;
+            case 'scanner':
+                title.textContent = "Escáner de Acceso";
+                await renderScanner(content);
+                break;
         }
 
         // Aparecer suavemente con un pequeño delay para forzar el reflow del navegador
@@ -247,12 +258,12 @@ async function renderOverview(container) {
 
     container.innerHTML = `
         <div class="stats-grid">
-            ${grid.map(s => `
-                <div class="stat-card glass-glow" style="border-top: 3px solid ${s.color}">
+            ${grid.map((s, i) => `
+                <div class="stat-card glass-glow animate-row" style="border-top: 3px solid ${s.color}; animation-delay: ${i * 0.1}s">
                     <div class="stat-icon" style="color: ${s.color}; background: rgba(255,255,255,0.03);">${s.icon}</div>
                     <div class="stat-info">
                         <h3>${s.label}</h3>
-                        <div class="value">${s.val ?? 0}</div>
+                        <div class="value counter" data-value="${s.val ?? 0}">${s.val ?? 0}</div>
                     </div>
                 </div>
             `).join('')}
@@ -320,7 +331,31 @@ async function renderOverview(container) {
     setTimeout(() => {
         renderPeakHoursChart(trafficRes?.data?.data || []);
         setupQRButton();
+        animateCounters();
     }, 100);
+}
+
+function animateCounters() {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseInt(counter.dataset.value);
+        if (isNaN(target)) return;
+
+        let count = 0;
+        const duration = 1000; // 1 segundo
+        const increment = target / (duration / 16); // ~60fps
+
+        const update = () => {
+            count += increment;
+            if (count < target) {
+                counter.textContent = Math.floor(count);
+                requestAnimationFrame(update);
+            } else {
+                counter.textContent = target;
+            }
+        };
+        update();
+    });
 }
 
 function setupQRButton() {
@@ -762,11 +797,21 @@ function showModal(type, item = null) {
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
     const saveBtn = document.getElementById('btnSave');
+    const modalFooter = document.getElementById('modalFooter');
 
     if (!overlay || !body) return;
 
-    title.textContent = item ? `Editar ${type}` : `Nuevo ${type.slice(0, -1)}`;
-    saveBtn.style.display = 'block'; // Asegurar que sea visible si venimos de Ficha Médica
+    // Reset view
+    title.textContent = item ? `Editar ${type}` : (type === 'logout_confirm' ? 'Cerrar Sesión' : `Nuevo ${type.slice(0, -1)}`);
+
+    if (type === 'logout_confirm') {
+        saveBtn.style.display = 'none';
+        if (modalFooter) modalFooter.style.display = 'none';
+    } else {
+        saveBtn.style.display = 'block';
+        if (modalFooter) modalFooter.style.display = 'flex';
+    }
+
     saveBtn.onclick = () => handleModalSave(type, item?.id);
 
     if (type === 'vehiculos' || type === 'dispositivos') {
@@ -783,20 +828,13 @@ function showModal(type, item = null) {
         body.innerHTML = renderModalFields(type, item);
     }
 
-    overlay.classList.add('active');
-    overlay.style.display = 'flex';
+    overlay.classList.add('show');
 }
 
 function closeModal() {
     const overlay = document.getElementById('modalOverlay');
     if (overlay) {
-        overlay.classList.remove('active');
-        // Esperar a que termine la transición de opacidad antes de ocultar el display
-        setTimeout(() => {
-            if (!overlay.classList.contains('active')) {
-                overlay.style.display = 'none';
-            }
-        }, 300);
+        overlay.classList.remove('show');
     }
 }
 
@@ -852,6 +890,17 @@ function renderModalFields(type, item) {
             <div class="form-group"><label>Descripción</label><input type="text" id="t_desc" value="${item?.descripcion || ''}" placeholder="Opcional"></div>
         `;
     }
+    if (type === 'logout_confirm') {
+        return `
+            <div style="text-align:center; padding:10px;">
+                <p style="margin-bottom:20px; color:var(--text-secondary);">¿Estás seguro de que deseas cerrar tu sesión actual?</p>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-primary" style="background:var(--error-color)" onclick="handleLogout()">Sí, Salir</button>
+                    <button class="btn-secondary btn-close-modal">Cancelar</button>
+                </div>
+            </div>
+        `;
+    }
     return `<p>Formulario para ${type} en desarrollo...</p>`;
 }
 
@@ -892,39 +941,55 @@ function renderDynamicForm(type, item, users, trans) {
 }
 
 async function handleModalSave(type, id) {
-    let payload = {};
-    let url = type === 'vehiculos' ? '/dispositivos' : `/${type}`;
-    let method = id ? 'PUT' : 'POST';
-    if (id) url += `/${id}`;
+    const saveBtn = document.getElementById('btnSave');
+    const originalText = saveBtn.textContent;
 
-    if (type === 'vehiculos') {
+    // 🛡️ VALIDACIÓN LADO CLIENTE
+    let payload = {};
+    if (type === 'usuarios') {
+        payload = {
+            nombre: document.getElementById('m_nombre').value.trim(),
+            apellido: document.getElementById('m_apellido').value.trim(),
+            email: document.getElementById('m_email').value.trim().toLowerCase(),
+            rol_id: parseInt(document.getElementById('m_rol').value)
+        };
+        if (!payload.nombre || !payload.email) return showToast("Nombre y Email son requeridos", "warning");
+        if (!validarEmail(payload.email)) return showToast("Email inválido", "error");
+    } else if (type === 'vehiculos') {
         payload = {
             usuario_id: document.getElementById('v_usuario').value,
             medio_transporte_id: document.getElementById('v_tipo').value,
-            nombre: document.getElementById('v_nombre').value,
-            identificador_unico: document.getElementById('v_placa').value
+            nombre: document.getElementById('v_nombre').value.trim(),
+            identificador_unico: document.getElementById('v_placa').value.trim().toUpperCase()
         };
-        if (!payload.usuario_id || !payload.medio_transporte_id || !payload.nombre || !payload.identificador_unico) return showToast("Faltan campos", "error");
+        if (!payload.usuario_id || !payload.nombre || !payload.identificador_unico) return showToast("Todos los campos son obligatorios", "warning");
     } else if (type === 'dispositivos') {
         payload = {
             usuario_id: document.getElementById('d_usuario').value,
-            nombre: document.getElementById('d_nombre').value,
-            identificador_unico: document.getElementById('d_uid').value || `TECH-${Date.now()}`
+            nombre: document.getElementById('d_nombre').value.trim(),
+            identificador_unico: document.getElementById('d_uid').value.trim() || `TECH-${Date.now()}`
         };
-        if (!payload.usuario_id || !payload.nombre) return showToast("Faltan campos", "error");
+        if (!payload.usuario_id || !payload.nombre) return showToast("Asigne un dueño y nombre al equipo", "warning");
     } else if (type === 'accesos') {
-        const guestName = document.getElementById('guest_name').value;
-        const guestEmail = document.getElementById('guest_email').value;
+        const guestName = document.getElementById('guest_name').value.trim();
+        const guestEmail = document.getElementById('guest_email').value.trim();
         const expirationHours = document.getElementById('guest_expires').value;
-        if (!guestName) return showToast("Nombre requerido", "error");
+        if (!guestName) return showToast("Nombre del invitado requerido", "warning");
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span class="loading-spinner"></span> Generando...`;
 
         const res = await apiRequest('/accesos/invitation', 'POST', { guestName, guestEmail, expirationHours });
+
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+
         if (res.ok) {
             const resultDiv = document.getElementById('invitationResult');
             const qrDiv = document.getElementById('guestQR');
             const waBtn = document.getElementById('btnShareWA');
 
-            qrDiv.innerHTML = `<img src="${res.data.qr}" style="width:100%;">`;
+            qrDiv.innerHTML = `<img src="${res.data.qr}" style="width:100%; border-radius:8px;">`;
             resultDiv.style.display = 'block';
 
             waBtn.onclick = async () => {
@@ -932,26 +997,31 @@ async function handleModalSave(type, id) {
                 if (waRes.ok) window.open(waRes.data.waLink, '_blank');
             };
 
-            showToast(res.data.sentByEmail ? "Invitación generada y enviada" : "Invitación generada", "success");
+            showToast(res.data.sentByEmail ? "Email enviado e Invitación lista" : "Invitación lista para compartir", "success");
             return;
         }
         return;
-    } else if (type === 'usuarios') {
-        payload = {
-            nombre: document.getElementById('m_nombre').value,
-            apellido: document.getElementById('m_apellido').value,
-            email: document.getElementById('m_email').value,
-            rol_id: parseInt(document.getElementById('m_rol').value)
-        };
     }
 
+    // Efecto de carga en el botón
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="loading-spinner"></span> Guardando...`;
+
+    let url = type === 'vehiculos' ? '/dispositivos' : `/${type}`;
+    let method = id ? 'PUT' : 'POST';
+    if (id) url += `/${id}`;
+
     const finalRes = await apiRequest(url, method, payload);
-    if (finalRes.ok) {
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalText;
+
+    if (finalRes && finalRes.ok) {
         showToast(id ? 'Actualizado correctamente' : 'Creado correctamente', 'success');
         closeModal();
-        loadView(type);
+        loadView(type, true);
     } else {
-        showToast(finalRes.data?.error || "Error al guardar", "error");
+        showToast(finalRes?.data?.error || "Error al procesar la solicitud", "error");
     }
 }
 
@@ -1081,6 +1151,113 @@ async function showUserDetail(userId) {
 }
 
 // Al final del archivo, reafirmamos las exportaciones por seguridad
+/**
+ * Renderiza el módulo de escáner integrado en el dashboard
+ */
+let html5QrCode = null;
+
+async function renderScanner(container) {
+    container.innerHTML = `
+        <div class="card glass-glow animate-row" style="max-width: 600px; margin: 0 auto; padding: 25px; text-align: center;">
+            <div id="reader-container" style="position: relative; border-radius: 16px; overflow: hidden; background: #000; min-height: 300px;">
+                <div id="reader" style="width: 100%;"></div>
+                <div id="scanner-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border: 2px dashed rgba(16, 185, 129, 0.5); box-sizing: border-box; display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 200px; height: 200px; border: 2px solid var(--accent-green); position: relative;">
+                        <div style="position: absolute; width: 100%; height: 2px; background: var(--accent-green); top: 0; animation: scanAnim 2s infinite linear;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scan-result" style="display:none; margin-top:25px; animation: fadeInUp 0.4s ease;">
+                <div id="scan-user-photo" style="width:100px; height:100px; margin:0 auto 15px; border-radius:50%; border:3px solid var(--accent-green); overflow:hidden; background:var(--bg-secondary); display:flex; align-items:center; justify-content:center; font-size:40px;">👤</div>
+                <h3 id="scan-user-name" style="margin-bottom:5px;">-</h3>
+                <p id="scan-user-type" style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">-</p>
+                <div class="badge badge-success" style="font-size:14px; padding:10px;">Acceso Autorizado</div>
+                <button class="btn-primary" onclick="window.startDashboardScanner()" style="margin-top:20px;">Siguiente Escaneo</button>
+            </div>
+
+            <div id="scan-error" style="display:none; margin-top:25px; color:var(--error-color); background:rgba(244, 63, 94, 0.1); padding:15px; border-radius:12px; border:1px solid var(--error-color);">
+                <p id="scan-error-msg">Error</p>
+                <button class="btn-secondary" onclick="window.startDashboardScanner()" style="margin-top:15px; width:auto; padding:8px 16px;">Reintentar</button>
+            </div>
+            
+            <p id="scanner-status" style="margin-top:15px; font-size:12px; color:var(--text-muted);">Iniciando cámara...</p>
+        </div>
+        <style>
+            @keyframes scanAnim {
+                0% { top: 0; }
+                100% { top: 100%; }
+            }
+        </style>
+    `;
+
+    window.startDashboardScanner = startDashboardScanner;
+    setTimeout(startDashboardScanner, 500);
+}
+
+async function startDashboardScanner() {
+    const status = document.getElementById('scanner-status');
+    const resultDiv = document.getElementById('scan-result');
+    const errorDiv = document.getElementById('scan-error');
+    const readerDiv = document.getElementById('reader-container');
+
+    if (resultDiv) resultDiv.style.display = 'none';
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (readerDiv) readerDiv.style.display = 'block';
+
+    try {
+        if (html5QrCode) {
+            await html5QrCode.stop().catch(() => { });
+            html5QrCode = null;
+        }
+
+        html5QrCode = new Html5Qrcode("reader");
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 15, qrbox: { width: 250, height: 250 } },
+            async (decodedText) => {
+                await html5QrCode.stop();
+                processDashboardScan(decodedText);
+            }
+        );
+        if (status) status.textContent = "Cámara activa - Escaneando...";
+    } catch (err) {
+        if (status) status.textContent = "Error al acceder a la cámara";
+        console.error(err);
+    }
+}
+
+async function processDashboardScan(scanData) {
+    const resultDiv = document.getElementById('scan-result');
+    const errorDiv = document.getElementById('scan-error');
+    const readerDiv = document.getElementById('reader-container');
+    const status = document.getElementById('scanner-status');
+
+    if (readerDiv) readerDiv.style.display = 'none';
+    if (status) status.style.display = 'none';
+
+    const res = await apiRequest('/accesos/scan', 'POST', { scanData });
+
+    if (res.ok) {
+        const data = res.data.data;
+        document.getElementById('scan-user-name').textContent = data.nombre;
+        document.getElementById('scan-user-type').textContent = data.esInvitado ? 'Invitado' : 'Usuario Permanente';
+
+        const photoEl = document.getElementById('scan-user-photo');
+        if (data.foto) {
+            photoEl.innerHTML = `<img src="${data.foto}" style="width:100%; height:100%; object-fit:cover;">`;
+        } else {
+            photoEl.textContent = data.nombre.charAt(0).toUpperCase();
+        }
+
+        resultDiv.style.display = 'block';
+    } else {
+        errorDiv.style.display = 'block';
+        document.getElementById('scan-error-msg').textContent = res.data?.error || 'QR inválido';
+    }
+}
+
 window.showUserDetail = showUserDetail;
 window.closeModal = closeModal;
+window.startDashboardScanner = startDashboardScanner;
 
