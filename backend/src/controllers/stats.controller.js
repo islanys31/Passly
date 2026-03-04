@@ -78,7 +78,7 @@ exports.getTrafficByHour = async (req, res) => {
         const tenantId = req.user.cliente_id;
 
         const [rows] = await db.query(`
-            SELECT a.fecha_hora
+            SELECT a.fecha_hora, a.tipo, u.nombre as usuario_nombre, u.foto_url as usuario_foto
             FROM accesos a
             JOIN usuarios u ON a.usuario_id = u.id
             WHERE u.cliente_id = ?
@@ -87,6 +87,53 @@ exports.getTrafficByHour = async (req, res) => {
         `, [tenantId]);
 
         res.json({ ok: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};
+
+exports.getAdvancedStats = async (req, res) => {
+    try {
+        const tenantId = req.user.cliente_id;
+
+        // 1. Accesos de los últimos 7 días
+        const [weekly] = await db.query(`
+            SELECT DATE(fecha_hora) as date, COUNT(*) as count 
+            FROM accesos a
+            JOIN usuarios u ON a.usuario_id = u.id
+            WHERE u.cliente_id = ? AND fecha_hora >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(fecha_hora)
+            ORDER BY DATE(fecha_hora) ASC
+        `, [tenantId]);
+
+        // 2. Accesos por medio de transporte (JOIN dispositivos + medios_transporte)
+        const [byTransport] = await db.query(`
+            SELECT mt.nombre as label, COUNT(a.id) as value
+            FROM accesos a
+            JOIN usuarios u ON a.usuario_id = u.id
+            LEFT JOIN dispositivos d ON a.dispositivo_id = d.id
+            LEFT JOIN medios_transporte mt ON d.medio_transporte_id = mt.id
+            WHERE u.cliente_id = ?
+            GROUP BY mt.nombre
+        `, [tenantId]);
+
+        // 3. Usuarios por rol
+        const [byRole] = await db.query(`
+            SELECT r.nombre_rol as label, COUNT(u.id) as value
+            FROM usuarios u
+            JOIN roles r ON u.rol_id = r.id
+            WHERE u.cliente_id = ?
+            GROUP BY r.nombre_rol
+        `, [tenantId]);
+
+        res.json({
+            ok: true,
+            data: {
+                weekly,
+                byTransport,
+                byRole
+            }
+        });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }

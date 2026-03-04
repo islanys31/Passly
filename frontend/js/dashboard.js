@@ -59,6 +59,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 4. Conectar WebSockets para actualizaciones en tiempo real
     setupSocket();
+
+    // 6. Inicializar Centro de Notificaciones
+    initNotifications();
 });
 
 /**
@@ -123,7 +126,7 @@ function setupUI() {
 
     // Configurar los botones de navegación del Sidebar
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
-    const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security', 'scanner'];
+    const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security', 'analytics', 'config', 'help'];
 
     navItems.forEach((item, index) => {
         if (!navItems[index]) return;
@@ -214,6 +217,22 @@ async function loadView(view, force = false) {
             case 'security':
                 title.textContent = "Seguridad de la Cuenta";
                 await renderSecurity(content);
+                break;
+            case 'analytics':
+                title.textContent = "Analíticas Avanzadas";
+                await renderAnalytics(content);
+                break;
+            case 'config':
+                title.textContent = "Configuración del Sistema";
+                await renderSettings(content);
+                break;
+            case 'help':
+                title.textContent = "Guía y Manuales";
+                await renderHelp(content);
+                break;
+            case 'profile':
+                title.textContent = "Mi Perfil";
+                await renderProfile(content);
                 break;
             case 'scanner':
                 title.textContent = "Escáner de Acceso";
@@ -674,6 +693,299 @@ function generateAccessTable(data) {
             </tr>`).join('')}
         </tbody>
     </table>`;
+}
+
+/**
+ * CENTRO DE NOTIFICACIONES
+ */
+async function initNotifications() {
+    const icon = document.getElementById('notifIcon');
+    const dropdown = document.getElementById('notifDropdown');
+    const badge = document.getElementById('notifBadge');
+
+    // Toggle dropdown
+    icon.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+        if (dropdown.classList.contains('show')) fetchNotifications();
+    };
+
+    document.addEventListener('click', () => dropdown.classList.remove('show'));
+
+    // Intervalo de chequeo
+    setInterval(fetchNotifications, 60000);
+    fetchNotifications();
+
+    document.getElementById('btnMarkAllRead').onclick = async (e) => {
+        e.stopPropagation();
+        // Lógica simplificada: en una app real iteraríamos o habría endpoint 'read-all'
+        showToast("Marcado como leído", "info");
+    };
+}
+
+async function fetchNotifications() {
+    const res = await apiRequest('/notificaciones');
+    if (res.ok) {
+        const notifs = res.data;
+        const unreadCount = notifs.filter(n => !n.leido).length;
+        const badge = document.getElementById('notifBadge');
+        const list = document.getElementById('notifList');
+
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        if (notifs.length === 0) {
+            list.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">Sin notificaciones nuevas</div>`;
+            return;
+        }
+
+        list.innerHTML = notifs.map(n => `
+            <div class="notif-item ${n.leido ? '' : 'unread'}" onclick="markNotifRead(${n.id})">
+                <i>${n.tipo === 'error' ? '🛑' : (n.tipo === 'warning' ? '⚠️' : 'ℹ️')}</i>
+                <div class="notif-content">
+                    <h4>${escapeHTML(n.titulo)}</h4>
+                    <p>${escapeHTML(n.mensaje)}</p>
+                    <div class="notif-time">${new Date(n.fecha_hora).toLocaleString()}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+async function markNotifRead(id) {
+    await apiRequest(`/notificaciones/${id}/read`, 'PATCH');
+    fetchNotifications();
+}
+
+/**
+ * MODULO: MI PERFIL
+ */
+async function renderProfile(container) {
+    const res = await apiRequest('/usuarios/me');
+    if (!res.ok) return;
+    const user = res.data.user;
+
+    container.innerHTML = `
+        <div class="card glass-glow profile-card" style="padding:40px;">
+            <div style="text-align:center; border-right:1px solid var(--border-color); padding-right:30px;">
+                <div class="user-avatar" style="width:120px; height:120px; font-size:40px; margin:0 auto 20px;">
+                    ${user.foto_url ? `<img src="${user.foto_url}" id="profilePreview" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : `<span id="profilePreview">${user.nombre.charAt(0)}</span>`}
+                </div>
+                <input type="file" id="photoInput" style="display:none;" accept="image/*">
+                <button class="btn-table" id="btnChangeAvatar" style="margin-top:10px;">Cambiar Foto</button>
+                <div style="margin-top:30px;">
+                    <div class="badge badge-success">${user.rol_id === 1 ? 'ADMINISTRADOR' : 'USUARIO'}</div>
+                    <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">Miembro desde: ${new Date(user.created_at || Date.now()).toLocaleDateString()}</p>
+                </div>
+            </div>
+            <div>
+                <h3>Datos Personales</h3>
+                <div class="settings-grid" style="grid-template-columns:1fr; margin-top:20px;">
+                    <div class="setting-item">
+                        <label>Nombre</label>
+                        <input type="text" id="profNombre" value="${user.nombre}">
+                    </div>
+                    <div class="setting-item">
+                        <label>Apellido</label>
+                        <input type="text" id="profApellido" value="${user.apellido}">
+                    </div>
+                    <div class="setting-item">
+                        <label>Email</label>
+                        <input type="email" id="profEmail" value="${user.email}">
+                    </div>
+                </div>
+                <button id="btnSaveProfile" style="margin-top:30px; background:var(--accent-blue);">Actualizar Datos</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('btnSaveProfile').onclick = async () => {
+        const data = {
+            nombre: document.getElementById('profNombre').value,
+            apellido: document.getElementById('profApellido').value,
+            email: document.getElementById('profEmail').value
+        };
+        const update = await apiRequest('/usuarios/me', 'PUT', data);
+        if (update.ok) {
+            showToast("Perfil actualizado", "success");
+            userData.nombre = data.nombre;
+            setupUI();
+        }
+    };
+
+    document.getElementById('btnChangeAvatar').onclick = () => document.getElementById('photoInput').click();
+    document.getElementById('photoInput').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        const res = await fetch('/api/usuarios/me/photo', {
+            method: 'POST',
+            body: formData,
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('passly_token')}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            showToast("Foto actualizada", "success");
+            loadView('profile', true);
+            setupUI();
+        }
+    };
+
+    // Link to profile view from top bar
+    document.getElementById('userProfileMenu').onclick = () => loadView('profile');
+}
+
+/**
+ * MODULO: CONFIGURACIÓN GLOBAL
+ */
+async function renderSettings(container) {
+    if (userData.rol_id !== 1) return container.innerHTML = "Acceso restringido a Administradores";
+
+    const res = await apiRequest('/config');
+    if (!res.ok) return;
+    const settings = res.data;
+
+    container.innerHTML = `
+        <div class="card glass-glow" style="max-width:900px; margin:0 auto; padding:30px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <h3>Parametrización del Sistema</h3>
+                <button id="btnSaveConfig" class="btn-table" style="background:var(--accent-green); color:white;">Guardar Cambios</button>
+            </div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>Nombre de la Sede</label>
+                    <input type="text" data-key="nombre_sede" value="${settings.nombre_sede}">
+                </div>
+                <div class="setting-item">
+                    <label>Email de Alertas</label>
+                    <input type="text" data-key="alerta_email" value="${settings.alerta_email}">
+                </div>
+                <div class="setting-item">
+                    <label>Validez de QR (minutos)</label>
+                    <input type="number" data-key="tiempo_qr_validez" value="${settings.tiempo_qr_validez}">
+                </div>
+                <div class="setting-item">
+                    <label>Auto-Registro de Usuarios</label>
+                    <select data-key="permite_registro_auto">
+                        <option value="true" ${settings.permite_registro_auto === 'true' ? 'selected' : ''}>Habilitado</option>
+                        <option value="false" ${settings.permite_registro_auto === 'false' ? 'selected' : ''}>Deshabilitado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('btnSaveConfig').onclick = async () => {
+        const bodyArr = [...container.querySelectorAll('[data-key]')].reduce((acc, el) => {
+            acc[el.dataset.key] = el.value;
+            return acc;
+        }, {});
+        const save = await apiRequest('/config', 'PATCH', bodyArr);
+        if (save.ok) showToast("Configuración guardada", "success");
+    };
+}
+
+/**
+ * MODULO: ANALÍTICAS AVANZADAS
+ */
+async function renderAnalytics(container) {
+    const res = await apiRequest('/stats/advanced');
+    if (!res.ok) return;
+    const { weekly, byTransport, byRole } = res.data;
+
+    container.innerHTML = `
+        <div class="stats-grid">
+            <div class="card glass-glow" style="grid-column: span 2;">
+                <h3>Tendencia Seganal (Accesos)</h3>
+                <div style="height:300px;"><canvas id="weeklyChart"></canvas></div>
+            </div>
+            <div class="card glass-glow">
+                <h3>Distribución por Transporte</h3>
+                <div style="height:250px;"><canvas id="transportChart"></canvas></div>
+            </div>
+            <div class="card glass-glow">
+                <h3>Usuarios por Rol</h3>
+                <div style="height:250px;"><canvas id="roleChart"></canvas></div>
+            </div>
+        </div>
+    `;
+
+    setTimeout(() => {
+        // Grafico Semanal
+        new Chart(document.getElementById('weeklyChart'), {
+            type: 'line',
+            data: {
+                labels: weekly.map(w => w.date),
+                datasets: [{ label: 'Accesos', data: weekly.map(w => w.count), borderColor: 'var(--accent-blue)', tension: 0.4, fill: true, backgroundColor: 'rgba(54, 162, 235, 0.1)' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Grafico Transporte (Dona)
+        new Chart(document.getElementById('transportChart'), {
+            type: 'doughnut',
+            data: {
+                labels: byTransport.map(t => t.label || 'Otros'),
+                datasets: [{ data: byTransport.map(t => t.value), backgroundColor: ['#10b981', '#3b82f6', '#a78bfa', '#f59e0b'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Grafico Roles
+        new Chart(document.getElementById('roleChart'), {
+            type: 'pie',
+            data: {
+                labels: byRole.map(r => r.label),
+                datasets: [{ data: byRole.map(r => r.value), backgroundColor: ['#ef4444', '#3b82f6', '#10b981'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }, 100);
+}
+
+/**
+ * MODULO: AYUDA / MANUALES
+ */
+async function renderHelp(container) {
+    container.innerHTML = `
+        <div style="max-width:800px; margin:0 auto;">
+            <div class="card glass-glow" style="margin-bottom:30px; text-align:left;">
+                <h3>Centro de Soporte Passly</h3>
+                <p style="margin-top:10px; color:var(--text-secondary);">Accede a la documentación oficial del sistema para resolver dudas operativas.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:30px;">
+                    <div class="setting-item" style="cursor:pointer;" onclick="window.open('/docs/04_MANUALES.md', '_blank')">
+                        <i style="font-size:30px;">📄</i>
+                        <h4 style="margin-top:10px;">Manual de Usuario</h4>
+                        <p style="font-size:11px;">Guía básica para el uso diario del sistema.</p>
+                    </div>
+                    <div class="setting-item" style="cursor:pointer;" onclick="window.open('/docs/04_MANUALES.md', '_blank')">
+                        <i style="font-size:30px;">🛠️</i>
+                        <h4 style="margin-top:10px;">Manual Técnico</h4>
+                        <p style="font-size:11px;">Configuración avanzada para administradores.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card glass-glow" style="text-align:left;">
+                <h3>Preguntas Frecuentes</h3>
+                <details style="margin-top:20px; padding:10px; border-bottom:1px solid var(--border-color);">
+                    <summary style="font-weight:600; cursor:pointer;">¿Cómo genero un nuevo código QR?</summary>
+                    <p style="padding-top:10px; font-size:13px; color:var(--text-secondary);">En el panel de Inicio (Overview), busca la sección "Mi Llave QR" y presiona el botón "Generar".</p>
+                </details>
+                <details style="margin-top:10px; padding:10px;">
+                    <summary style="font-weight:600; cursor:pointer;">¿Qué hago si olvidé mi contraseña?</summary>
+                    <p style="padding-top:10px; font-size:13px; color:var(--text-secondary);">Utiliza la opción "Recuperar cuenta" en la página de inicio de sesión.</p>
+                </details>
+            </div>
+        </div>
+    `;
 }
 
 function generateAuditTable(data) {

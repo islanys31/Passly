@@ -32,6 +32,9 @@
         <div class="nav-item"><i>🚪</i> <span class="nav-text">Accesos</span></div>
         <div id="navAudit" class="nav-item"><i>📋</i> <span class="nav-text">Auditoría</span></div>
         <div id="navSecurity" class="nav-item"><i>🛡️</i> <span class="nav-text">Seguridad</span></div>
+        <div id="navAnalytics" class="nav-item"><i>📈</i> <span class="nav-text">Analíticas</span></div>
+        <div id="navConfig" class="nav-item"><i>⚙️</i> <span class="nav-text">Configuración</span></div>
+        <div id="navHelp" class="nav-item"><i>📖</i> <span class="nav-text">Manuales</span></div>
       </nav>
       <div class="sidebar-footer">
         <div class="theme-toggle" id="themeToggle"
@@ -47,8 +50,29 @@
     <main class="main-view">
       <div class="top-bar">
         <h2 id="view-title">Resumen</h2>
-        <div style="display:flex; align-items:center; gap:20px;">
-          <div class="user-profile">
+        <div style="display:flex; align-items:center; gap:25px;">
+          <!-- Centro de Notificaciones -->
+          <div class="notification-center" id="notifCenter">
+            <div class="notif-icon" id="notifIcon">
+              <i>🔔</i>
+              <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+            </div>
+            <div class="notif-dropdown" id="notifDropdown">
+              <div class="notif-header">
+                <span>Notificaciones</span>
+                <button id="btnMarkAllRead"
+                  style="padding:4px 8px; font-size:10px; width:auto; border-radius:6px; background:var(--bg-secondary); margin:0;">Leído
+                  todo</button>
+              </div>
+              <div class="notif-list" id="notifList">
+                <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">Sin
+                  notificaciones nuevas</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Perfil de Usuario -->
+          <div class="user-profile" id="userProfileMenu" style="cursor:pointer;" title="Ver mi perfil">
             <div class="user-avatar" id="userInitial">-</div>
             <div style="text-align:left;">
               <div id="userName" style="font-size:14px; font-weight:600; color:var(--text-primary);">Cargando...</div>

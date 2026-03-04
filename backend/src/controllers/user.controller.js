@@ -47,6 +47,51 @@ exports.getMe = async (req, res) => {
     }
 };
 
+exports.updateMe = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { nombre, apellido, email } = req.body;
+
+        // 🛡️ SEGURIDAD: Verificar si el email ya existe en otro usuario
+        if (email) {
+            const [existing] = await db.query('SELECT id FROM usuarios WHERE email = ? AND id != ?', [email, userId]);
+            if (existing.length > 0) {
+                return res.status(400).json({ ok: false, error: 'El correo electrónico ya está en uso por otro usuario' });
+            }
+        }
+
+        await db.query(
+            'UPDATE usuarios SET nombre = ?, apellido = ?, email = ? WHERE id = ?',
+            [nombre, apellido, email, userId]
+        );
+
+        res.json({ ok: true, message: 'Perfil actualizado correctamente' });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};
+
+exports.uploadMyPhoto = async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ ok: false, error: 'No se subió imagen' });
+
+        const photoUrl = `/uploads/profiles/${req.file.filename}`;
+        const userId = req.user.id;
+
+        // Borrar anterior
+        const [user] = await db.query('SELECT foto_url FROM usuarios WHERE id = ?', [userId]);
+        if (user[0]?.foto_url && user[0].foto_url.startsWith('/uploads/')) {
+            const oldPath = path.join(__dirname, '../../', user[0].foto_url);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+
+        await db.query('UPDATE usuarios SET foto_url = ? WHERE id = ?', [photoUrl, userId]);
+        res.json({ ok: true, photoUrl });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};
+
 exports.createUser = async (req, res) => {
     try {
         const { nombre, apellido, email, password, rol_id } = req.body;

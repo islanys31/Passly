@@ -131,6 +131,26 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 | ip_address | VARCHAR(45) | NULLABLE |
 | fecha_hora | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
 
+### 3.10 Tabla `notificaciones`
+| Campo | Tipo | Restricción |
+|-------|------|-------------|
+| id | INT AUTO_INCREMENT | PRIMARY KEY |
+| usuario_id | INT | FK → usuarios(id), NOT NULL |
+| titulo | VARCHAR(100) | NOT NULL |
+| mensaje | TEXT | NOT NULL |
+| tipo | ENUM('info', 'warning', 'error') | DEFAULT 'info' |
+| leido | BOOLEAN | DEFAULT FALSE |
+| fecha_hora | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
+
+### 3.11 Tabla `configuracion_global`
+| Campo | Tipo | Restricción |
+|-------|------|-------------|
+| id | INT AUTO_INCREMENT | PRIMARY KEY |
+| clave | VARCHAR(50) | UNIQUE, NOT NULL |
+| valor | TEXT | NOT NULL |
+| descripcion | VARCHAR(255) | NULLABLE |
+| updated_at | TIMESTAMP | AUTO ON UPDATE |
+
 ---
 
 ## 4. RESTRICCIONES DE INTEGRIDAD
@@ -157,3 +177,4 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 *   `accesos.usuario_id` → `usuarios.id`
 *   `accesos.dispositivo_id` → `dispositivos.id`
 *   `logs_sistema.usuario_id` → `usuarios.id`
+*   `notificaciones.usuario_id` → `usuarios.id`

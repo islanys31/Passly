@@ -20,6 +20,8 @@ const transportRoutes = require('./routes/transport.routes');
 const accessRoutes = require('./routes/access.routes');
 const statsRoutes = require('./routes/stats.routes');
 const logRoutes = require('./routes/log.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const configRoutes = require('./routes/config.routes');
 
 // Importar middlewares de seguridad reforzada (Hardening)
 const {
@@ -129,6 +131,8 @@ app.use('/api/transportes', transportRoutes); // Listado de medios (Coche, Moto,
 app.use('/api/accesos', accessRoutes);     // Registro de entradas/salidas y QR
 app.use('/api/stats', statsRoutes);       // Datos para las gráficas del Dashboard
 app.use('/api/logs', logRoutes);           // Historial de auditoría para administradores
+app.use('/api/notificaciones', notificationRoutes); // Sistema de alertas
+app.use('/api/config', configRoutes);      // Configuración global del sistema
 
 // ============================================
 // MANEJO DE RUTAS DEL FRONTEND

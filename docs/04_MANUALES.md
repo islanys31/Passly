@@ -55,9 +55,9 @@
 
 ### 2.1 Estructura del Proyecto
 *   `/backend/src/config/`: Configuraciones (DB pool, Socket.IO, Swagger).
-*   `/backend/src/controllers/`: Lógica de negocio (6 controladores: auth, user, device, access, transport, stats).
+*   `/backend/src/controllers/`: Lógica de negocio (8 controladores: auth, user, device, access, transport, stats, notification, config).
 *   `/backend/src/middlewares/`: Autenticación JWT, Seguridad (Helmet, Rate Limiting, Validación), Upload de archivos.
-*   `/backend/src/routes/`: Rutas de la API REST (6 archivos).
+*   `/backend/src/routes/`: Rutas de la API REST (8 archivos).
 *   `/backend/src/services/`: Servicios externos (Email con Nodemailer).
 *   `/backend/src/utils/`: Utilidades (Backups programados).
 *   `/frontend/`: Dashboard, autenticación, escáner QR y páginas de recuperación.
@@ -97,6 +97,15 @@ GET  /api/accesos/qr             - Generar QR personal
 POST /api/accesos/invitation     - Crear invitación QR temporal
 POST /api/accesos/scan           - Validar escaneo QR
 GET  /api/stats                  - Estadísticas generales
+GET  /api/stats/traffic          - Historial de tráfico por hora
+GET  /api/stats/advanced         - Analíticas avanzadas (graficos)
+GET  /api/notificaciones         - Mis notificaciones
+PATCH /api/notificaciones/:id/read - Marcar como leída
+GET  /api/config                 - Obtener configuración global
+PATCH /api/config                - Actualizar configuración (Admin)
+GET  /api/usuarios/me            - Mi perfil actual
+PUT  /api/usuarios/me            - Actualizar mis datos
+POST /api/usuarios/me/photo      - Subir mi foto de perfil
 ```
 
 > 📘 Documentación interactiva en: `http://localhost:3000/api-docs` (Swagger)
@@ -135,6 +144,7 @@ Si desea invitar a alguien:
 
 ### 3.3 Uso del Dashboard
 *   **Estadísticas**: El panel superior muestra usuarios activos, accesos del día, dispositivos activos y alertas en tiempo real.
+*   **Notificaciones**: Acceda a las alertas de sistema desde el ícono de campana en la barra superior.
 *   **Gráfica**: Visualice el tráfico de accesos por horas del día actual.
 *   **Últimos Accesos**: Tabla actualizada en tiempo real vía WebSockets.
 *   **QR Personal**: Genere y descargue su código QR para acceso rápido.
@@ -158,4 +168,11 @@ En la pestaña "Dispositivos", puede añadir nuevos vehículos, motocicletas o b
 *   **PDF**: En "Accesos" → Click en "📄 PDF" → Descarga reporte profesional con logo y formato corporativo.
 
 ### 3.8 Gestión de Usuarios
-En la pestaña "Usuarios", los administradores pueden crear, editar, desactivar usuarios y subir fotos de perfil (JPG/PNG, máximo 2MB).
+En la pestaña "Usuarios", los administradores pueden crear, editar, desactivar usuarios y visualizar la ficha maestra detallada de cada persona.
+
+### 3.9 Perfil y Configuración
+*   **Mi Perfil**: Haga clic en su nombre en la barra superior para actualizar sus datos personales y cambiar su foto de perfil.
+*   **Ajustes de Sistema**: (Solo Admin) En "Configuración", defina el nombre de la sede, tiempos de validez de QR y políticas de auto-registro.
+
+### 3.10 Analíticas Avanzadas
+En la pestaña "Analíticas", visualice reportes gráficos sobre tendencias semanales, distribución de medios de transporte y censos de roles de usuario.
