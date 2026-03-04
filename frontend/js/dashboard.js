@@ -38,8 +38,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Vincular eventos globales (Delegación de eventos para robustez)
     document.addEventListener('click', (e) => {
-        if (e.target && (e.target.id === 'btnCancelGlobal' || e.target.classList.contains('btn-close-modal'))) {
+        // Cerrar modales (clase btn-close-modal o ID btnCancelGlobal)
+        if (e.target && (e.target.id === 'btnCancelGlobal' || e.target.classList.contains('btn-close-modal') || e.target.closest('.btn-close-modal'))) {
             closeModal();
+            return;
+        }
+
+        // Abrir modal de logout (ID btnSidebarLogout o ancestros)
+        if (e.target && (e.target.id === 'btnSidebarLogout' || e.target.closest('#btnSidebarLogout'))) {
+            showModal('logout_confirm');
+            return;
+        }
+
+        // Ejecutar logout final (ID btnConfirmLogout)
+        if (e.target && e.target.id === 'btnConfirmLogout') {
+            handleLogout();
+            return;
         }
     });
 
@@ -138,10 +152,7 @@ function setupUI() {
         navMenu.appendChild(scannerBtn);
     }
 
-    // Botón de Cerrar Sesión con confirmación Premium
-    document.querySelector('.sidebar-footer .nav-item').onclick = () => {
-        showModal('logout_confirm');
-    };
+    // Ya no es necesario vincular aquí, se maneja por delegación arriba
 }
 
 /**
@@ -895,7 +906,7 @@ function renderModalFields(type, item) {
             <div style="text-align:center; padding:10px;">
                 <p style="margin-bottom:20px; color:var(--text-secondary);">¿Estás seguro de que deseas cerrar tu sesión actual?</p>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn-primary" style="background:var(--error-color)" onclick="handleLogout()">Sí, Salir</button>
+                    <button id="btnConfirmLogout" class="btn-primary" style="background:var(--error-color)">Sí, Salir</button>
                     <button class="btn-secondary btn-close-modal">Cancelar</button>
                 </div>
             </div>
