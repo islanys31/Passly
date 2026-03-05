@@ -31,6 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = "dashboard.html";
     }
 
+    // Auto-focus email field for better UX
+    setTimeout(() => {
+        const emailInput = document.getElementById("emailLogin");
+        if (emailInput) emailInput.focus();
+    }, 500);
+
     // Configurar listeners de eventos para interactividad
     initEventListeners();
 
@@ -87,16 +93,34 @@ function initEventListeners() {
         checkRegistrationFormValidity();
     };
 
-    // Show passwords
-    document.getElementById("showReg").onchange = e => {
-        const type = e.target.checked ? "text" : "password";
-        document.getElementById("passRegistro").type = type;
-        document.getElementById("passConfirm").type = type;
-    };
+    // Show/Hide passwords with new icon buttons
+    document.querySelectorAll('.btn-toggle-pass').forEach(btn => {
+        btn.onclick = () => {
+            const inputId = btn.getAttribute('data-input');
+            const input = document.getElementById(inputId);
+            if (!input) return;
 
-    document.getElementById("showLogin").onchange = e => {
-        document.getElementById("passLogin").type = e.target.checked ? "text" : "password";
-    };
+            if (input.type === "password") {
+                input.type = "text";
+                btn.innerHTML = "<i>🔓</i>";
+            } else {
+                input.type = "password";
+                btn.innerHTML = "<i>👁️</i>";
+            }
+        };
+    });
+
+    // Handle Enter key for submission
+    document.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const isLoginVisible = !document.getElementById("loginCard").classList.contains("hidden");
+            if (isLoginVisible) handleLogin();
+            else {
+                const btnReg = document.getElementById("btnRegistrar");
+                if (!btnReg.disabled) handleRegister();
+            }
+        }
+    });
 
     // Form Submissions
     document.getElementById("btnLogin").onclick = handleLogin;
@@ -210,6 +234,13 @@ async function handleLogin() {
         intentos++;
         const errorMsg = data?.error || (data?.errors ? data.errors[0].message : null) || error || `Credenciales incorrectas (${intentos}/3)`;
 
+        // Shake the card on error
+        const loginCard = document.getElementById('loginCard');
+        if (loginCard) {
+            loginCard.classList.add("shake");
+            setTimeout(() => loginCard.classList.remove("shake"), 500);
+        }
+
         if (errorEl) {
             errorEl.textContent = errorMsg;
             errorEl.style.display = "block";
@@ -255,10 +286,14 @@ function toggleForms(form) {
         regCard.classList.add("hidden");
         loginCard.classList.remove("hidden");
         loginCard.style.animation = "fadeInUp 0.5s ease";
+        const emailField = document.getElementById("emailLogin");
+        if (emailField) emailField.focus();
     } else {
         loginCard.classList.add("hidden");
         regCard.classList.remove("hidden");
         regCard.style.animation = "fadeInUp 0.5s ease";
+        const nameField = document.getElementById("nombreRegistro");
+        if (nameField) nameField.focus();
         checkRegistrationFormValidity();
     }
 }

@@ -60,6 +60,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. Conectar WebSockets para actualizaciones en tiempo real
     setupSocket();
 
+    // 5. Configurar Botón Flotante de Soporte (Creative Feature)
+    const fab = document.getElementById('supportFAB');
+    if (fab) fab.onclick = () => loadView('help', true);
+
     // 6. Inicializar Centro de Notificaciones
     initNotifications();
 });
@@ -173,10 +177,10 @@ async function loadView(view, force = false) {
     const content = document.getElementById('view-content');
     const title = document.getElementById('view-title');
 
-    // Reset de estilos para animación de entrada
-    content.style.opacity = '0';
-    content.style.transform = 'translateY(5px)';
-    content.style.transition = 'all 0.15s ease-out';
+    // Reset view with transition class
+    content.classList.remove('view-transition');
+    void content.offsetWidth; // Force reflow
+    content.classList.add('view-transition');
 
     // Actualizar estado 'active' en el Sidebar
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
@@ -241,10 +245,7 @@ async function loadView(view, force = false) {
         }
 
         // Aparecer suavemente con un pequeño delay para forzar el reflow del navegador
-        setTimeout(() => {
-            content.style.opacity = '1';
-            content.style.transform = 'translateY(0)';
-        }, 50);
+        // Content is already transitioning via CSS class
 
     } catch (error) {
         console.error("View Error:", error);
@@ -501,7 +502,14 @@ async function renderUsuarios(container, page = 1) {
 }
 
 function generateUserTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay usuarios</div>`;
+    if (!data.length) return `
+        <div class="empty-state">
+            <div class="empty-state-icon">👥</div>
+            <div class="empty-state-text">
+                <h3>Sin usuarios</h3>
+                <p>No se encontraron usuarios que coincidan con la búsqueda o la base de datos está vacía.</p>
+            </div>
+        </div>`;
     return `<table>
         <thead><tr><th>Foto</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Acciones</th></tr></thead>
         <tbody>
@@ -513,6 +521,7 @@ function generateUserTable(data) {
                 <td>
                     <button class="btn-table btn-detail" data-id="${u.id}" title="Ver ficha maestra">👁️</button>
                     <button class="btn-table btn-edit" data-item='${JSON.stringify(u)}' title="Editar usuario">✏️</button>
+                    <button class="btn-table btn-delete" data-id="${u.id}" data-name="${escapeHTML(u.nombre)}" title="Eliminar usuario">🗑️</button>
                 </td>
             </tr>`).join('')}
         </tbody>
@@ -648,7 +657,14 @@ async function renderAuditLogs(container, page = 1) {
 }
 
 function generateDeviceTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay dispositivos tecnológicos vinculados</div>`;
+    if (!data.length) return `
+        <div class="empty-state">
+            <div class="empty-state-icon">💻</div>
+            <div class="empty-state-text">
+                <h3>Equipos no vinculados</h3>
+                <p>No hay laptops, tablets o equipos tecnológicos registrados aún.</p>
+            </div>
+        </div>`;
     return `<table>
         <thead><tr><th>Nombre Equipo</th><th>Dueño</th><th>Última Conexión</th><th>Estado</th></tr></thead>
         <tbody>
@@ -663,7 +679,14 @@ function generateDeviceTable(data) {
 }
 
 function generateVehicleTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay vehículos registrados</div>`;
+    if (!data.length) return `
+        <div class="empty-state">
+            <div class="empty-state-icon">🚗</div>
+            <div class="empty-state-text">
+                <h3>Sin vehículos</h3>
+                <p>No hay placas o vehículos registrados en el sistema.</p>
+            </div>
+        </div>`;
     return `<table>
         <thead><tr><th>Vehículo</th><th>Placa</th><th>Propietario</th><th>Categoría</th><th>Acciones</th></tr></thead>
         <tbody>
@@ -898,7 +921,7 @@ async function renderSettings(container) {
 async function renderAnalytics(container) {
     const res = await apiRequest('/stats/advanced');
     if (!res.ok) return;
-    const { weekly, byTransport, byRole } = res.data;
+    const { weekly, byTransport, byRole } = res.data.data;
 
     container.innerHTML = `
         <div class="stats-grid">
@@ -933,7 +956,7 @@ async function renderAnalytics(container) {
             type: 'doughnut',
             data: {
                 labels: byTransport.map(t => t.label || 'Otros'),
-                datasets: [{ data: byTransport.map(t => t.value), backgroundColor: ['#10b981', '#3b82f6', '#a78bfa', '#f59e0b'] }]
+                datasets: [{ data: byTransport.map(t => t.value), backgroundColor: ['#10b981', '#3b82f6', '#a78bfa', '#f59e0b', '#6366f1', '#ec4899'] }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
@@ -979,10 +1002,35 @@ async function renderHelp(container) {
                     <summary style="font-weight:600; cursor:pointer;">¿Cómo genero un nuevo código QR?</summary>
                     <p style="padding-top:10px; font-size:13px; color:var(--text-secondary);">En el panel de Inicio (Overview), busca la sección "Mi Llave QR" y presiona el botón "Generar".</p>
                 </details>
-                <details style="margin-top:10px; padding:10px;">
-                    <summary style="font-weight:600; cursor:pointer;">¿Qué hago si olvidé mi contraseña?</summary>
-                    <p style="padding-top:10px; font-size:13px; color:var(--text-secondary);">Utiliza la opción "Recuperar cuenta" en la página de inicio de sesión.</p>
+                <details style="margin-top:10px; padding:10px; border-bottom:1px solid var(--border-color);">
+                    <summary style="font-weight:600; cursor:pointer;">¿Qué hacer si un dispositivo no se reconoce?</summary>
+                    <p style="padding-top:10px; font-size:13px; color:var(--text-secondary);">Asegúrese de que el ID único sea correcto y que el estado del dispositivo sea "Activo" en la gestión de dispositivos.</p>
                 </details>
+            </div>
+
+            <div class="card glass-glow" style="margin-top:30px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%); text-align:left;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3 style="margin:0;">⚡ Soporte Rápido</h3>
+                    <span class="badge badge-success">Online 24/7</span>
+                </div>
+                <p style="font-size:13px; color:var(--text-secondary); margin-bottom:20px;">¿Necesitas ayuda inmediata? Nuestro equipo técnico está a un clic.</p>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <button class="btn-table" style="background:#25D366; color:white; font-size:13px;" onclick="window.open('https://wa.me/573214567890?text=Hola,%20necesito%20soporte%20con%20Passly', '_blank')">
+                        <i>💬</i> WhatsApp
+                    </button>
+                    <button class="btn-table" style="background:var(--accent-blue); color:white; font-size:13px;" onclick="location.href='mailto:soporte@passly.com?subject=Soporte Técnico Passly'">
+                        <i>✉️</i> Email Directo
+                    </button>
+                </div>
+                
+                <div style="margin-top:20px; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; font-size:11px; display:flex; align-items:center; gap:10px; border:1px solid var(--border-color);">
+                    <span style="font-size:20px;">🤖</span>
+                    <div>
+                        <span style="font-weight:600; display:block;">PasslyBot</span>
+                        <span style="opacity:0.7;">Para reportar errores técnicos críticos.</span>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -1080,13 +1128,22 @@ function setupModuleEvents(container, type) {
 
     searchInput.oninput = () => {
         clearTimeout(searchDebounce);
-        searchDebounce = setTimeout(() => {
+
+        // Visual feedback for search starting
+        searchInput.parentElement.querySelector('i').textContent = '⏳';
+
+        searchDebounce = setTimeout(async () => {
             const term = searchInput.value.trim();
-            // Guardar término activo para que las funciones de render lo usen
             searchInput.dataset.activeSearch = term;
+
             const renderFn = renderFnMap[type];
-            if (renderFn) renderFn(container, 1); // Siempre vuelve a página 1 al buscar
-        }, 350);
+            if (renderFn) {
+                await renderFn(container, 1);
+            }
+
+            // Restore icon
+            searchInput.parentElement.querySelector('i').textContent = '🔍';
+        }, 500);
     };
 
     const addBtnMap = {
@@ -1113,6 +1170,28 @@ function setupModuleEvents(container, type) {
             showUserDetail(id);
         };
     });
+
+    if (type === 'usuarios') {
+        container.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.onclick = async () => {
+                const id = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+                if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al usuario "${name}"? Esta acción no se puede deshacer.`)) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    const res = await apiRequest(`/usuarios/${id}`, 'DELETE');
+                    if (res && res.ok) {
+                        showToast("Usuario eliminado correctamente", "success");
+                        loadView('usuarios', true);
+                    } else {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        showToast(res?.data?.error || "Error al eliminar el usuario", "error");
+                    }
+                }
+            };
+        });
+    }
 }
 
 function showModal(type, item = null) {
@@ -1125,7 +1204,7 @@ function showModal(type, item = null) {
     if (!overlay || !body) return;
 
     // Reset view
-    title.textContent = item ? `Editar ${type}` : (type === 'logout_confirm' ? 'Cerrar Sesión' : `Nuevo ${type.slice(0, -1)}`);
+    title.textContent = item ? `Editar ${type} ` : (type === 'logout_confirm' ? 'Cerrar Sesión' : `Nuevo ${type.slice(0, -1)} `);
 
     if (type === 'logout_confirm') {
         saveBtn.style.display = 'none';
@@ -1138,7 +1217,7 @@ function showModal(type, item = null) {
     saveBtn.onclick = () => handleModalSave(type, item?.id);
 
     if (type === 'vehiculos' || type === 'dispositivos') {
-        body.innerHTML = `<div class="loading-spinner"></div> Cargando formulario...`;
+        body.innerHTML = `< div class="loading-spinner" ></div > Cargando formulario...`;
         Promise.all([
             apiRequest('/usuarios'),
             apiRequest('/transportes')
@@ -1170,7 +1249,7 @@ document.addEventListener('keydown', (e) => {
 function renderModalFields(type, item) {
     if (type === 'usuarios') {
         return `
-            <div class="form-group"><label>Nombre</label><input type="text" id="m_nombre" value="${item?.nombre || ''}"></div>
+    < div class="form-group" ><label>Nombre</label><input type="text" id="m_nombre" value="${item?.nombre || ''}"></div>
             <div class="form-group"><label>Apellido</label><input type="text" id="m_apellido" value="${item?.apellido || ''}"></div>
             <div class="form-group"><label>Email</label><input type="email" id="m_email" value="${item?.email || ''}"></div>
             <div class="form-group">
@@ -1181,11 +1260,11 @@ function renderModalFields(type, item) {
                     <option value="3" ${item?.rol_id === 3 ? 'selected' : ''}>Seguridad</option>
                 </select>
             </div>
-        `;
+`;
     }
     if (type === 'accesos') {
         return `
-            <div style="text-align:left;">
+    < div style = "text-align:left;" >
                 <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">Crea una invitación temporal para un invitado o registra un acceso manual.</p>
                 <div class="form-group"><label>Nombre del Invitado</label><input type="text" id="guest_name" placeholder="Ej: Juan Pérez"></div>
                 <div class="form-group"><label>Email del Invitado (Opcional)</label><input type="email" id="guest_email" placeholder="Para enviarle el QR directamente"></div>
@@ -1204,39 +1283,39 @@ function renderModalFields(type, item) {
                         <i>📱</i> Compartir por WhatsApp
                     </button>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
     }
     if (type === 'transportes') {
         return `
-            <div class="form-group"><label>Nombre de la Categoría</label><input type="text" id="t_nombre" value="${item?.nombre || ''}" placeholder="Ej: Carro, Moto, Blindado"></div>
+    < div class="form-group" ><label>Nombre de la Categoría</label><input type="text" id="t_nombre" value="${item?.nombre || ''}" placeholder="Ej: Carro, Moto, Blindado"></div>
             <div class="form-group"><label>Descripción</label><input type="text" id="t_desc" value="${item?.descripcion || ''}" placeholder="Opcional"></div>
-        `;
+`;
     }
     if (type === 'logout_confirm') {
         return `
-            <div style="text-align:center; padding:10px;">
+    < div style = "text-align:center; padding:10px;" >
                 <p style="margin-bottom:20px; color:var(--text-secondary);">¿Estás seguro de que deseas cerrar tu sesión actual?</p>
                 <div style="display:flex; gap:10px;">
                     <button id="btnConfirmLogout" class="btn-primary" style="background:var(--error-color)">Sí, Salir</button>
                     <button class="btn-secondary btn-close-modal">Cancelar</button>
                 </div>
-            </div>
-        `;
+            </div >
+    `;
     }
-    return `<p>Formulario para ${type} en desarrollo...</p>`;
+    return `< p > Formulario para ${type} en desarrollo...</p > `;
 }
 
 function renderDynamicForm(type, item, users, trans) {
     if (type === 'vehiculos') {
         return `
-            <div class="form-group">
+    < div class="form-group" >
                 <label>Propietario</label>
                 <select id="v_usuario">
                     <option value="">Seleccione dueño...</option>
                     ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
                 </select>
-            </div>
+            </div >
             <div class="form-group">
                 <label>Categoría</label>
                 <select id="v_tipo">
@@ -1246,20 +1325,20 @@ function renderDynamicForm(type, item, users, trans) {
             </div>
             <div class="form-group"><label>Marca / Modelo</label><input type="text" id="v_nombre" value="${item?.nombre || ''}" placeholder="Ej: Mazda CX-5"></div>
             <div class="form-group"><label>Placa (Matrícula)</label><input type="text" id="v_placa" value="${item?.identificador_unico || ''}" placeholder="Ej: ABC-123"></div>
-        `;
+`;
     }
     if (type === 'dispositivos') {
         return `
-            <div class="form-group">
+    < div class="form-group" >
                 <label>Asignar a Usuario</label>
                 <select id="d_usuario">
                     <option value="">Seleccione usuario...</option>
                     ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
                 </select>
-            </div>
+            </div >
             <div class="form-group"><label>Nombre del Equipo</label><input type="text" id="d_nombre" value="${item?.nombre || ''}" placeholder="Ej: Laptop Dell, iPad Admin"></div>
             <div class="form-group"><label>ID Único / Serial</label><input type="text" id="d_uid" value="${item?.identificador_unico || ''}" placeholder="Opcional"></div>
-        `;
+`;
     }
 }
 
@@ -1290,7 +1369,7 @@ async function handleModalSave(type, id) {
         payload = {
             usuario_id: document.getElementById('d_usuario').value,
             nombre: document.getElementById('d_nombre').value.trim(),
-            identificador_unico: document.getElementById('d_uid').value.trim() || `TECH-${Date.now()}`
+            identificador_unico: document.getElementById('d_uid').value.trim() || `TECH - ${Date.now()} `
         };
         if (!payload.usuario_id || !payload.nombre) return showToast("Asigne un dueño y nombre al equipo", "warning");
     } else if (type === 'accesos') {
@@ -1300,7 +1379,7 @@ async function handleModalSave(type, id) {
         if (!guestName) return showToast("Nombre del invitado requerido", "warning");
 
         saveBtn.disabled = true;
-        saveBtn.innerHTML = `<span class="loading-spinner"></span> Generando...`;
+        saveBtn.innerHTML = `< span class="loading-spinner" ></span > Generando...`;
 
         const res = await apiRequest('/accesos/invitation', 'POST', { guestName, guestEmail, expirationHours });
 
@@ -1312,7 +1391,7 @@ async function handleModalSave(type, id) {
             const qrDiv = document.getElementById('guestQR');
             const waBtn = document.getElementById('btnShareWA');
 
-            qrDiv.innerHTML = `<img src="${res.data.qr}" style="width:100%; border-radius:8px;">`;
+            qrDiv.innerHTML = `< img src = "${res.data.qr}" style = "width:100%; border-radius:8px;" > `;
             resultDiv.style.display = 'block';
 
             waBtn.onclick = async () => {
@@ -1328,11 +1407,11 @@ async function handleModalSave(type, id) {
 
     // Efecto de carga en el botón
     saveBtn.disabled = true;
-    saveBtn.innerHTML = `<span class="loading-spinner"></span> Guardando...`;
+    saveBtn.innerHTML = `< span class="loading-spinner" ></span > Guardando...`;
 
-    let url = type === 'vehiculos' ? '/dispositivos' : `/${type}`;
+    let url = type === 'vehiculos' ? '/dispositivos' : `/ ${type} `;
     let method = id ? 'PUT' : 'POST';
-    if (id) url += `/${id}`;
+    if (id) url += `/ ${id} `;
 
     const finalRes = await apiRequest(url, method, payload);
 
@@ -1369,13 +1448,22 @@ async function showUserDetail(userId) {
     const saveBtn = document.getElementById('btnSave');
 
     title.textContent = "Ficha Maestra - Perfil de Usuario";
-    saveBtn.style.display = 'none'; // No se edita aquí
+    saveBtn.style.display = 'none';
 
     body.innerHTML = `<div class="loading-spinner"></div> Consultando historial...`;
-    overlay.style.display = 'flex';
-    overlay.classList.add('active');
+    overlay.classList.add('show');
 
     try {
+        // Buscamos al usuario en la data actual (currentData) o lo pedimos al servidor si no está
+        let user = currentData.find(u => Number(u.id) === Number(userId));
+
+        if (!user) {
+            const uRes = await apiRequest(`/usuarios/${userId}`);
+            if (uRes.ok) user = uRes.data.data || uRes.data;
+        }
+
+        if (!user) throw new Error("Usuario no encontrado");
+
         const [dRes, aRes] = await Promise.all([
             apiRequest('/dispositivos'),
             apiRequest('/accesos')
@@ -1384,7 +1472,6 @@ async function showUserDetail(userId) {
         const allDevices = dRes.data.data || dRes.data;
         const allAccess = aRes.data.data || aRes.data;
 
-        const user = currentData.find(u => u.id === userId);
         const userVehicles = allDevices.filter(d => d.usuario_id === userId && d.medio_transporte_id);
         const userTech = allDevices.filter(d => d.usuario_id === userId && !d.medio_transporte_id);
         const userHistory = allAccess.filter(a => a.usuario_id === userId).slice(0, 5);
@@ -1462,7 +1549,7 @@ async function showUserDetail(userId) {
             </div>
             
             <button class="btn-table" onclick="window.closeModal()" style="width:100%; margin-top:20px; background:var(--bg-secondary); border:1px solid var(--border-color);">Cerrar Ficha Maestra</button>
-        `;
+`;
 
         // Vincular botón editar dentro del detalle
         const btnEditDetail = document.getElementById('btnEditFromDetail');
@@ -1470,10 +1557,10 @@ async function showUserDetail(userId) {
 
     } catch (e) {
         body.innerHTML = `<p style="color:var(--error-color)">Error al cargar la ficha técnica.</p>`;
+        console.error(e);
     }
 }
 
-// Al final del archivo, reafirmamos las exportaciones por seguridad
 /**
  * Renderiza el módulo de escáner integrado en el dashboard
  */
@@ -1506,13 +1593,13 @@ async function renderScanner(container) {
             
             <p id="scanner-status" style="margin-top:15px; font-size:12px; color:var(--text-muted);">Iniciando cámara...</p>
         </div>
-        <style>
-            @keyframes scanAnim {
-                0% { top: 0; }
-                100% { top: 100%; }
-            }
-        </style>
-    `;
+    <style>
+        @keyframes scanAnim {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+    </style>
+`;
 
     window.startDashboardScanner = startDashboardScanner;
     setTimeout(startDashboardScanner, 500);
@@ -1580,7 +1667,11 @@ async function processDashboardScan(scanData) {
     }
 }
 
+// Global Exports
 window.showUserDetail = showUserDetail;
 window.closeModal = closeModal;
 window.startDashboardScanner = startDashboardScanner;
+window.loadView = loadView;
+window.handleLogout = handleLogout;
+window.showModal = showModal;
 

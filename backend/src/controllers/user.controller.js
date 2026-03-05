@@ -47,6 +47,17 @@ exports.getMe = async (req, res) => {
     }
 };
 
+exports.getUserById = async (req, res) => {
+    try {
+        const tenantId = req.user.cliente_id;
+        const [users] = await db.query('SELECT id, nombre, apellido, email, rol_id, estado_id, foto_url FROM usuarios WHERE id = ? AND cliente_id = ?', [req.params.id, tenantId]);
+        if (users.length === 0) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
+        res.json({ ok: true, data: users[0] });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};
+
 exports.updateMe = async (req, res) => {
     try {
         const userId = req.user.id;

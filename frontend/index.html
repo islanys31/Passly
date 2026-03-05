@@ -47,10 +47,13 @@
 
     <div class="card glass-glow" id="loginCard">
         <h1>Iniciar Sesión</h1>
-        <input id="emailLogin" type="email" placeholder="Correo electrónico">
-        <input id="passLogin" type="password" placeholder="Contraseña">
-        <div class="checkbox-row">
-            <input type="checkbox" id="showLogin"> <label for="showLogin">Mostrar contraseña</label>
+        <div class="input-group">
+            <input id="emailLogin" type="email" placeholder="Correo electrónico">
+        </div>
+        <div class="input-group">
+            <input id="passLogin" type="password" placeholder="Contraseña">
+            <button class="btn-toggle-pass" type="button" data-input="passLogin"
+                title="Mostrar/Ocultar"><i>👁️</i></button>
         </div>
         <select id="rolLogin">
             <option value="" disabled selected>Selecciona tu rol</option>
@@ -73,17 +76,32 @@
     <div class="card hidden glass-glow" id="registroCard">
         <h1>Registrar Usuario</h1>
 
-        <input id="nombreRegistro" type="text" placeholder="Nombre" maxlength="50">
-        <span class="instruction-message">Mayúscula inicial, solo letras.</span>
+        <div class="input-group">
+            <input id="nombreRegistro" type="text" placeholder="Nombre" maxlength="50">
+            <span class="instruction-message">Mayúscula inicial, solo letras.</span>
+        </div>
 
-        <input id="apellidoRegistro" type="text" placeholder="Apellido" maxlength="50">
-        <span class="instruction-message">Mayúscula inicial, solo letras.</span>
+        <div class="input-group">
+            <input id="apellidoRegistro" type="text" placeholder="Apellido" maxlength="50">
+            <span class="instruction-message">Mayúscula inicial, solo letras.</span>
+        </div>
 
-        <input id="emailRegistro" type="email" placeholder="Correo electrónico">
-        <span id="emailRegistroError" class="field-error"></span>
+        <div class="input-group">
+            <input id="emailRegistro" type="email" placeholder="Correo electrónico">
+            <span id="emailRegistroError" class="field-error"></span>
+        </div>
 
-        <input id="passRegistro" type="password" placeholder="Contraseña">
-        <input id="passConfirm" type="password" placeholder="Confirmar contraseña">
+        <div class="input-group">
+            <input id="passRegistro" type="password" placeholder="Contraseña">
+            <button class="btn-toggle-pass" type="button" data-input="passRegistro"
+                title="Mostrar/Ocultar"><i>👁️</i></button>
+        </div>
+
+        <div class="input-group">
+            <input id="passConfirm" type="password" placeholder="Confirmar contraseña">
+            <button class="btn-toggle-pass" type="button" data-input="passConfirm"
+                title="Mostrar/Ocultar"><i>👁️</i></button>
+        </div>
 
         <ul class="password-requirements" id="passReqList">
             <li id="reqLength">Entre 8 y 12 caracteres.</li>
@@ -100,7 +118,6 @@
         </select>
 
         <div class="checkbox-row">
-            <input type="checkbox" id="showReg"> <label for="showReg">Mostrar</label>
             <input type="checkbox" id="aceptoTerminos"> <label for="aceptoTerminos">Acepto los términos</label>
         </div>
 

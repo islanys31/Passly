@@ -8,6 +8,7 @@ router.put('/me', authMiddleware.verifyToken, userController.updateMe);
 router.post('/me/photo', authMiddleware.verifyToken, require('../middlewares/upload.middleware').single('photo'), userController.uploadMyPhoto);
 router.get('/', authMiddleware.verifyToken, userController.getAllUsers);
 router.post('/', authMiddleware.verifyToken, userController.createUser);
+router.get('/:id', authMiddleware.verifyToken, userController.getUserById);
 router.put('/:id', authMiddleware.verifyToken, userController.updateUser);
 router.post('/:id/photo', authMiddleware.verifyToken, require('../middlewares/upload.middleware').single('photo'), userController.uploadPhoto);
 router.delete('/:id', authMiddleware.verifyToken, userController.deleteUser);

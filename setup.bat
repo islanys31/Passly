@@ -55,6 +55,6 @@ echo Para iniciar el sistema en modo desarrollo:
 echo    cd backend
 echo    npm run dev
 echo.
-echo Accede a: http://localhost:3000
+echo Accede a: http://localhost:3005
 echo.
 pause

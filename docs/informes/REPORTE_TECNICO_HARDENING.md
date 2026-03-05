@@ -3,7 +3,7 @@
 | **PROYECTO:** | Passly - Control de Accesos | **FECHA:** | 2026-02-17 |
 | :--- | :--- | :--- | :--- |
 | **VERSIÓN:** | 2.1.1 (Hardened) | **ESTADO:** | ✅ LISTO PARA PRODUCCIÓN |
-| **AUTOR:** | Equipo Passly | **REVISIÓN:** | Final v2.1 |
+| **AUTOR:** | Equipo Passly (Islanys Peña) |  **REVISIÓN:** | Final v2.1 |
 
 ---
 
@@ -101,6 +101,8 @@ Se han resuelto los siguientes 10 fallos detectados en la auditoría unitaria:
 10. **Bug 10 (Frontend):** Control de errores en el DOM del sidebar para evitar crashes visuales.
 11. **Bug 11 (UX):** Reparación del botón "Cancelar" en modales y adición de cierre con tecla Escape.
 12. **Bug 12 (Seguridad):** Blindaje Multi-tenant en `validateScan` (QR) para evitar escaneos cruzados entre empresas.
+13. **Bug 13 (Funcionalidad):** Restauración completa del flujo para la eliminación lógica de usuarios, con modal de confirmación nativo e integración con backend.
+14. **Bug 14 (Gestión):** Solución en la Ficha Maestra ("Botón Ojo") agregando la consulta faltante `GET /usuarios/:id` en backend y ajustando las clases del modal frontend.
 
 ---
 

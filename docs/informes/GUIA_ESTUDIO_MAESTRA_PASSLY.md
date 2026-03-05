@@ -1,6 +1,6 @@
 # 🧠 GUÍA MAESTRA DE ESTUDIO - PROYECTO PASSLY (v2.0.0 Hardened)
 
-Este documento centraliza toda la información estratégica, técnica y operativa del sistema Passly. Está diseñado para ser procesado por herramientas de mapas mentales (como Mapify o Ideamap) y para funcionar como referencia completa de estudio.
+Este documento centraliza toda la información estratégica, técnica y operativa del sistema Passly.
 
 ---
 
