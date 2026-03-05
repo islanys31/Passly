@@ -14,6 +14,8 @@
 *   **RF-07: Escáner QR**: Validación automática de accesos mediante escaneo de QR con cámara o imagen.
 *   **RF-08: Exportación de Reportes**: Generación de reportes en formato CSV (para Excel) y PDF profesional con logo y formato corporativo.
 *   **RF-09: Gestión de Fotos**: Subida de fotos de perfil para identificación visual de usuarios (JPG/PNG, máximo 2MB).
+*   **RF-12: Eliminación Lógica de Usuarios**: Capacidad de dar de baja o eliminar usuarios de forma lógica (cambio de estado), registrando la acción en sistema sin perder la integridad de datos históricos.
+*   **RF-13: Ficha Maestra de Usuario**: Vista consolidada donde el administrador puede visualizar el resumen completo de un usuario, incluyendo sus dispositivos vehiculares, tecnológicos y últimos movimientos en el sistema.
 
 ### 1.2 Requisitos No Funcionales (RNF)
 *   **RNF-01: Seguridad (Hardening)**: Encriptación con Bcrypt (salt 10), protección de headers con Helmet.js (CSP, HSTS), Rate Limiting por endpoint, sanitización de inputs, autenticación de dos factores (MFA/TOTP) y validaciones estrictas con express-validator.

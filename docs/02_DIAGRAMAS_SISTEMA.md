@@ -22,6 +22,8 @@ useCaseDiagram
         usecase "Subir Foto de Perfil" as UC10
         usecase "Configurar MFA (2FA)" as UC11
         usecase "Ver Logs de Auditoría" as UC12
+        usecase "Eliminar Usuario (Lógico)" as UC13
+        usecase "Ver Ficha Maestra" as UC14
     }
 
     Admin --> UC1
@@ -31,6 +33,8 @@ useCaseDiagram
     Admin --> UC8
     Admin --> UC9
     Admin --> UC12
+    Admin --> UC13
+    Admin --> UC14
     User --> UC11
     User --> UC5
     User --> UC6
@@ -38,6 +42,7 @@ useCaseDiagram
     Guard --> UC3
     Guard --> UC4
     Guard --> UC8
+    Guard --> UC14
 ```
 
 ---
@@ -102,6 +107,13 @@ classDiagram
         +mfaVerify()
         +forgotPassword()
         +resetPassword()
+    }
+    class UserController {
+        +getAllUsers()
+        +getUserById()
+        +createUser()
+        +updateUser()
+        +deleteUser()
     }
     class AccessController {
         +getAllAccess()
