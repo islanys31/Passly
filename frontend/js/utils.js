@@ -33,7 +33,7 @@ export function validarPassword(pass) {
     if (!regexPermitidos.test(pass)) return "Contiene caracteres no permitidos.";
     if (!tieneMayuscula || !tieneMinuscula) return "Requiere Mayúscula y Minúscula.";
     if (!tieneNumero) return "Requiere al menos un número.";
-    if (!tieneCaracterEspecial) return "Requiere un símbolo (!@#$%^*/_.).";
+    if (tieneCaracterEspecial) return "No se permiten caracteres especiales.";
 
     return null;
 }

@@ -42,7 +42,20 @@ function initEventListeners() {
     // Toggles
     document.getElementById("toRegister").onclick = () => toggleForms("register");
     document.getElementById("toLogin").onclick = () => toggleForms("login");
-    document.getElementById("resetLink").onclick = () => { window.location.href = "forgot.html"; };
+    document.getElementById("resetLink").onclick = () => {
+        document.getElementById('recoveryModal').style.display = 'flex';
+        document.getElementById('recoveryStep1').style.display = 'block';
+        document.getElementById('recoveryStep2').style.display = 'none';
+        document.getElementById('recoveryEmail').value = document.getElementById('emailLogin').value;
+    };
+    
+    // Recovery flow events
+    document.getElementById("btnCancelRecovery").onclick = () => {
+        document.getElementById('recoveryModal').style.display = 'none';
+    };
+    
+    document.getElementById("btnSendRecovery").onclick = handleSendRecovery;
+    document.getElementById("btnResetPassword").onclick = handleResetPassword;
 
     // Login inputs
     document.getElementById('emailLogin').oninput = (e) => {
@@ -99,8 +112,11 @@ function initEventListeners() {
     };
 
     // Form Submissions
-    document.getElementById("btnLogin").onclick = handleLogin;
-    document.getElementById("btnRegistrar").onclick = handleRegister;
+    const btnLogin = document.getElementById("btnLogin");
+    if (btnLogin) btnLogin.onclick = handleLogin;
+
+    const btnRegistrar = document.getElementById("btnRegistrar");
+    if (btnRegistrar) btnRegistrar.onclick = handleRegister;
 }
 
 let currentMfaToken = null;
@@ -231,7 +247,36 @@ async function handleRegister() {
     const apellido = document.getElementById("apellidoRegistro").value.trim();
     const email = document.getElementById("emailRegistro").value.trim();
     const password = document.getElementById("passRegistro").value;
+    const confirm = document.getElementById("passConfirm").value;
     const rol_id = document.getElementById("rolRegistro").value;
+    const acepto = document.getElementById("aceptoTerminos").checked;
+
+    // Validación final antes de enviar
+    if (!nombre || !apellido || !email || !password || !rol_id) {
+        showToast("Por favor, completa todos los campos requeridos.", "error");
+        return;
+    }
+
+    if (!validarEmail(email)) {
+        showToast("El formato del correo no es válido (ej: usuario@gmail.com).", "error");
+        return;
+    }
+
+    const passError = validarPassword(password);
+    if (passError) {
+        showToast(passError, "error");
+        return;
+    }
+
+    if (password !== confirm) {
+        showToast("Las contraseñas no coinciden.", "error");
+        return;
+    }
+
+    if (!acepto) {
+        showToast("Debes aceptar los términos y condiciones.", "warning");
+        return;
+    }
 
     setLoading("btnRegistrar", true);
     const { ok, data, error } = await apiRequest("/auth/register", "POST", {
@@ -307,7 +352,7 @@ function updatePasswordChecklist() {
         'reqLength': pass.length >= 8 && pass.length <= 12,
         'reqUpper': /[A-Z]/.test(pass) && /[a-z]/.test(pass),
         'reqNumber': /[0-9]/.test(pass),
-        'reqSpecial': /[!@#$%^*/_.]/.test(pass)
+        'reqSpecial': !/[!@#$%^*/_.]/.test(pass)
     };
 
     for (const [id, isValid] of Object.entries(rules)) {
@@ -345,11 +390,12 @@ function checkRegistrationFormValidity() {
     // Validar coincidencia
     const isMatch = (confirm === pass) && (confirm !== "");
 
-    // Habilitar/Deshabilitar botón
+    // Habilitar/Deshabilitar botón (Opcional: Lo dejamos habilitado para mejor UX)
     const btn = document.getElementById("btnRegistrar");
-    const isValid = isNombreValid && isApellidoValid && isEmailValid && isPassValid && isMatch && rol && acepto;
-
-    btn.disabled = !isValid;
+    if (btn) {
+        // btn.disabled = !isValid; 
+        // Comentado para permitir que handleRegister maneje el feedback del error
+    }
 
     // Log para depuración (opcional)
     // console.log({ isNombreValid, isApellidoValid, isEmailValid, isPassValid, isMatch, rol, acepto, isValid });
@@ -372,6 +418,68 @@ function clearFormError(el) {
     el.style.borderColor = "var(--border-color)";
 }
 
+/**
+ * Inicia el proceso de recuperación de contraseña enviando un código al correo.
+ */
+async function handleSendRecovery() {
+    const emailEl = document.getElementById("recoveryEmail");
+    const email = emailEl.value.trim();
+
+    if (!email || !validarEmail(email)) {
+        showToast("Ingresa un correo @gmail o @hotmail válido.", "error");
+        setInputBorder("recoveryEmail", true);
+        return;
+    }
+
+    setLoading("btnSendRecovery", true);
+    const { ok, data, error } = await apiRequest("/auth/forgot-password", "POST", { email });
+    setLoading("btnSendRecovery", false);
+
+    if (ok) {
+        showToast("Código enviado. Revisa tu correo.", "success");
+        document.getElementById('recoveryStep1').style.display = 'none';
+        document.getElementById('recoveryStep2').style.display = 'block';
+        document.getElementById('recoveryTitle').textContent = "Verificar Código";
+    } else {
+        showToast(data?.error || "Error al enviar el código.", "error");
+    }
+}
+
+/**
+ * Completa el restablecimiento de contraseña usando el código recibido.
+ */
+async function handleResetPassword() {
+    const email = document.getElementById("recoveryEmail").value.trim();
+    const code = document.getElementById("recoveryCode").value.trim();
+    const newPassword = document.getElementById("recoveryNewPass").value;
+
+    if (!code || code.length !== 6) {
+        showToast("Ingresa el código de 6 dígitos.", "error");
+        return;
+    }
+
+    const passError = validarPassword(newPassword);
+    if (passError) {
+        showToast(passError, "error");
+        return;
+    }
+
+    setLoading("btnResetPassword", true);
+    const { ok, data, error } = await apiRequest("/auth/reset-password", "POST", { email, code, newPassword });
+    setLoading("btnResetPassword", false);
+
+    if (ok) {
+        showToast("Contraseña actualizada exitosamente.", "success");
+        document.getElementById('recoveryModal').style.display = 'none';
+        // Limpiar campos
+        document.getElementById("recoveryCode").value = "";
+        document.getElementById("recoveryNewPass").value = "";
+        showToast("Ya puedes iniciar sesión con tu nueva clave.", "info");
+    } else {
+        showToast(data?.error || "Código inválido o expirado.", "error");
+    }
+}
+
 function setLoading(btnId, isLoading) {
     const btn = document.getElementById(btnId);
     if (!btn) return;
@@ -380,7 +488,13 @@ function setLoading(btnId, isLoading) {
         btn.innerHTML = '<span class="loading-spinner"></span> Procesando...';
         btn.disabled = true;
     } else {
-        btn.innerHTML = btn.dataset.originalText || "Entrar";
+        // Restaurar texto original o poner uno por defecto según el botón
+        let defaultText = "Entrar";
+        if (btnId === "btnRegistrar") defaultText = "Registrar";
+        if (btnId === "btnSendRecovery") defaultText = "Enviar Código";
+        if (btnId === "btnResetPassword") defaultText = "Cambiar Contraseña";
+
+        btn.innerHTML = btn.dataset.originalText || defaultText;
         btn.disabled = false;
         if (btnId === 'btnRegistrar') checkRegistrationFormValidity();
     }

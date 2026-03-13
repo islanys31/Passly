@@ -63,7 +63,7 @@
         <button id="btnLogin" class="btn-primary">Entrar</button>
 
         <p id="resetLink"
-            style="display:none; color: var(--accent-blue); cursor: pointer; font-size: 13px; margin-top: 15px; font-weight: 500;">
+            style="color: var(--accent-blue); cursor: pointer; font-size: 13px; margin-top: 15px; font-weight: 500;">
             ¿Olvidaste tu contraseña? Restablécela aquí
         </p>
 
@@ -104,8 +104,33 @@
             <input type="checkbox" id="aceptoTerminos"> <label for="aceptoTerminos">Acepto los términos</label>
         </div>
 
-        <button id="btnRegistrar" disabled>Registrar</button>
+        <button id="btnRegistrar">Registrar</button>
         <span class="toggle" id="toLogin">¿Ya tienes cuenta? Inicia sesión aquí</span>
+    </div>
+
+    <!-- Password Recovery Modal Overlay -->
+    <div class="modal-overlay" id="recoveryModal">
+        <div class="modal-content glass-glow" style="max-width:400px; text-align:center;">
+            <h2 id="recoveryTitle" style="margin-bottom:15px; color:var(--text-primary);">Recuperar Contraseña</h2>
+            <p id="recoverySubtitle" style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">
+                Ingresa tu correo para recibir un código de recuperación.
+            </p>
+
+            <!-- Step 1: Request Code -->
+            <div id="recoveryStep1">
+                <input id="recoveryEmail" type="email" placeholder="Correo electrónico" style="width:100%; margin-bottom:15px;">
+                <button id="btnSendRecovery" class="btn-primary" style="width:100%;">Enviar Código</button>
+            </div>
+
+            <!-- Step 2: Verify Code & Reset -->
+            <div id="recoveryStep2" style="display:none;">
+                <input id="recoveryCode" type="text" placeholder="Código de 6 dígitos" maxlength="6" style="width:100%; text-align:center; font-size:20px; letter-spacing:5px; margin-bottom:15px;">
+                <input id="recoveryNewPass" type="password" placeholder="Nueva Contraseña" style="width:100%; margin-bottom:15px;">
+                <button id="btnResetPassword" class="btn-primary" style="width:100%;">Cambiar Contraseña</button>
+            </div>
+
+            <button id="btnCancelRecovery" class="btn-table" style="width:100%; margin-top:15px; background:transparent; border:1px solid var(--border-color); color:var(--text-primary);">Cancelar</button>
+        </div>
     </div>
 </body>
 

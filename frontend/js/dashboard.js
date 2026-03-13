@@ -11,6 +11,7 @@ let userData = null;          // Datos del usuario logueado
 let currentData = [];         // Datos del módulo actual para filtrado/búsqueda
 let currentView = 'overview'; // Nombre de la vista activa
 let currentPagination = null; // Metadatos de paginación de la última respuesta
+let notifications = [];       // Almacena notificaciones recibidas por websocket
 
 // Exposición al objeto global 'window' para que los botones con onclick en HTML funcionen con módulos ES
 window.closeModal = closeModal;
@@ -139,6 +140,13 @@ function setupUI() {
         navMenu.appendChild(auditBtn);
     }
 
+    const profBtn = document.createElement('div');
+    profBtn.className = 'nav-item';
+    profBtn.dataset.view = 'perfil';
+    profBtn.innerHTML = `<i>👤</i> <span class="nav-text">Mi Perfil</span>`;
+    profBtn.onclick = (e) => { e.preventDefault(); loadView('perfil'); };
+    navMenu.appendChild(profBtn);
+
     const secBtn = document.createElement('div');
     secBtn.className = 'nav-item';
     secBtn.dataset.view = 'security';
@@ -167,6 +175,16 @@ function setupUI() {
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
         if (confirm('¿Deseas cerrar sesión?')) handleLogout();
     };
+
+    // Botón Limpiar Notificaciones
+    const btnClearNotifs = document.getElementById('btnClearNotifs');
+    if (btnClearNotifs) {
+        btnClearNotifs.onclick = (e) => {
+            e.stopPropagation();
+            notifications = [];
+            updateNotificationUI();
+        };
+    }
 }
 
 /**
@@ -224,6 +242,10 @@ async function loadView(view, force = false) {
             case 'logs':
                 title.textContent = "Registro de Auditoría";
                 await renderAuditLogs(content);
+                break;
+            case 'perfil':
+                title.textContent = "Mi Perfil";
+                await renderMiPerfil(content);
                 break;
             case 'security':
                 title.textContent = "Seguridad de la Cuenta";
@@ -414,7 +436,10 @@ function renderModuleHeader(container, config) {
             <div class="search-container"><i>🔍</i><input type="text" id="moduleSearch" placeholder="${config.searchPlaceholder}"></div>
             ${config.hasDateFilter ? `<div style="display:flex; gap:10px;"><input type="date" id="dateStart"><input type="date" id="dateEnd"></div>` : ''}
             <div class="action-buttons">
-                ${config.hasExport ? `<button class="btn-export" id="btnExportPDF">📄 PDF</button>` : ''}
+                ${config.hasExport ? `
+                    <button class="btn-export" id="btnExportCSV" style="background:#107c41; color:white;">📊 Excel/CSV</button>
+                    <button class="btn-export" id="btnExportPDF" style="background:#e13028; color:white;">📄 PDF</button>
+                ` : ''}
                 <button class="btn-table" id="${config.buttonId}" style="background:${config.buttonColor}; color:white;">${config.buttonText}</button>
             </div>
         </div>
@@ -478,7 +503,13 @@ async function renderUsuarios(container, page = 1) {
 function generateUserTable(data) {
     if (!data.length) return `<div class="empty-state">No hay usuarios</div>`;
     return `<table>
-        <thead><tr><th>Foto</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Acciones</th></tr></thead>
+        <thead><tr>
+            <th class="sortable" data-sort="foto_url">Foto ↕</th>
+            <th class="sortable" data-sort="nombre">Nombre ↕</th>
+            <th class="sortable" data-sort="email">Email ↕</th>
+            <th class="sortable" data-sort="rol_id">Rol ↕</th>
+            <th>Acciones</th>
+        </tr></thead>
         <tbody>
             ${data.map(u => `<tr>
                 <td><div class="user-avatar" style="width:30px; height:30px;">${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; border-radius:50%;">` : u.nombre.charAt(0)}</div></td>
@@ -534,6 +565,183 @@ async function updateMFAStatus(container) {
             if (ver.ok) { showToast("MFA Activado", "success"); loadView('security'); }
         };
     }
+}
+
+async function renderMiPerfil(container) {
+    const res = await apiRequest('/usuarios/me');
+    if (!res.ok) return container.innerHTML = "Error al cargar el perfil.";
+    const u = res.data.user;
+
+    container.innerHTML = `
+        <div class="card glass-glow" style="max-width:600px; margin:20px auto;">
+            <h3 style="margin-bottom:20px;">👤 Datos de la Cuenta</h3>
+            
+            <div style="display:flex; gap:20px; align-items:center; margin-bottom: 30px; padding: 20px; background: rgba(0,0,0,0.05); border-radius:12px;">
+                <div style="position:relative; width:100px; height:100px;">
+                    <div id="profileAvatarPreview" style="width:100%; height:100%; border-radius:50%; background:var(--bg-secondary); overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:40px;">
+                        ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; height:100%; object-fit:cover;">` : u.nombre.charAt(0)}
+                    </div>
+                </div>
+                <div>
+                    <h4>Foto de Perfil</h4>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">JPG o PNG. Máximo 2MB.</p>
+                    <input type="file" id="profileImageInput" accept="image/png, image/jpeg" style="display:none;">
+                    <button class="btn-table" id="btnUploadPhoto" style="background:var(--accent-blue); color:white;">Subir Nueva Foto</button>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 20px;">
+                <div>
+                    <label>Nombre</label>
+                    <input type="text" id="profileNombre" value="${escapeHTML(u.nombre)}" class="form-input">
+                </div>
+                <div>
+                    <label>Apellido</label>
+                    <input type="text" id="profileApellido" value="${escapeHTML(u.apellido || '')}" class="form-input">
+                </div>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label>Correo Electrónico (No modificable)</label>
+                <input type="email" value="${escapeHTML(u.email)}" class="form-input" disabled style="opacity:0.7">
+            </div>
+            
+            <button id="btnSaveProfile" class="btn-primary" style="width:100%;">Guardar Cambios</button>
+        </div>
+
+        <div class="card glass-glow" style="max-width:600px; margin:20px auto;">
+            <h3 style="margin-bottom:15px; color:var(--error-color);">🔑 Seguridad de Contraseña</h3>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Cambia tu contraseña activa. Se cerrará tu sesión por seguridad al terminar.</p>
+            <div style="margin-bottom: 15px;">
+                <input type="password" id="profileCurrentPass" placeholder="Contraseña Actual" style="margin:0;">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
+                <input type="password" id="profileNewPass" placeholder="Nueva Contraseña" style="margin:0;">
+                <input type="password" id="profileConfirmPass" placeholder="Confirmar Nueva" style="margin:0;">
+            </div>
+            <div style="height:4px; background:var(--bg-secondary); border-radius:2px; margin-bottom:20px; overflow:hidden;">
+                <div id="passStrengthMeter" style="height:100%; width:0%; background:var(--error-color); transition:all 0.3s ease;"></div>
+            </div>
+            <button id="btnChangePassword" class="btn-table" style="width:100%; border-color:var(--error-color); color:var(--error-color);">Actualizar Contraseña</button>
+        </div>
+    `;
+
+    const fileInput = container.querySelector('#profileImageInput');
+    const btnUpload = container.querySelector('#btnUploadPhoto');
+    const avatarPreview = container.querySelector('#profileAvatarPreview');
+
+    btnUpload.onclick = () => fileInput.click();
+
+    fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (re) => {
+            avatarPreview.innerHTML = `<img src="${re.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+        };
+        reader.readAsDataURL(file);
+
+        btnUpload.textContent = "Subiendo...";
+        btnUpload.disabled = true;
+
+        const formData = new FormData();
+        formData.append('foto', file);
+
+        try {
+            const token = localStorage.getItem('auth_token');
+            const res = await fetch(`/api/usuarios/${u.id}/photo`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            const result = await res.json();
+            
+            if (res.ok) {
+                showToast("Foto de perfil actualizada", "success");
+                userData.foto_url = result.url;
+                localStorage.setItem('usuario_activo', JSON.stringify(userData));
+                setupUI(); 
+            } else {
+                showToast(result.error || "Error al subir foto", "error");
+            }
+        } catch(error) {
+            showToast("Error de conexión al subir la imagen", "error");
+        } finally {
+            btnUpload.textContent = "Subir Nueva Foto";
+            btnUpload.disabled = false;
+        }
+    };
+
+    container.querySelector('#btnSaveProfile').onclick = async () => {
+        const nombre = container.querySelector('#profileNombre').value.trim();
+        const apellido = container.querySelector('#profileApellido').value.trim();
+        
+        if (!nombre) return showToast("El nombre es obligatorio", "error");
+        
+        const btn = container.querySelector('#btnSaveProfile');
+        btn.classList.add('btn-loading');
+
+        const res = await apiRequest(`/usuarios/${u.id}`, 'PUT', {
+            nombre,
+            apellido,
+            email: u.email,
+            rol_id: u.rol_id,
+            estado_id: u.estado_id
+        });
+
+        if (res.ok) {
+            showToast("Perfil actualizado correctamente", "success");
+            userData.nombre = nombre;
+            userData.apellido = apellido;
+            localStorage.setItem('usuario_activo', JSON.stringify(userData));
+            setupUI();
+        } else {
+            showToast(res.data?.error || "Error al actualizar perfil", "error");
+        }
+        
+        btn.classList.remove('btn-loading');
+    };
+
+    // Password Strength Logic
+    const newPassInput = container.querySelector('#profileNewPass');
+    const meter = container.querySelector('#passStrengthMeter');
+    
+    newPassInput.oninput = (e) => {
+        const val = e.target.value;
+        let score = 0;
+        if(val.length > 7) score++;
+        if(/[A-Z]/.test(val)) score++;
+        if(/[0-9]/.test(val)) score++;
+        if(/[^A-Za-z0-9]/.test(val)) score++;
+
+        meter.style.width = (score * 25) + '%';
+        if(score <= 1) meter.style.background = 'var(--error-color)';
+        else if(score === 2 || score === 3) meter.style.background = 'var(--warning-color)';
+        else meter.style.background = 'var(--success-color)';
+    };
+
+    // Password Change Logic
+    container.querySelector('#btnChangePassword').onclick = async () => {
+        const currentPass = container.querySelector('#profileCurrentPass').value;
+        const newPass = newPassInput.value;
+        const confirmPass = container.querySelector('#profileConfirmPass').value;
+
+        if(!currentPass || !newPass || !confirmPass) return showToast("Llena todos los campos", "error");
+        if(newPass !== confirmPass) return showToast("Las contraseñas no coinciden", "error");
+        if(!validarPassword(newPass).isValid) return showToast("La nueva contraseña no es segura", "error");
+
+        const btn = container.querySelector('#btnChangePassword');
+        btn.classList.add('btn-loading');
+
+        const res = await apiRequest(`/usuarios/${u.id}/password`, 'PUT', { currentPassword: currentPass, newPassword: newPass });
+        if(res.ok) {
+            showToast("Contraseña cambiada. Cerrando sesión...", "success");
+            setTimeout(() => handleLogout(), 2000);
+        } else {
+            showToast(res.data?.error || "La contraseña actual es incorrecta", "error");
+            btn.classList.remove('btn-loading');
+        }
+    };
 }
 
 // REST OF THE MINIMAL FUNCTIONS TO KEEP DASHBOARD WORKING
@@ -625,7 +833,12 @@ async function renderAuditLogs(container, page = 1) {
 function generateDeviceTable(data) {
     if (!data.length) return `<div class="empty-state">No hay dispositivos tecnológicos vinculados</div>`;
     return `<table>
-        <thead><tr><th>Nombre Equipo</th><th>Dueño</th><th>Última Conexión</th><th>Estado</th></tr></thead>
+        <thead><tr>
+            <th class="sortable" data-sort="nombre">Nombre Equipo ↕</th>
+            <th class="sortable" data-sort="usuario_nombre">Dueño ↕</th>
+            <th class="sortable" data-sort="last_connection">Última Conexión ↕</th>
+            <th class="sortable" data-sort="estado_id">Estado ↕</th>
+        </tr></thead>
         <tbody>
             ${data.map(d => `<tr>
                 <td><strong>${escapeHTML(d.nombre)}</strong><br><small>UID: ${escapeHTML(d.identificador_unico)}</small></td>
@@ -640,7 +853,13 @@ function generateDeviceTable(data) {
 function generateVehicleTable(data) {
     if (!data.length) return `<div class="empty-state">No hay vehículos registrados</div>`;
     return `<table>
-        <thead><tr><th>Vehículo</th><th>Placa</th><th>Propietario</th><th>Categoría</th><th>Acciones</th></tr></thead>
+        <thead><tr>
+            <th class="sortable" data-sort="nombre">Vehículo ↕</th>
+            <th class="sortable" data-sort="identificador_unico">Placa ↕</th>
+            <th class="sortable" data-sort="usuario_nombre">Propietario ↕</th>
+            <th class="sortable" data-sort="medio_transporte">Categoría ↕</th>
+            <th>Acciones</th>
+        </tr></thead>
         <tbody>
             ${data.map(v => `<tr>
                 <td><strong>${escapeHTML(v.nombre)}</strong></td>
@@ -659,7 +878,11 @@ function generateAccessTable(data) {
         <div class="empty-state-text"><h3>Sin accesos</h3><p>No se han registrado entradas o salidas aún.</p></div>
     </div>`;
     return `<table>
-        <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Tipo</th></tr></thead>
+        <thead><tr>
+            <th class="sortable" data-sort="fecha_hora">Fecha/Hora ↕</th>
+            <th class="sortable" data-sort="usuario_nombre">Usuario ↕</th>
+            <th class="sortable" data-sort="tipo">Tipo ↕</th>
+        </tr></thead>
         <tbody>
             ${data.map((a, i) => `<tr class="animate-row" style="animation-delay: ${i * 0.05}s">
                 <td>${new Date(a.fecha_hora).toLocaleString()}</td>
@@ -676,7 +899,13 @@ function generateAuditTable(data) {
         <div class="empty-state-text"><h3>Sin auditoría</h3><p>El registro de acciones administrativas está vacío.</p></div>
     </div>`;
     return `<table>
-        <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Módulo</th><th>IP</th></tr></thead>
+        <thead><tr>
+            <th class="sortable" data-sort="fecha_hora">Fecha / Hora ↕</th>
+            <th class="sortable" data-sort="usuario_nombre">Usuario ↕</th>
+            <th class="sortable" data-sort="accion">Acción ↕</th>
+            <th class="sortable" data-sort="modulo">Módulo ↕</th>
+            <th class="sortable" data-sort="ip_address">IP ↕</th>
+        </tr></thead>
         <tbody>
             ${data.map((l, i) => `
                 <tr class="animate-row" style="animation-delay: ${i * 0.05}s">
@@ -720,23 +949,57 @@ function exportToPDF(title, columns, rows, fileName) {
     showToast("Reporte generado exitosamente", "success");
 }
 
+function exportToCSV(title, columns, rows, fileName) {
+    let csvContent = "";
+    csvContent += title + "\n\n";
+    csvContent += columns.join(",") + "\n";
+    
+    rows.forEach(row => {
+        const escapedRow = row.map(cell => {
+            let cellStr = String(cell);
+            // Si tiene comas o comillas, escaparlo
+            if (cellStr.includes(',') || cellStr.includes('"')) {
+                cellStr = '"' + cellStr.replace(/"/g, '""') + '"';
+            }
+            return cellStr;
+        });
+        csvContent += escapedRow.join(",") + "\n";
+    });
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' }); // \uFEFF for Excel UTF-8 BOM
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${fileName}_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Archivo Excel/CSV descargado", "success");
+}
+
 function setupModuleEvents(container, type) {
     const searchInput = document.getElementById('moduleSearch');
     const tableContainer = document.getElementById('moduleTableContainer');
     const exportBtn = document.getElementById('btnExportPDF');
+    const exportCSVBtn = document.getElementById('btnExportCSV');
 
-    if (exportBtn) {
-        exportBtn.onclick = () => {
+    if (exportBtn || exportCSVBtn) {
+        const handleExport = (format) => {
             if (type === 'accesos') {
                 const cols = ["Fecha/Hora", "Usuario", "Tipo"];
                 const rows = currentData.map(a => [new Date(a.fecha_hora).toLocaleString(), a.usuario_nombre, a.tipo]);
-                exportToPDF("Historial de Accesos", cols, rows, "Passly_Accesos");
+                if (format === 'pdf') exportToPDF("Historial de Accesos", cols, rows, "Passly_Accesos");
+                else exportToCSV("Historial de Accesos", cols, rows, "Passly_Accesos");
             } else if (type === 'logs') {
                 const cols = ["Fecha", "Usuario", "Acción", "Módulo", "IP"];
                 const rows = currentData.map(l => [new Date(l.fecha_hora).toLocaleString(), l.usuario_nombre || 'Sistema', l.accion, l.modulo, l.ip_address]);
-                exportToPDF("Registro de Auditoría", cols, rows, "Passly_Auditoria");
+                if (format === 'pdf') exportToPDF("Registro de Auditoría", cols, rows, "Passly_Auditoria");
+                else exportToCSV("Registro de Auditoría", cols, rows, "Passly_Auditoria");
             }
         };
+
+        if (exportBtn) exportBtn.onclick = () => handleExport('pdf');
+        if (exportCSVBtn) exportCSVBtn.onclick = () => handleExport('csv');
     }
 
     const refreshBtn = document.getElementById('btnRefreshLogs');
@@ -793,6 +1056,64 @@ function setupModuleEvents(container, type) {
         btn.onclick = () => {
             const id = parseInt(btn.getAttribute('data-id'));
             showUserDetail(id);
+        };
+    });
+
+    // Bind sorting to headers
+    setupTableSorting(container, type);
+}
+
+let activeSortOptions = { column: null, asc: true };
+
+/**
+ * Agrega eventos de clic a las cabeceras de tabla para ordenar 'currentData' en memoria.
+ */
+function setupTableSorting(container, type) {
+    const headers = container.querySelectorAll('th.sortable');
+    headers.forEach(th => {
+        th.style.cursor = 'pointer';
+        th.onclick = () => {
+            const prop = th.dataset.sort;
+            if (activeSortOptions.column === prop) {
+                activeSortOptions.asc = !activeSortOptions.asc; // Invertir orden
+            } else {
+                activeSortOptions.column = prop;
+                activeSortOptions.asc = true; // Primer clic ascendente
+            }
+
+            // Ordenar los datos
+            currentData.sort((a, b) => {
+                let valA = a[prop];
+                let valB = b[prop];
+                
+                // Tratar nulos como strings vacíos
+                if (valA == null) valA = '';
+                if (valB == null) valB = '';
+
+                // Strings case insensitive
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return activeSortOptions.asc ? -1 : 1;
+                if (valA > valB) return activeSortOptions.asc ? 1 : -1;
+                return 0;
+            });
+
+            // Re-render del HTML de la tabla con la data ordenada
+            const renderMap = {
+                'usuarios': generateUserTable,
+                'dispositivos': generateDeviceTable,
+                'vehiculos': generateVehicleTable,
+                'accesos': generateAccessTable,
+                'logs': generateAuditTable
+            };
+            
+            const tableContainer = document.getElementById('moduleTableContainer');
+            if (tableContainer && renderMap[type]) {
+                tableContainer.innerHTML = renderMap[type](currentData);
+                // Restaurar eventos de los botones (Editar/Ver) usando DOM re-rendering
+                setupModuleEvents(container, type); 
+            }
         };
     });
 }
@@ -958,22 +1279,28 @@ async function handleModalSave(type, id) {
         const expirationHours = document.getElementById('guest_expires').value;
         if (!guestName) return showToast("Nombre requerido", "error");
 
-        const res = await apiRequest('/accesos/invitation', 'POST', { guestName, guestEmail, expirationHours });
-        if (res.ok) {
-            const resultDiv = document.getElementById('invitationResult');
-            const qrDiv = document.getElementById('guestQR');
-            const waBtn = document.getElementById('btnShareWA');
+        const btnSave = document.getElementById('btnSave');
+        if (btnSave) btnSave.classList.add('btn-loading');
 
-            qrDiv.innerHTML = `<img src="${res.data.qr}" style="width:100%;">`;
-            resultDiv.style.display = 'block';
+        try {
+            const res = await apiRequest('/accesos/invitation', 'POST', { guestName, guestEmail, expirationHours });
+            if (res.ok) {
+                const resultDiv = document.getElementById('invitationResult');
+                const qrDiv = document.getElementById('guestQR');
+                const waBtn = document.getElementById('btnShareWA');
 
-            waBtn.onclick = async () => {
-                const waRes = await apiRequest('/accesos/invitation/whatsapp', 'POST', { guestName, token: res.data.token });
-                if (waRes.ok) window.open(waRes.data.waLink, '_blank');
-            };
+                qrDiv.innerHTML = `<img src="${res.data.qr}" style="width:100%;">`;
+                resultDiv.style.display = 'block';
 
-            showToast(res.data.sentByEmail ? "Invitación generada y enviada" : "Invitación generada", "success");
-            return;
+                waBtn.onclick = async () => {
+                    const waRes = await apiRequest('/accesos/invitation/whatsapp', 'POST', { guestName, token: res.data.token });
+                    if (waRes.ok) window.open(waRes.data.waLink, '_blank');
+                };
+
+                showToast(res.data.sentByEmail ? "Invitación generada y enviada" : "Invitación generada", "success");
+            }
+        } finally {
+            if (btnSave) btnSave.classList.remove('btn-loading');
         }
         return;
     } else if (type === 'usuarios') {
@@ -985,28 +1312,82 @@ async function handleModalSave(type, id) {
         };
     }
 
-    const finalRes = await apiRequest(url, method, payload);
-    if (finalRes.ok) {
-        showToast(id ? 'Actualizado correctamente' : 'Creado correctamente', 'success');
-        closeModal();
-        loadView(type);
-    } else {
-        showToast(finalRes.data?.error || "Error al guardar", "error");
+    const btnSave = document.getElementById('btnSave');
+    if (btnSave) btnSave.classList.add('btn-loading');
+
+    try {
+        const finalRes = await apiRequest(url, method, payload);
+        if (finalRes.ok) {
+            showToast(id ? 'Actualizado correctamente' : 'Creado correctamente', 'success');
+            closeModal();
+            loadView(type);
+        } else {
+            showToast(finalRes.data?.error || "Error al guardar", "error");
+        }
+    } finally {
+        if (btnSave) btnSave.classList.remove('btn-loading');
     }
+}
+
+// Helper to escape HTML for safe display
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
 }
 
 function setupSocket() {
     const socket = io();
     socket.on('stats_update', () => {
         if (currentView === 'overview') loadView('overview', true);
+        if (currentView === 'accesos') loadView('accesos', true);
+    });
+
+    socket.on('disconnect', () => {
+        console.warn('WebSocket Desconectado');
     });
 
     socket.on('new_access', (data) => {
         showToast(`🔔 Acceso: ${data.usuario_nombre} (${data.tipo})`, 'info');
+        addNotification('access', `Acceso de ${data.usuario_nombre} (${data.tipo})`); // Add notification for new access
         if (currentView === 'overview' || currentView === 'accesos') {
             loadView(currentView, true);
         }
     });
+}
+
+/**
+ * Agrega y renderiza una nueva notificación en la campana superior.
+ */
+function addNotification(type, message) {
+    notifications.unshift({ type, message, time: new Date() });
+    if (notifications.length > 50) notifications.pop(); // Mantener solo las últimas 50
+    updateNotificationUI();
+}
+
+function updateNotificationUI() {
+    const badge = document.getElementById('notifBadge');
+    const list = document.getElementById('notifList');
+    if (!badge || !list) return;
+
+    if (notifications.length === 0) {
+        badge.style.display = 'none';
+        list.innerHTML = `<div class="empty-state" style="padding:15px 0; border:none; background:transparent;">Nada nuevo por aquí 🎉</div>`;
+        return;
+    }
+
+    badge.style.display = 'block';
+    badge.textContent = notifications.length > 9 ? '9+' : notifications.length;
+
+    list.innerHTML = notifications.map(n => `
+        <div style="padding:10px; border-bottom:1px solid rgba(0,0,0,0.05); display:flex; align-items:start; gap:10px; animation: slideIn 0.3s ease-out;">
+            <div style="font-size:16px; margin-top:2px;">${n.type === 'access' ? '🚪' : '⚠️'}</div>
+            <div>
+                <div style="font-size:13px; color:var(--text-primary); line-height:1.4;">${escapeHTML(n.message)}</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">${n.time.toLocaleTimeString()}</div>
+            </div>
+        </div>
+    `).join('');
 }
 
 async function showUserDetail(userId) {

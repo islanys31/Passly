@@ -177,3 +177,40 @@ exports.uploadPhoto = async (req, res) => {
         res.status(500).json({ ok: false, error: error.message });
     }
 };
+
+exports.changePassword = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { currentPassword, newPassword } = req.body;
+        
+        // Un usuario solo puede cambiar su propia contraseña por este medio
+        if (req.user.id !== parseInt(id)) {
+            return res.status(403).json({ ok: false, error: 'No autorizado para cambiar esta contraseña' });
+        }
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ ok: false, error: 'Ambas contraseñas son requeridas' });
+        }
+
+        const [users] = await db.query('SELECT password FROM usuarios WHERE id = ?', [id]);
+        if (users.length === 0) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
+
+        const isMatch = await bcrypt.compare(currentPassword, users[0].password);
+        if (!isMatch) return res.status(400).json({ ok: false, error: 'La contraseña actual es incorrecta' });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await db.query('UPDATE usuarios SET password = ? WHERE id = ?', [hashedPassword, id]);
+        
+        // Audit log
+        await logAction(req.user.id, 'Cambio Contraseña', 'Seguridad', { target_id: id }, req.ip);
+
+        // Fuerza al usuario a volver a iniciar sesión
+        invalidateUserCache(parseInt(id)); 
+        
+        res.json({ ok: true });
+    } catch(e) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+};
