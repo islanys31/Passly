@@ -64,24 +64,87 @@ function setupUI() {
     if (!userData) return;
 
     const navMenu = document.querySelector('.nav-menu');
-    const items = navMenu.querySelectorAll('.nav-item');
+    navMenu.innerHTML = ''; // Limpiar previo
 
-    // Inyección dinámica de cabeceras en el menú según la importancia
+    const role = userData.rol_id;
+
+    // Inyección dinámica de cabeceras en el menú
     const opHeader = document.createElement('div');
     opHeader.className = 'nav-section';
-    opHeader.textContent = 'Gestión Principal';
-    navMenu.insertBefore(opHeader, items[0]);
+    opHeader.textContent = role === 2 ? 'Mis Datos' : 'Gestión Principal';
+    navMenu.appendChild(opHeader);
 
-    const sysHeader = document.createElement('div');
-    sysHeader.className = 'nav-section';
-    sysHeader.textContent = 'Seguridad y Logs';
-    const auditItem = document.getElementById('navAudit');
-    if (auditItem) {
-        navMenu.insertBefore(sysHeader, auditItem);
-    } else {
-        navMenu.appendChild(sysHeader);
+    // Vistas según rol
+    let views = [];
+    if (role === 1) { // Admin
+        views = [
+            { id: 'overview', icon: '📊', text: 'Inicio' },
+            { id: 'usuarios', icon: '👥', text: 'Usuarios' },
+            { id: 'dispositivos', icon: '📱', text: 'Dispositivos' },
+            { id: 'vehiculos', icon: '🚗', text: 'Vehículos' },
+            { id: 'accesos', icon: '🚪', text: 'Accesos' }
+        ];
+    } else if (role === 3) { // Seguridad
+        views = [
+            { id: 'overview', icon: '📊', text: 'Inicio' },
+            { id: 'accesos', icon: '🚪', text: 'Accesos' }
+        ];
+    } else { // Usuario
+        views = [
+            { id: 'overview', icon: '📊', text: 'Mi Resumen' },
+            { id: 'dispositivos', icon: '📱', text: 'Mis Dispositivos' },
+            { id: 'vehiculos', icon: '🚗', text: 'Mis Vehículos' },
+            { id: 'accesos', icon: '🚪', text: 'Mis Accesos' }
+        ];
     }
 
+    views.forEach(v => {
+        const div = document.createElement('div');
+        div.className = 'nav-item';
+        div.dataset.view = v.id;
+        div.innerHTML = `<i>${v.icon}</i> <span class="nav-text">${v.text}</span>`;
+        div.onclick = (e) => { e.preventDefault(); loadView(v.id); };
+        navMenu.appendChild(div);
+    });
+
+    // Menú de escáner para Admin y Seguridad
+    if (role === 1 || role === 3) {
+        const terminalHeader = document.createElement('div');
+        terminalHeader.className = 'nav-section';
+        terminalHeader.style.marginTop = '20px';
+        terminalHeader.textContent = 'Terminales';
+        navMenu.appendChild(terminalHeader);
+
+        const scannerBtn = document.createElement('div');
+        scannerBtn.className = 'nav-item';
+        scannerBtn.innerHTML = '<i>📷</i> <span class="nav-text">Escáner QR</span>';
+        scannerBtn.style.background = 'rgba(41, 121, 255, 0.1)';
+        scannerBtn.style.color = 'var(--accent-blue)';
+        scannerBtn.onclick = () => window.open('scanner.html', '_blank');
+        navMenu.appendChild(scannerBtn);
+    }
+
+    // Seguridad y Logs
+    const sysHeader = document.createElement('div');
+    sysHeader.className = 'nav-section';
+    sysHeader.textContent = role === 1 ? 'Seguridad y Logs' : 'Ajustes de Cuenta';
+    navMenu.appendChild(sysHeader);
+
+    if (role === 1) {
+        const auditBtn = document.createElement('div');
+        auditBtn.className = 'nav-item';
+        auditBtn.dataset.view = 'logs';
+        auditBtn.innerHTML = `<i>📋</i> <span class="nav-text">Auditoría</span>`;
+        auditBtn.onclick = (e) => { e.preventDefault(); loadView('logs'); };
+        navMenu.appendChild(auditBtn);
+    }
+
+    const secBtn = document.createElement('div');
+    secBtn.className = 'nav-item';
+    secBtn.dataset.view = 'security';
+    secBtn.innerHTML = `<i>🛡️</i> <span class="nav-text">Seguridad</span>`;
+    secBtn.onclick = (e) => { e.preventDefault(); loadView('security'); };
+    navMenu.appendChild(secBtn);
 
     const nombre = userData.nombre || 'Usuario';
     const apellido = userData.apellido || '';
@@ -99,37 +162,6 @@ function setupUI() {
     document.getElementById('userRole').textContent =
         userData.rol_id === 1 ? 'Administrador' :
             (userData.rol_id === 3 ? 'Seguridad' : 'Usuario');
-
-    // Configurar los botones de navegación del Sidebar
-    const navItems = document.querySelectorAll('.nav-menu .nav-item');
-    const views = ['overview', 'usuarios', 'dispositivos', 'vehiculos', 'accesos', 'logs', 'security'];
-
-    navItems.forEach((item, index) => {
-        if (!navItems[index]) return;
-        item.onclick = (e) => {
-            e.preventDefault();
-            loadView(views[index]); // Carga la sección correspondiente sin recargar la página
-        };
-    });
-
-    /**
-     * ACCESO RÁPIDO: Si el usuario es Admin o Seguridad, añadimos botón al Escáner QR.
-     */
-    if (userData.rol_id === 1 || userData.rol_id === 3) {
-        const divider = document.createElement('div');
-        divider.className = 'nav-section';
-        divider.style.marginTop = '20px';
-        divider.textContent = 'Terminales';
-        navMenu.appendChild(divider);
-
-        const scannerBtn = document.createElement('div');
-        scannerBtn.className = 'nav-item';
-        scannerBtn.innerHTML = '<i>📷</i> <span class="nav-text">Escáner QR</span>';
-        scannerBtn.style.background = 'rgba(41, 121, 255, 0.1)';
-        scannerBtn.style.color = 'var(--accent-blue)';
-        scannerBtn.onclick = () => window.open('scanner.html', '_blank');
-        navMenu.appendChild(scannerBtn);
-    }
 
     // Botón de Cerrar Sesión con confirmación
     document.querySelector('.sidebar-footer .nav-item').onclick = () => {
@@ -161,7 +193,7 @@ async function loadView(view, force = false) {
     const navItems = document.querySelectorAll('.nav-menu .nav-item');
     navItems.forEach(i => i.classList.remove('active'));
 
-    let activeItem = [...navItems].find(item => item.textContent.toLowerCase().includes(view.toLowerCase()));
+    let activeItem = [...navItems].find(item => item.dataset.view === view);
     if (activeItem) activeItem.classList.add('active');
 
     // Mostrar cargador visual (Skeleton) mientras llegan los datos
@@ -234,16 +266,23 @@ async function renderOverview(container) {
         apiRequest('/stats/traffic')
     ]);
 
-    const stats = statsRes?.data?.stats || { users: 0, accessToday: 0, devices: 0, alerts: 0 };
+    const stats = statsRes?.data?.stats || { users: 0, accessToday: 0, tech: 0, vehicles: 0, alerts: 0 };
     const recentAccess = (trafficRes?.data?.data || []).slice(0, 5);
 
+    // Ajustar etiquetas según el rol
+    const role = userData.rol_id;
+    const isUser = role === 2;
+
     const grid = [
-        { label: 'Usuarios Activos', val: stats.users, icon: '👥', color: 'var(--accent-blue)' },
-        { label: 'Accesos Hoy', val: stats.accessToday, icon: '🚪', color: 'var(--accent-green)' },
-        { label: 'Equipos Tech', val: stats.tech, icon: '💻', color: 'var(--accent-lavender)' },
-        { label: 'Vehículos', val: stats.vehicles, icon: '🚗', color: 'var(--accent-emerald)' },
-        { label: 'Alertas', val: stats.alerts, icon: '⚠️', color: 'var(--error-color)' }
+        { label: isUser ? 'Mi Cuenta' : 'Usuarios Activos', val: isUser ? 'Activa' : stats.users, icon: '👥', color: 'var(--accent-blue)' },
+        { label: isUser ? 'Mis Accesos Hoy' : 'Accesos Hoy', val: stats.accessToday, icon: '🚪', color: 'var(--accent-green)' },
+        { label: isUser ? 'Mis Equipos' : 'Equipos Tech', val: stats.tech, icon: '💻', color: 'var(--accent-lavender)' },
+        { label: isUser ? 'Mis Vehículos' : 'Vehículos', val: stats.vehicles, icon: '🚗', color: 'var(--accent-emerald)' }
     ];
+
+    if (role === 1 || role === 3) {
+        grid.push({ label: 'Alertas', val: stats.alerts, icon: '⚠️', color: 'var(--error-color)' });
+    }
 
     container.innerHTML = `
         <div class="stats-grid">
@@ -296,13 +335,14 @@ async function renderOverview(container) {
                 </div>
             </div>
 
+            ${role !== 2 ? `
             <div class="card glass-glow" style="flex: 1; min-width: 300px; padding: 25px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3>📈 Tráfico</h3>
                     <div class="badge badge-success">● Vivo</div>
                 </div>
                 <div style="height: 180px;"><canvas id="peakHoursChart"></canvas></div>
-            </div>
+            </div>` : ''}
 
             <div class="card glass-glow" style="flex: 0.8; min-width: 250px; text-align: center; padding: 25px;">
                 <h3>🔑 Mi Llave QR</h3>
@@ -318,7 +358,7 @@ async function renderOverview(container) {
     `;
 
     setTimeout(() => {
-        renderPeakHoursChart(trafficRes?.data?.data || []);
+        if (role !== 2) renderPeakHoursChart(trafficRes?.data?.data || []);
         setupQRButton();
     }, 100);
 }

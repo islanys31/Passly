@@ -21,44 +21,72 @@ function getStatsFromCache(tenantId) {
 exports.getGeneralStats = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
+        const userId = req.user.id;
+        const roleId = req.user.rol_id;
 
-        // Cache HIT → responder sin tocar la BD
-        const cached = getStatsFromCache(tenantId);
+        // Cache HIT → responder sin tocar la BD (solo para admin/seguridad)
+        const cacheKey = roleId === 2 ? `user_${userId}` : `tenant_${tenantId}`;
+        const cached = getStatsFromCache(cacheKey);
         if (cached) {
             return res.json({ success: true, stats: cached, fromCache: true });
         }
 
-        // Cache MISS → ejecutar las 5 queries en paralelo
-        const [usersRes, accessRes, techRes, vehicleRes, blockedRes] = await Promise.all([
-            db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 1 AND cliente_id = ?', [tenantId]),
-            db.query(`
-                SELECT COUNT(*) as total FROM accesos a
-                JOIN usuarios u ON a.usuario_id = u.id
-                WHERE DATE(a.fecha_hora) = CURDATE() AND u.cliente_id = ?
-            `, [tenantId]),
-            db.query(`
-                SELECT COUNT(*) as total FROM equipos e
-                JOIN usuarios u ON e.usuario_id = u.id
-                WHERE e.estado_id = 1 AND u.cliente_id = ?
-            `, [tenantId]),
-            db.query(`
-                SELECT COUNT(*) as total FROM dispositivos d
-                JOIN usuarios u ON d.usuario_id = u.id
-                WHERE d.estado_id = 1 AND d.medio_transporte_id IS NOT NULL AND u.cliente_id = ?
-            `, [tenantId]),
-            db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 4 AND cliente_id = ?', [tenantId])
-        ]);
+        let stats = {};
 
-        const stats = {
-            users: usersRes[0][0].total,
-            accessToday: accessRes[0][0].total,
-            tech: techRes[0][0].total,
-            vehicles: vehicleRes[0][0].total,
-            alerts: blockedRes[0][0].total
-        };
+        if (roleId === 2) {
+            const [accessRes, techRes, vehicleRes] = await Promise.all([
+                db.query(`
+                    SELECT COUNT(*) as total FROM accesos
+                    WHERE usuario_id = ? AND DATE(fecha_hora) = CURDATE()
+                `, [userId]),
+                db.query(`
+                    SELECT COUNT(*) as total FROM equipos
+                    WHERE usuario_id = ? AND estado_id = 1
+                `, [userId]),
+                db.query(`
+                    SELECT COUNT(*) as total FROM dispositivos
+                    WHERE usuario_id = ? AND estado_id = 1 AND medio_transporte_id IS NOT NULL
+                `, [userId])
+            ]);
+            stats = {
+                users: 1,
+                accessToday: accessRes[0][0].total,
+                tech: techRes[0][0].total,
+                vehicles: vehicleRes[0][0].total,
+                alerts: 0
+            };
+        } else {
+            const [usersRes, accessRes, techRes, vehicleRes, blockedRes] = await Promise.all([
+                db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 1 AND cliente_id = ?', [tenantId]),
+                db.query(`
+                    SELECT COUNT(*) as total FROM accesos a
+                    JOIN usuarios u ON a.usuario_id = u.id
+                    WHERE DATE(a.fecha_hora) = CURDATE() AND u.cliente_id = ?
+                `, [tenantId]),
+                db.query(`
+                    SELECT COUNT(*) as total FROM equipos e
+                    JOIN usuarios u ON e.usuario_id = u.id
+                    WHERE e.estado_id = 1 AND u.cliente_id = ?
+                `, [tenantId]),
+                db.query(`
+                    SELECT COUNT(*) as total FROM dispositivos d
+                    JOIN usuarios u ON d.usuario_id = u.id
+                    WHERE d.estado_id = 1 AND d.medio_transporte_id IS NOT NULL AND u.cliente_id = ?
+                `, [tenantId]),
+                db.query('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 4 AND cliente_id = ?', [tenantId])
+            ]);
+
+            stats = {
+                users: usersRes[0][0].total,
+                accessToday: accessRes[0][0].total,
+                tech: techRes[0][0].total,
+                vehicles: vehicleRes[0][0].total,
+                alerts: blockedRes[0][0].total
+            };
+        }
 
         // Guardar en caché para los próximos 30s
-        statsCache.set(tenantId, { stats, cachedAt: Date.now() });
+        statsCache.set(cacheKey, { stats, cachedAt: Date.now() });
 
         res.json({ success: true, stats });
     } catch (error) {
@@ -76,15 +104,34 @@ exports.getGeneralStats = async (req, res) => {
 exports.getTrafficByHour = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
+        const userId = req.user.id;
+        const roleId = req.user.rol_id;
 
-        const [rows] = await db.query(`
-            SELECT a.fecha_hora
-            FROM accesos a
-            JOIN usuarios u ON a.usuario_id = u.id
-            WHERE u.cliente_id = ?
-            ORDER BY a.fecha_hora DESC
-            LIMIT 200
-        `, [tenantId]);
+        let query = '';
+        let params = [];
+
+        if (roleId === 2) {
+            query = `
+                SELECT fecha_hora
+                FROM accesos
+                WHERE usuario_id = ?
+                ORDER BY fecha_hora DESC
+                LIMIT 200
+            `;
+            params = [userId];
+        } else {
+            query = `
+                SELECT a.fecha_hora
+                FROM accesos a
+                JOIN usuarios u ON a.usuario_id = u.id
+                WHERE u.cliente_id = ?
+                ORDER BY a.fecha_hora DESC
+                LIMIT 200
+            `;
+            params = [tenantId];
+        }
+
+        const [rows] = await db.query(query, params);
 
         res.json({ ok: true, data: rows });
     } catch (error) {

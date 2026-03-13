@@ -5,6 +5,8 @@ const { getPagination, paginatedResponse } = require('../utils/pagination');
 exports.getAllAccess = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
+        const userId = req.user.id;
+        const roleId = req.user.rol_id;
         const { page, limit, offset } = getPagination(req.query, 20, 100);
 
         // Búsqueda server-side: filtra a nivel SQL, no client-side
@@ -14,12 +16,16 @@ exports.getAllAccess = async (req, res) => {
             : '';
         const searchParams = search ? [search, search, search] : [];
 
+        // Filtro por rol (Usuario normal solo ve sus propios accesos)
+        const roleFilter = roleId === 2 ? 'AND a.usuario_id = ?' : '';
+        if (roleId === 2) searchParams.unshift(userId);
+
         // COUNT total para los metadatos de paginación
         const [[{ total }]] = await db.query(`
             SELECT COUNT(*) AS total
             FROM accesos a
             JOIN usuarios u ON a.usuario_id = u.id
-            WHERE u.cliente_id = ? ${searchFilter}
+            WHERE u.cliente_id = ? ${roleFilter} ${searchFilter}
         `, [tenantId, ...searchParams]);
 
         // Query paginada — solo trae las filas de la página solicitada
@@ -29,7 +35,7 @@ exports.getAllAccess = async (req, res) => {
             FROM accesos a
             JOIN usuarios u ON a.usuario_id = u.id
             LEFT JOIN dispositivos d ON a.dispositivo_id = d.id
-            WHERE u.cliente_id = ? ${searchFilter}
+            WHERE u.cliente_id = ? ${roleFilter} ${searchFilter}
             ORDER BY a.fecha_hora DESC
             LIMIT ? OFFSET ?
         `, [tenantId, ...searchParams, limit, offset]);

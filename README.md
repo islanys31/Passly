@@ -22,6 +22,7 @@
 - ✅ Email de Bienvenida y Alertas de Seguridad automáticas
 - ✅ Helmet.js, Rate Limiting estricto (5 intentos login) y Sanitización Global
 - ✅ Aislamiento Multi-tenancy (cada administrador solo ve sus datos)
+- ✅ **Dashboards Basados en Roles**: Vistas dinámicas y seguras para Administrador, Seguridad y Usuario regular.
 
 ### 📊 Dashboard en Tiempo Real
 - ✅ Estadísticas live: usuarios activos, accesos del día, dispositivos, alertas
@@ -95,7 +96,9 @@ Accede a: **`http://localhost`**
 
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
-| `admin@gmail.com` | `Admin123!` | Administrador |
+| `juan.perez@gmail.com` | `Demo123!` | Administrador |
+| `ana.mtz@gmail.com`    | `Demo123!` | Usuario |
+| `guardia1@gmail.com`   | `Demo123!` | Seguridad |
 
 ---
 
