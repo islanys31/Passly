@@ -60,6 +60,8 @@ const helmetConfig = helmet({
             imgSrc: ["'self'", "data:", "https:"],
             workerSrc: ["'self'", "blob:"],
             childSrc: ["'self'", "blob:"],
+            connectSrc: ["'self'"],
+            upgradeInsecureRequests: null,
         },
     },
     // SEGURIDAD: Solo activar HSTS si HTTPS está habilitado explícitamente (evita fallos en localhost)

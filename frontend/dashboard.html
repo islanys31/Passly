@@ -4,101 +4,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Passly - Panel de Control Administrativo</title>
+  <title>Passly - Security & Access Panel</title>
   <link rel="stylesheet" href="/css/index.css">
   <link rel="manifest" href="/manifest.json">
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script type="module" src="/js/dashboard.js"></script>
 </head>
 
 <body>
   <div class="dashboard-container">
+    <!-- PREMIUM SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h1 id="sidebar-logo">Passly</h1>
-          <button id="toggleSidebar" class="btn-icon" title="Colapsar menú">☰</button>
+          <h1 id="sidebar-logo">PASSLY</h1>
+          <button id="toggleSidebar" class="btn-icon" title="Menu Control">☰</button>
         </div>
       </div>
+      
       <nav class="nav-menu" id="nav-menu">
-        <!-- Renderizado dinámicamente según rol en dashboard.js -->
+        <!-- Rendered dynamically in dashboard.js -->
       </nav>
+
       <div class="sidebar-footer">
-        <div class="theme-toggle" id="themeToggle"
-          style="margin-bottom:10px; position:relative; top:0; right:0; width:100%; border-radius:12px;">
+        <div class="theme-toggle" id="themeToggle">
           <span class="theme-toggle-icon" id="themeIcon">🌙</span>
-          <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+          <span class="theme-toggle-text" id="themeText">NIGHT MODE</span>
         </div>
-        <div class="nav-item" style="color:var(--error-color)"><i>🚪</i> <span class="nav-text">Salir</span></div>
+        <div class="nav-item logout-btn" style="margin-top:20px; color:var(--error)">
+          <i>🚪</i> <span class="nav-text">Sign Out</span>
+        </div>
       </div>
     </aside>
 
+    <!-- CONTENT AREA -->
     <main class="main-view">
-      <div class="top-bar">
-        <h2 id="view-title">Resumen</h2>
-        <div style="display:flex; align-items:center; gap:20px;">
-          
-          <!-- Notificaciones (Real-Time) -->
+      <header class="top-bar">
+        <div class="header-left">
+          <h2 id="view-title">Dashboard Overview</h2>
+        </div>
+
+        <div class="header-right" style="display:flex; align-items:center; gap:24px;">
+          <!-- REAL-TIME NOTIFICATIONS -->
           <div class="notification-container" style="position:relative; cursor:pointer;" onclick="document.getElementById('notifDropdown').classList.toggle('hidden')">
-            <div style="font-size:20px; color:var(--text-secondary); transition:color 0.2s;" onmouseover="this.style.color='var(--accent-blue)'" onmouseout="this.style.color='var(--text-secondary)'">🔔</div>
-            <div id="notifBadge" style="display:none; position:absolute; top:-3px; right:-5px; background:var(--error-color); color:white; font-size:10px; font-weight:bold; border-radius:10px; padding:2px 5px; min-width:16px; text-align:center;">0</div>
+            <div class="btn-icon">🔔</div>
+            <div id="notifBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--error); color:white; font-size:10px; font-weight:bold; border-radius:10px; padding:2px 6px; border:2px solid var(--bg-primary);">0</div>
             
-            <div id="notifDropdown" class="card glass-glow hidden" style="position:absolute; top:35px; right:-50px; width:300px; padding:0; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.3); border:1px solid var(--border-color); overflow:hidden;">
-                <div style="padding:15px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.05);">
-                    <h4 style="margin:0;">Notificaciones</h4>
-                    <span id="btnClearNotifs" style="font-size:12px; color:var(--text-muted); cursor:pointer;">Limpiar</span>
+            <div id="notifDropdown" class="glass-glow hidden" style="position:absolute; top:54px; right:0; width:320px; z-index:100; padding:0;">
+                <div style="padding:20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:hsla(0,0%,0%,0.2);">
+                    <h4 style="margin:0; font-size:14px;">Updates</h4>
+                    <span id="btnClearNotifs" style="font-size:12px; color:var(--text-muted); cursor:pointer;">Clear all</span>
                 </div>
-                <div id="notifList" style="max-height:300px; overflow-y:auto; padding:10px;">
-                    <div class="empty-state" style="padding:15px 0;">Nada nuevo por aquí 🎉</div>
+                <div id="notifList" style="max-height:360px; overflow-y:auto; padding:12px;">
+                    <div class="empty-state" style="padding:24px 0; font-size:13px;">Systems operational. No alerts.</div>
                 </div>
             </div>
           </div>
 
+          <!-- USER IDENTITY -->
           <div class="user-profile">
             <div class="user-avatar" id="userInitial">-</div>
-            <div style="text-align:left;">
-              <div id="userName" style="font-size:14px; font-weight:600; color:var(--text-primary);">Cargando...</div>
-              <div id="userRole" style="font-size:11px; color:var(--text-muted);">...</div>
+            <div class="user-info" style="text-align:left; line-height:1.2;">
+              <div id="userName" style="font-size:14px; font-weight:700; color:var(--text-primary);">Analizing...</div>
+              <div id="userRole" style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">-</div>
             </div>
           </div>
         </div>
-      </div>
-      <div id="view-content"></div>
+      </header>
+
+      <!-- DYNAMIC CONTENT -->
+      <div id="view-content" style="animation: contentReveal 0.6s ease-out;"></div>
     </main>
   </div>
 
-  <!-- Modal -->
+  <!-- PREMIUM MODAL OVERLAY -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-content">
-      <h2 id="modalTitle" style="margin-bottom:20px;">Acción</h2>
+      <div class="modal-header" style="margin-bottom:32px;">
+        <h2 id="modalTitle" style="font-size:24px; letter-spacing:-0.03em;">Action</h2>
+      </div>
       <div id="modalBody"></div>
-      <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn-table" style="flex:1" onclick="closeModal()">Cancelar</button>
-        <button id="btnSave" style="flex:1; margin-top:0">Guardar</button>
+      <div class="modal-footer" style="display:flex; gap:16px; margin-top:40px;">
+        <button class="btn-table" style="flex:1; background:hsla(0,0%,100%,0.05); color:var(--text-primary);" onclick="closeModal()">Cancel</button>
+        <button id="btnSave" style="flex:1;">Confirm Changes</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Detector de errores global para el dashboard
+    // System Error Handler
     window.onerror = function (msg, url, line, col, error) {
       const content = document.getElementById('view-content');
       if (content) {
         content.innerHTML = `
-          <div class="card" style="max-width: 600px; margin: 40px auto; border-left: 5px solid var(--error-color); text-align: left;">
-            <h3 style="color: var(--error-color); margin-bottom: 10px;">🛑 Error de Inicialización</h3>
-            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 15px;">
-              El panel no pudo cargar correctamente debido a un error técnico.
+          <div class="card" style="max-width: 600px; margin: 80px auto; border-top: 4px solid var(--error); text-align: left;">
+            <h3 style="color: var(--error); margin-bottom: 16px; display:flex; align-items:center; gap:10px;">
+              <span>⚠️</span> Module Load Failure
+            </h3>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
+              A technical exception occurred while initializing the dashboard interface.
             </p>
-            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; overflow-x: auto;">
-              <strong>Error:</strong> ${msg}<br>
-              <strong>Archivo:</strong> ${url.split('/').pop()}<br>
-              <strong>Línea:</strong> ${line}:${col}
+            <div style="background: hsla(0,0%,0%,0.3); padding: 20px; border-radius: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; border: 1px solid var(--glass-border);">
+              <div style="color:var(--text-muted); margin-bottom:8px;">TRACE:</div>
+              ${msg}<br>
+              <span style="color:var(--accent-secondary)">SRC: ${url.split('/').pop()} @ ${line}:${col}</span>
             </div>
-            <button onclick="location.reload()" style="margin-top: 20px; background: var(--accent-blue);">Reintentar Carga</button>
+            <button onclick="location.reload()" style="margin-top: 32px;">Reload Interface</button>
           </div>
         `;
       }

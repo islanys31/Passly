@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Validar estado inicial del botón de registro
     checkRegistrationFormValidity();
+
+    // Iniciar Iconos
+    if (window.lucide) window.lucide.createIcons();
 });
 
 function initEventListeners() {
@@ -194,12 +197,17 @@ async function handleLogin() {
 
             // Insertar campo de código MFA
             const mfaHtml = `
-                <div id="mfaSection" style="margin-top:20px; text-align:center; animation: fadeInUp 0.5s ease;">
-                    <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">
-                        🛡️ Autenticación de dos factores requerida.
+                <div id="mfaSection" class="animate-fade-in" style="margin-top:24px; text-align:center;">
+                    <div class="stat-icon" style="margin-inline:auto; background:hsla(220, 90%, 65%, 0.1); color:hsla(220, 90%, 65%, 1); margin-bottom:16px;">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <p style="font-size:13px; margin-bottom:20px; color:var(--text-muted);">
+                        SECURE TOKEN REQUIRED
                     </p>
-                    <input id="mfaCode" type="text" placeholder="000000" maxlength="6" 
-                           style="text-align:center; font-size:24px; letter-spacing:5px; font-weight:bold;">
+                    <div class="input-group" style="max-width:240px; margin-inline:auto;">
+                        <input id="mfaCode" type="text" placeholder="000 000" maxlength="6" 
+                               style="text-align:center; font-size:24px; letter-spacing:0.2em; height:64px; font-weight:700;">
+                    </div>
                 </div>
             `;
 
@@ -209,9 +217,10 @@ async function handleLogin() {
                 errorEl
             );
 
-            document.getElementById('btnLogin').textContent = "Verificar Código";
-            loginCard.querySelector('h1').textContent = "Paso de Seguridad";
-            showToast("Se requiere código MFA", "info");
+            if (window.lucide) window.lucide.createIcons();
+            document.getElementById('btnLogin').textContent = "VERIFY IDENTITY";
+            loginCard.querySelector('h2').textContent = "Security Step";
+            showToast("MFA token requested", "info");
             return;
         }
 
@@ -306,6 +315,7 @@ function toggleForms(form) {
         regCard.style.animation = "fadeInUp 0.5s ease";
         checkRegistrationFormValidity();
     }
+    if (window.lucide) window.lucide.createIcons();
 }
 
 function validateLive(inputId, type, formId) {
@@ -357,8 +367,15 @@ function updatePasswordChecklist() {
 
     for (const [id, isValid] of Object.entries(rules)) {
         const el = document.getElementById(id);
-        if (el) el.classList.toggle('valid', isValid);
+        if (el) {
+            el.classList.toggle('valid', isValid);
+            const icon = el.querySelector('i');
+            if (icon) {
+                icon.setAttribute('data-lucide', isValid ? 'check-circle-2' : 'circle');
+            }
+        }
     }
+    if (window.lucide) window.lucide.createIcons();
 
     const confirmVal = document.getElementById('passConfirm').value;
     if (confirmVal) {

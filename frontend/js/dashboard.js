@@ -69,95 +69,82 @@ function setupUI() {
 
     const role = userData.rol_id;
 
-    // Inyección dinámica de cabeceras en el menú
-    const opHeader = document.createElement('div');
-    opHeader.className = 'nav-section';
-    opHeader.textContent = role === 2 ? 'Mis Datos' : 'Gestión Principal';
-    navMenu.appendChild(opHeader);
+    // Configuration of views by role
+    const viewConfigs = {
+        1: [ // Admin
+            { section: 'SYSTEM CONTROL', views: [
+                { id: 'overview', icon: 'layout-dashboard', text: 'Dashboard' },
+                { id: 'usuarios', icon: 'users', text: 'Identity Manager' },
+                { id: 'dispositivos', icon: 'monitor', text: 'Hardware Assets' },
+                { id: 'vehiculos', icon: 'truck', text: 'Fleet Registry' },
+                { id: 'accesos', icon: 'lock', text: 'Access Logs' }
+            ]},
+            { section: 'TERMINALS', views: [
+                { id: 'scanner', icon: 'qr-code', text: 'QR Scanner', external: 'scanner.html' }
+            ]},
+            { section: 'SECURITY & AUDIT', views: [
+                { id: 'logs', icon: 'clipboard-list', text: 'Audit Trail' },
+                { id: 'perfil', icon: 'user-cog', text: 'Account Settings' },
+                { id: 'security', icon: 'shield-check', text: 'Shield 2FA' }
+            ]}
+        ],
+        3: [ // Security
+            { section: 'OPERATIONS', views: [
+                { id: 'overview', icon: 'layout-dashboard', text: 'Operations' },
+                { id: 'accesos', icon: 'lock', text: 'Live Logs' }
+            ]},
+            { section: 'TERMINALS', views: [
+                { id: 'scanner', icon: 'qr-code', text: 'QR Scanner', external: 'scanner.html' }
+            ]},
+            { section: 'IDENTITY', views: [
+                { id: 'perfil', icon: 'user-cog', text: 'Profile' },
+                { id: 'security', icon: 'shield-check', text: 'Security' }
+            ]}
+        ],
+        2: [ // User
+            { section: 'PERSONAL ASSETS', views: [
+                { id: 'overview', icon: 'layout-dashboard', text: 'My Summary' },
+                { id: 'dispositivos', icon: 'monitor', text: 'My Devices' },
+                { id: 'vehiculos', icon: 'truck', text: 'My Vehicles' },
+                { id: 'accesos', icon: 'lock', text: 'My History' }
+            ]},
+            { section: 'ACCOUNT', views: [
+                { id: 'perfil', icon: 'user-cog', text: 'Settings' },
+                { id: 'security', icon: 'shield-check', text: 'Security' }
+            ]}
+        ]
+    };
 
-    // Vistas según rol
-    let views = [];
-    if (role === 1) { // Admin
-        views = [
-            { id: 'overview', icon: '📊', text: 'Inicio' },
-            { id: 'usuarios', icon: '👥', text: 'Usuarios' },
-            { id: 'dispositivos', icon: '📱', text: 'Dispositivos' },
-            { id: 'vehiculos', icon: '🚗', text: 'Vehículos' },
-            { id: 'accesos', icon: '🚪', text: 'Accesos' }
-        ];
-    } else if (role === 3) { // Seguridad
-        views = [
-            { id: 'overview', icon: '📊', text: 'Inicio' },
-            { id: 'accesos', icon: '🚪', text: 'Accesos' }
-        ];
-    } else { // Usuario
-        views = [
-            { id: 'overview', icon: '📊', text: 'Mi Resumen' },
-            { id: 'dispositivos', icon: '📱', text: 'Mis Dispositivos' },
-            { id: 'vehiculos', icon: '🚗', text: 'Mis Vehículos' },
-            { id: 'accesos', icon: '🚪', text: 'Mis Accesos' }
-        ];
-    }
+    const config = viewConfigs[role] || viewConfigs[2];
 
-    views.forEach(v => {
-        const div = document.createElement('div');
-        div.className = 'nav-item';
-        div.dataset.view = v.id;
-        div.innerHTML = `<i>${v.icon}</i> <span class="nav-text">${v.text}</span>`;
-        div.onclick = (e) => { e.preventDefault(); loadView(v.id); };
-        navMenu.appendChild(div);
+    config.forEach(group => {
+        const header = document.createElement('div');
+        header.className = 'nav-section';
+        header.textContent = group.section;
+        navMenu.appendChild(header);
+
+        group.views.forEach(v => {
+            const div = document.createElement('div');
+            div.className = 'nav-item';
+            div.dataset.view = v.id;
+            div.innerHTML = `<i data-lucide="${v.icon}"></i> <span class="nav-text">${v.text}</span>`;
+            
+            if (v.external) {
+                div.onclick = () => window.open(v.external, '_blank');
+            } else {
+                div.onclick = (e) => { e.preventDefault(); loadView(v.id); };
+            }
+            navMenu.appendChild(div);
+        });
     });
 
-    // Menú de escáner para Admin y Seguridad
-    if (role === 1 || role === 3) {
-        const terminalHeader = document.createElement('div');
-        terminalHeader.className = 'nav-section';
-        terminalHeader.style.marginTop = '20px';
-        terminalHeader.textContent = 'Terminales';
-        navMenu.appendChild(terminalHeader);
+    // Refresh Lucide Icons
+    if (window.lucide) window.lucide.createIcons();
 
-        const scannerBtn = document.createElement('div');
-        scannerBtn.className = 'nav-item';
-        scannerBtn.innerHTML = '<i>📷</i> <span class="nav-text">Escáner QR</span>';
-        scannerBtn.style.background = 'rgba(41, 121, 255, 0.1)';
-        scannerBtn.style.color = 'var(--accent-blue)';
-        scannerBtn.onclick = () => window.open('scanner.html', '_blank');
-        navMenu.appendChild(scannerBtn);
-    }
-
-    // Seguridad y Logs
-    const sysHeader = document.createElement('div');
-    sysHeader.className = 'nav-section';
-    sysHeader.textContent = role === 1 ? 'Seguridad y Logs' : 'Ajustes de Cuenta';
-    navMenu.appendChild(sysHeader);
-
-    if (role === 1) {
-        const auditBtn = document.createElement('div');
-        auditBtn.className = 'nav-item';
-        auditBtn.dataset.view = 'logs';
-        auditBtn.innerHTML = `<i>📋</i> <span class="nav-text">Auditoría</span>`;
-        auditBtn.onclick = (e) => { e.preventDefault(); loadView('logs'); };
-        navMenu.appendChild(auditBtn);
-    }
-
-    const profBtn = document.createElement('div');
-    profBtn.className = 'nav-item';
-    profBtn.dataset.view = 'perfil';
-    profBtn.innerHTML = `<i>👤</i> <span class="nav-text">Mi Perfil</span>`;
-    profBtn.onclick = (e) => { e.preventDefault(); loadView('perfil'); };
-    navMenu.appendChild(profBtn);
-
-    const secBtn = document.createElement('div');
-    secBtn.className = 'nav-item';
-    secBtn.dataset.view = 'security';
-    secBtn.innerHTML = `<i>🛡️</i> <span class="nav-text">Seguridad</span>`;
-    secBtn.onclick = (e) => { e.preventDefault(); loadView('security'); };
-    navMenu.appendChild(secBtn);
-
-    const nombre = userData.nombre || 'Usuario';
+    const nombre = userData.nombre || 'Resident';
     const apellido = userData.apellido || '';
 
-    // Mostrar nombre completo y avatar (o inicial)
+    // UI Identity update
     document.getElementById('userName').textContent = `${nombre} ${apellido}`;
     const avatarEl = document.getElementById('userInitial');
     if (userData.foto_url) {
@@ -166,17 +153,18 @@ function setupUI() {
         avatarEl.textContent = nombre.charAt(0).toUpperCase();
     }
 
-    // Mostrar etiqueta de Rol traducida
-    document.getElementById('userRole').textContent =
-        userData.rol_id === 1 ? 'Administrador' :
-            (userData.rol_id === 3 ? 'Seguridad' : 'Usuario');
+    const roleLabel = role === 1 ? 'ADMINISTRATOR' : (role === 3 ? 'SECURITY' : 'RESIDENT');
+    document.getElementById('userRole').textContent = roleLabel;
 
-    // Botón de Cerrar Sesión con confirmación
-    document.querySelector('.sidebar-footer .nav-item').onclick = () => {
-        if (confirm('¿Deseas cerrar sesión?')) handleLogout();
-    };
+    // Session Management
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            if (confirm('Verify exit from secure session?')) handleLogout();
+        };
+    }
 
-    // Botón Limpiar Notificaciones
+    // Global Notification cleanup
     const btnClearNotifs = document.getElementById('btnClearNotifs');
     if (btnClearNotifs) {
         btnClearNotifs.onclick = (e) => {
@@ -291,26 +279,27 @@ async function renderOverview(container) {
     const stats = statsRes?.data?.stats || { users: 0, accessToday: 0, tech: 0, vehicles: 0, alerts: 0 };
     const recentAccess = (trafficRes?.data?.data || []).slice(0, 5);
 
-    // Ajustar etiquetas según el rol
     const role = userData.rol_id;
     const isUser = role === 2;
 
     const grid = [
-        { label: isUser ? 'Mi Cuenta' : 'Usuarios Activos', val: isUser ? 'Activa' : stats.users, icon: '👥', color: 'var(--accent-blue)' },
-        { label: isUser ? 'Mis Accesos Hoy' : 'Accesos Hoy', val: stats.accessToday, icon: '🚪', color: 'var(--accent-green)' },
-        { label: isUser ? 'Mis Equipos' : 'Equipos Tech', val: stats.tech, icon: '💻', color: 'var(--accent-lavender)' },
-        { label: isUser ? 'Mis Vehículos' : 'Vehículos', val: stats.vehicles, icon: '🚗', color: 'var(--accent-emerald)' }
+        { label: isUser ? 'ACCOUNT STATUS' : 'ACTIVE USERS', val: isUser ? 'VERIFIED' : stats.users, icon: 'users', color: 'hsla(220, 90%, 65%, 1)' },
+        { label: isUser ? 'MY LOGS TODAY' : 'ENTRIES TODAY', val: stats.accessToday, icon: 'door-open', color: 'hsla(150, 70%, 45%, 1)' },
+        { label: isUser ? 'MY ASSETS' : 'HARDWARE ASSETS', val: stats.tech, icon: 'monitor', color: 'hsla(280, 50%, 60%, 1)' },
+        { label: isUser ? 'MY VEHICLES' : 'FLEET UNITS', val: stats.vehicles, icon: 'truck', color: 'hsla(170, 60%, 50%, 1)' }
     ];
 
     if (role === 1 || role === 3) {
-        grid.push({ label: 'Alertas', val: stats.alerts, icon: '⚠️', color: 'var(--error-color)' });
+        grid.push({ label: 'SYSTEM ALERTS', val: stats.alerts, icon: 'shield-alert', color: 'hsla(0, 85%, 65%, 1)' });
     }
 
     container.innerHTML = `
         <div class="stats-grid">
             ${grid.map(s => `
-                <div class="stat-card glass-glow" style="border-top: 3px solid ${s.color}">
-                    <div class="stat-icon" style="color: ${s.color}; background: rgba(255,255,255,0.03);">${s.icon}</div>
+                <div class="stat-card glass-glow">
+                    <div class="stat-icon" style="color: ${s.color}; background: ${s.color.replace('1)', '0.1)')}">
+                        <i data-lucide="${s.icon}"></i>
+                    </div>
                     <div class="stat-info">
                         <h3>${s.label}</h3>
                         <div class="value">${s.val ?? 0}</div>
@@ -319,36 +308,34 @@ async function renderOverview(container) {
             `).join('')}
         </div>
 
-        <div class="dashboard-row" style="display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap;">
-            <div class="card glass-glow" style="flex: 1.5; min-width: 300px; padding: 25px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3>🚨 Última Actividad</h3>
-                    <button class="btn-table" onclick="loadView('accesos')">Ver Todo</button>
+        <div class="dashboard-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-top: 32px;">
+            <div class="card glass-glow" style="padding: 32px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h3 style="margin:0; font-size:18px; letter-spacing:-0.02em;">REAL-TIME ACTIVITY</h3>
+                    <button class="btn-table" onclick="loadView('accesos')">View History</button>
                 </div>
                 <div class="data-table-container">
                     <table>
-                        <thead><tr><th>Usuario</th><th>Tipo</th><th>Hora</th></tr></thead>
+                        <thead><tr><th>Security Subject</th><th>Operation</th><th>Timestamp</th></tr></thead>
                         <tbody>
                             ${recentAccess.length ? recentAccess.map((a, index) => `
-                                <tr class="animate-row" style="animation-delay: ${index * 0.1}s">
+                                <tr class="animate-row" style="animation-delay: ${index * 0.05}s">
                                     <td>
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <div class="user-avatar" style="width:25px; height:25px; font-size:10px;">
+                                        <div style="display:flex; align-items:center; gap:12px;">
+                                            <div class="user-avatar" style="width:28px; height:28px; font-size:11px; border:1px solid var(--glass-border);">
                                                 ${a.usuario_foto ? `<img src="${a.usuario_foto}" style="width:100%; border-radius:50%;">` : (a.usuario_nombre?.charAt(0) || '?')}
                                             </div>
-                                            <strong>${escapeHTML(a.usuario_nombre)}</strong>
+                                            <span style="font-weight:600;">${escapeHTML(a.usuario_nombre)}</span>
                                         </div>
                                     </td>
-                                    <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo}</span></td>
-                                    <td>${new Date(a.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo.toUpperCase()}</span></td>
+                                    <td style="color:var(--text-muted); font-family:monospace;">${new Date(a.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                 </tr>
                             `).join('') : `
                                 <tr>
-                                    <td colspan="3">
-                                        <div class="empty-state" style="padding: 20px; border:none; background:transparent;">
-                                            <div class="empty-state-icon" style="font-size:24px;">🚪</div>
-                                            <div class="empty-state-text"><p>No hay actividad hoy</p></div>
-                                        </div>
+                                    <td colspan="3" style="padding:48px 0; text-align:center; color:var(--text-muted);">
+                                        <div style="font-size:32px; margin-bottom:12px;">📡</div>
+                                        <div>Waiting for system activity...</div>
                                     </td>
                                 </tr>
                             `}
@@ -357,27 +344,33 @@ async function renderOverview(container) {
                 </div>
             </div>
 
-            ${role !== 2 ? `
-            <div class="card glass-glow" style="flex: 1; min-width: 300px; padding: 25px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3>📈 Tráfico</h3>
-                    <div class="badge badge-success">● Vivo</div>
-                </div>
-                <div style="height: 180px;"><canvas id="peakHoursChart"></canvas></div>
-            </div>` : ''}
+            <div style="display:flex; flex-direction:column; gap:24px;">
+                ${role !== 2 ? `
+                <div class="card glass-glow" style="padding: 32px; flex:1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin:0; font-size:18px;">TRAFFIC TRENDS</h3>
+                        <div class="badge badge-success"><span class="pulse-online" style="margin-right:8px;"></span>LIVE</div>
+                    </div>
+                    <div style="height: 200px;"><canvas id="peakHoursChart"></canvas></div>
+                </div>` : ''}
 
-            <div class="card glass-glow" style="flex: 0.8; min-width: 250px; text-align: center; padding: 25px;">
-                <h3>🔑 Mi Llave QR</h3>
-                <div id="qrContainer" style="width:150px; height:150px; margin:20px auto; border: 2px dashed var(--border-color); border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:white;">
-                    <i style="font-size:30px; opacity:0.3; color:#000;">🔲</i>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-table" id="btnGenerateQR" style="flex:1; background:var(--accent-green); color:white;">Generar</button>
-                    <button class="btn-table" id="btnDownloadQR" style="flex:1; display:none;">💾 Guardar</button>
+                <div class="card glass-glow" style="padding: 32px; text-align: center;">
+                    <h3 style="margin-bottom:20px; font-size:18px;">DIGITAL KEY (MFA)</h3>
+                    <div id="qrContainer" style="width:160px; height:160px; margin:0 auto 24px; border-radius:16px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:white; box-shadow:0 8px 24px rgba(0,0,0,0.1); border:4px solid var(--bg-secondary);">
+                        <i data-lucide="qr-code" style="width:48px; height:48px; color:var(--bg-primary); opacity:0.2;"></i>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button id="btnGenerateQR" style="flex:2;">GENERATE SECURE KEY</button>
+                        <button id="btnDownloadQR" class="btn-icon" style="flex:0.5; display:none; height:auto; padding:12px;" title="Export Key">
+                            <i data-lucide="download"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     `;
+
+    if (window.lucide) window.lucide.createIcons();
 
     setTimeout(() => {
         if (role !== 2) renderPeakHoursChart(trafficRes?.data?.data || []);
@@ -420,30 +413,67 @@ function renderPeakHoursChart(logs) {
     logs.forEach(log => data[new Date(log.fecha_hora).getHours()]++);
 
     if (window.myChart) window.myChart.destroy();
+    
+    // Create Premium Gradient
+    const canvasCtx = ctx.getContext('2d');
+    const gradient = canvasCtx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, 'hsla(220, 90%, 65%, 0.4)');
+    gradient.addColorStop(1, 'hsla(220, 90%, 65%, 0)');
+
     window.myChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: Array.from({ length: 24 }, (_, i) => `${i}:00`).slice(6, 22),
-            datasets: [{ label: 'Accesos', data: data.slice(6, 22), backgroundColor: 'rgba(46,125,50,0.4)', borderColor: 'rgb(46,125,50)', borderWidth: 2 }]
+            datasets: [{ 
+                label: 'System Access', 
+                data: data.slice(6, 22), 
+                backgroundColor: gradient, 
+                borderColor: 'hsla(220, 90%, 65%, 1)', 
+                borderWidth: 2,
+                borderRadius: 6
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: 'hsla(0,0%,100%,0.05)' }, ticks: { color: 'var(--text-muted)' } },
+                x: { grid: { display: false }, ticks: { color: 'var(--text-muted)' } }
+            }
+        }
     });
 }
 
 function renderModuleHeader(container, config) {
     container.innerHTML = `
-        <div class="table-controls">
-            <div class="search-container"><i>🔍</i><input type="text" id="moduleSearch" placeholder="${config.searchPlaceholder}"></div>
-            ${config.hasDateFilter ? `<div style="display:flex; gap:10px;"><input type="date" id="dateStart"><input type="date" id="dateEnd"></div>` : ''}
+        <div class="table-controls animate-fade-in">
+            <div class="search-container">
+                <i data-lucide="search" style="width:16px; opacity:0.5;"></i>
+                <input type="text" id="moduleSearch" placeholder="${config.searchPlaceholder || 'Query database...'}">
+            </div>
+            ${config.hasDateFilter ? `
+                <div style="display:flex; gap:8px;">
+                    <div class="search-container"><input type="date" id="dateStart" style="padding-left:12px;"></div>
+                    <div class="search-container"><input type="date" id="dateEnd" style="padding-left:12px;"></div>
+                </div>` : ''}
             <div class="action-buttons">
                 ${config.hasExport ? `
-                    <button class="btn-export" id="btnExportCSV" style="background:#107c41; color:white;">📊 Excel/CSV</button>
-                    <button class="btn-export" id="btnExportPDF" style="background:#e13028; color:white;">📄 PDF</button>
+                    <button class="btn-icon" id="btnExportCSV" title="Export CSV" style="background:hsla(150, 70%, 45%, 0.1); color:hsla(150, 70%, 45%, 1);">
+                        <i data-lucide="file-spreadsheet"></i>
+                    </button>
+                    <button class="btn-icon" id="btnExportPDF" title="Export PDF" style="background:hsla(0, 85%, 65%, 0.1); color:hsla(0, 85%, 65%, 1);">
+                        <i data-lucide="file-text"></i>
+                    </button>
                 ` : ''}
-                <button class="btn-table" id="${config.buttonId}" style="background:${config.buttonColor}; color:white;">${config.buttonText}</button>
+                <button id="${config.buttonId}" style="height:44px; display:flex; align-items:center; gap:8px; padding:0 20px; border-radius:12px;">
+                    <i data-lucide="plus" style="width:18px;"></i>
+                    ${config.buttonText}
+                </button>
             </div>
         </div>
     `;
+    if (window.lucide) window.lucide.createIcons();
 }
 
 /**
@@ -501,24 +531,32 @@ async function renderUsuarios(container, page = 1) {
 }
 
 function generateUserTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay usuarios</div>`;
+    if (!data.length) return `<div class="empty-state">No users matching current criteria.</div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="foto_url">Foto ↕</th>
-            <th class="sortable" data-sort="nombre">Nombre ↕</th>
-            <th class="sortable" data-sort="email">Email ↕</th>
-            <th class="sortable" data-sort="rol_id">Rol ↕</th>
-            <th>Acciones</th>
+            <th>IDENTITY</th>
+            <th class="sortable" data-sort="nombre">FULL NAME <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="email">EMAIL ADDRESS <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="rol_id">ACCESS LEVEL <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th style="text-align:right;">OPERATIONS</th>
         </tr></thead>
         <tbody>
             ${data.map(u => `<tr>
-                <td><div class="user-avatar" style="width:30px; height:30px;">${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; border-radius:50%;">` : u.nombre.charAt(0)}</div></td>
-                <td><strong>${escapeHTML(u.nombre)} ${escapeHTML(u.apellido || '')}</strong></td>
-                <td>${escapeHTML(u.email)}</td>
-                <td>${u.rol_id === 1 ? 'Admin' : 'Usuario'}</td>
                 <td>
-                    <button class="btn-table btn-detail" data-id="${u.id}" title="Ver ficha maestra">👁️</button>
-                    <button class="btn-table btn-edit" data-item='${JSON.stringify(u)}' title="Editar usuario">✏️</button>
+                    <div class="user-avatar" style="width:32px; height:32px; border:1px solid var(--glass-border);">
+                        ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; border-radius:50%;">` : u.nombre.charAt(0)}
+                    </div>
+                </td>
+                <td><strong style="color:var(--text-primary)">${escapeHTML(u.nombre)} ${escapeHTML(u.apellido || '')}</strong></td>
+                <td style="font-family:monospace; opacity:0.8;">${escapeHTML(u.email)}</td>
+                <td><span class="badge ${u.rol_id === 1 ? 'badge-info' : 'badge-success'}">${u.rol_id === 1 ? 'ADMIN' : 'RESIDENT'}</span></td>
+                <td style="text-align:right;">
+                    <button class="btn-icon btn-detail" data-id="${u.id}" title="Inspección" style="color:var(--accent-blue);">
+                        <i data-lucide="search"></i>
+                    </button>
+                    <button class="btn-icon btn-edit" data-item='${JSON.stringify(u)}' title="Modificar" style="color:var(--warning-color);">
+                        <i data-lucide="edit-3"></i>
+                    </button>
                 </td>
             </tr>`).join('')}
         </tbody>
@@ -527,19 +565,43 @@ function generateUserTable(data) {
 
 async function renderSecurity(container) {
     container.innerHTML = `
-        <div class="card glass-glow" style="max-width:600px; margin:20px auto;">
-            <h3>🛡️ Autenticación de Dos Factores (2FA)</h3>
-            <div id="mfaStatusContainer" style="margin-top:20px; padding:20px; border:1px solid var(--border-color); border-radius:12px;">
-                <span id="mfaStatusBadge" class="badge">Verificando...</span>
-                <button id="btnToggleMFA" class="btn-table" style="float:right;">Configurar</button>
+        <div class="card glass-glow animate-fade-in" style="max-width:640px; margin:20px auto; padding:40px;">
+            <div style="display:flex; align-items:center; gap:20px; margin-bottom:32px;">
+                <div class="stat-icon" style="color:hsla(220, 90%, 65%, 1); background:hsla(220, 90%, 65%, 0.1); width:56px; height:56px;">
+                    <i data-lucide="shield-check" style="width:28px; height:28px;"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0; font-size:20px;">SECURITY CENTER</h3>
+                    <p style="margin:0; font-size:13px; color:var(--text-muted);">Manage your multi-factor authentication and session security.</p>
+                </div>
             </div>
-            <div id="mfaSetupPanel" style="display:none; margin-top:20px;">
-                <div id="mfaQRCode" style="background:white; padding:10px; width:150px; height:150px; margin:0 auto;"></div>
-                <input type="text" id="mfaConfirmCode" placeholder="000000" style="margin-top:15px; text-align:center;">
-                <button id="btnVerifyMFA" class="btn-primary" style="margin-top:10px;">Activar MFA</button>
+
+            <div id="mfaStatusContainer" style="padding:24px; background:hsla(0,0%,100%,0.03); border:1px solid var(--glass-border); border-radius:16px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <span style="font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:0.05em;">PROTECTION STATUS</span>
+                    <span id="mfaStatusBadge" class="badge">VERIFYING...</span>
+                </div>
+                <button id="btnToggleMFA" style="height:40px; padding:0 16px; font-size:13px;">CONFIGURE</button>
+            </div>
+
+            <div id="mfaSetupPanel" style="display:none; margin-top:32px; padding-top:32px; border-top:1px solid var(--glass-border); text-align:center;">
+                <p style="font-size:14px; color:var(--text-secondary); margin-bottom:24px;">Scan this QR code with your authenticator app (Google, Authy, etc.)</p>
+                <div id="mfaQRCode" style="background:white; padding:16px; width:180px; height:180px; margin:0 auto; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.2);"></div>
+                
+                <div style="margin-top:32px; max-width:280px; margin-inline:auto;">
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-align:left; margin-bottom:8px;">VERIFICATION CODE</label>
+                    <input type="text" id="mfaConfirmCode" placeholder="000 000" style="text-align:center; font-size:24px; letter-spacing:0.2em; height:64px;">
+                    <button id="btnVerifyMFA" class="btn-primary" style="width:100%; margin-top:16px; height:52px;">ACTIVATE PROTECTION</button>
+                </div>
+            </div>
+            
+            <div style="margin-top:40px; padding:20px; border-radius:12px; background:hsla(150, 70%, 45%, 0.05); border:1px solid hsla(150, 70%, 45%, 0.1); display:flex; gap:16px; align-items:flex-start;">
+                <i data-lucide="info" style="width:18px; color:hsla(150, 70%, 45%, 1); margin-top:2px;"></i>
+                <p style="margin:0; font-size:12px; line-height:1.6; color:hsla(150, 70%, 45%, 0.8);">MFA adds an extra layer of security to your account by requiring more than just a password to log in.</p>
             </div>
         </div>
     `;
+    if (window.lucide) window.lucide.createIcons();
     updateMFAStatus(container);
 }
 
@@ -562,68 +624,87 @@ async function updateMFAStatus(container) {
         container.querySelector('#btnVerifyMFA').onclick = async () => {
             const token = container.querySelector('#mfaConfirmCode').value;
             const ver = await apiRequest('/auth/mfa/verify', 'POST', { token });
-            if (ver.ok) { showToast("MFA Activado", "success"); loadView('security'); }
+            if (ver.ok) { 
+                showToast("MFA Activado", "success"); 
+                loadView('security'); 
+            }
         };
     }
 }
 
 async function renderMiPerfil(container) {
     const res = await apiRequest('/usuarios/me');
-    if (!res.ok) return container.innerHTML = "Error al cargar el perfil.";
+    if (!res.ok) return container.innerHTML = `<div class="error-message">Connection failure while retrieving identity data.</div>`;
     const u = res.data.user;
 
     container.innerHTML = `
-        <div class="card glass-glow" style="max-width:600px; margin:20px auto;">
-            <h3 style="margin-bottom:20px;">👤 Datos de la Cuenta</h3>
-            
-            <div style="display:flex; gap:20px; align-items:center; margin-bottom: 30px; padding: 20px; background: rgba(0,0,0,0.05); border-radius:12px;">
-                <div style="position:relative; width:100px; height:100px;">
-                    <div id="profileAvatarPreview" style="width:100%; height:100%; border-radius:50%; background:var(--bg-secondary); overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:40px;">
+        <div class="card glass-glow animate-fade-in" style="max-width:720px; margin:20px auto; padding:40px;">
+            <div style="display:flex; align-items:center; gap:24px; margin-bottom:40px;">
+                <div style="position:relative;">
+                    <div id="profileAvatarPreview" style="width:120px; height:120px; border-radius:32px; background:var(--bg-secondary); border:1px solid var(--glass-border); overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:48px; box-shadow:0 12px 24px rgba(0,0,0,0.2);">
                         ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; height:100%; object-fit:cover;">` : u.nombre.charAt(0)}
                     </div>
+                    <button id="btnUploadPhoto" class="btn-icon" style="position:absolute; bottom:-10px; right:-10px; background:var(--accent-primary); color:white; border-radius:12px; width:40px; height:40px; box-shadow:0 4px 12px var(--accent-primary-alpha);">
+                        <i data-lucide="camera" style="width:18px;"></i>
+                    </button>
+                    <input type="file" id="profileImageInput" accept="image/png, image/jpeg" style="display:none;">
                 </div>
                 <div>
-                    <h4>Foto de Perfil</h4>
-                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">JPG o PNG. Máximo 2MB.</p>
-                    <input type="file" id="profileImageInput" accept="image/png, image/jpeg" style="display:none;">
-                    <button class="btn-table" id="btnUploadPhoto" style="background:var(--accent-blue); color:white;">Subir Nueva Foto</button>
+                    <h3 style="margin:0; font-size:24px; letter-spacing:-0.03em;">${u.nombre} ${u.apellido || ''}</h3>
+                    <p style="margin:4px 0 0; color:var(--text-muted); font-size:14px;">Resident Identity & Profile Access</p>
+                    <div class="badge badge-info" style="margin-top:12px;">${u.rol_id === 1 ? 'ADMINISTRATOR' : 'RESIDENT'}</div>
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 20px;">
-                <div>
-                    <label>Nombre</label>
-                    <input type="text" id="profileNombre" value="${escapeHTML(u.nombre)}" class="form-input">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:32px;">
+                <div class="input-group">
+                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">GIVEN NAME</label>
+                    <input type="text" id="profileNombre" value="${escapeHTML(u.nombre)}" placeholder="e.g. John">
                 </div>
-                <div>
-                    <label>Apellido</label>
-                    <input type="text" id="profileApellido" value="${escapeHTML(u.apellido || '')}" class="form-input">
+                <div class="input-group">
+                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">SURNAME</label>
+                    <input type="text" id="profileApellido" value="${escapeHTML(u.apellido || '')}" placeholder="e.g. Doe">
                 </div>
             </div>
-            <div style="margin-bottom: 20px;">
-                <label>Correo Electrónico (No modificable)</label>
-                <input type="email" value="${escapeHTML(u.email)}" class="form-input" disabled style="opacity:0.7">
+
+            <div class="input-group" style="margin-bottom:40px;">
+                <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">REGISTERED EMAIL (PROTECTED)</label>
+                <div style="position:relative;">
+                    <i data-lucide="mail" style="position:absolute; left:16px; top:50%; transform:translateY(-50%); width:16px; opacity:0.3;"></i>
+                    <input type="email" value="${escapeHTML(u.email)}" disabled style="padding-left:48px; opacity:0.6; cursor:not-allowed;">
+                </div>
             </div>
             
-            <button id="btnSaveProfile" class="btn-primary" style="width:100%;">Guardar Cambios</button>
+            <button id="btnSaveProfile" class="btn-primary" style="width:100%; height:56px; font-size:15px; letter-spacing:0.02em;">
+                <i data-lucide="save" style="width:18px; margin-right:8px;"></i> COMMIT IDENTITY CHANGES
+            </button>
         </div>
 
-        <div class="card glass-glow" style="max-width:600px; margin:20px auto;">
-            <h3 style="margin-bottom:15px; color:var(--error-color);">🔑 Seguridad de Contraseña</h3>
-            <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Cambia tu contraseña activa. Se cerrará tu sesión por seguridad al terminar.</p>
-            <div style="margin-bottom: 15px;">
-                <input type="password" id="profileCurrentPass" placeholder="Contraseña Actual" style="margin:0;">
+        <div class="card glass-glow animate-fade-in" style="max-width:720px; margin:40px auto; padding:40px; border-bottom: 4px solid var(--error);">
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:32px;">
+                <i data-lucide="key-round" style="width:24px; color:var(--error);"></i>
+                <h3 style="margin:0; font-size:18px; color:var(--error);">CREDENTIAL ROTATION</h3>
             </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
-                <input type="password" id="profileNewPass" placeholder="Nueva Contraseña" style="margin:0;">
-                <input type="password" id="profileConfirmPass" placeholder="Confirmar Nueva" style="margin:0;">
+            
+            <div class="input-group" style="margin-bottom:24px;">
+                <input type="password" id="profileCurrentPass" placeholder="Current Security Password" style="height:52px;">
             </div>
-            <div style="height:4px; background:var(--bg-secondary); border-radius:2px; margin-bottom:20px; overflow:hidden;">
-                <div id="passStrengthMeter" style="height:100%; width:0%; background:var(--error-color); transition:all 0.3s ease;"></div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:24px;">
+                <input type="password" id="profileNewPass" placeholder="New Secret Code" style="height:52px;">
+                <input type="password" id="profileConfirmPass" placeholder="Repeat New Code" style="height:52px;">
             </div>
-            <button id="btnChangePassword" class="btn-table" style="width:100%; border-color:var(--error-color); color:var(--error-color);">Actualizar Contraseña</button>
+
+            <div style="height:6px; background:var(--bg-secondary); border-radius:10px; margin-bottom:32px; overflow:hidden;">
+                <div id="passStrengthMeter" style="height:100%; width:0%; background:var(--error); transition:all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
+            </div>
+
+            <button id="btnChangePassword" style="width:100%; height:52px; background:transparent; border:1px solid var(--error); color:var(--error);">
+                EXECUTE CREDENTIAL UPDATE
+            </button>
         </div>
     `;
+    if (window.lucide) window.lucide.createIcons();
 
     const fileInput = container.querySelector('#profileImageInput');
     const btnUpload = container.querySelector('#btnUploadPhoto');
@@ -831,42 +912,47 @@ async function renderAuditLogs(container, page = 1) {
 }
 
 function generateDeviceTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay dispositivos tecnológicos vinculados</div>`;
+    if (!data.length) return `<div class="empty-state">No hardware assets registered.</div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="nombre">Nombre Equipo ↕</th>
-            <th class="sortable" data-sort="usuario_nombre">Dueño ↕</th>
-            <th class="sortable" data-sort="last_connection">Última Conexión ↕</th>
-            <th class="sortable" data-sort="estado_id">Estado ↕</th>
+            <th class="sortable" data-sort="nombre">HARDWARE NAME <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">ASSIGNED OWNER <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="last_connection">LAST HEARTBEAT <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="estado_id">HEALTH STATUS <i data-lucide="chevron-down" style="width:12px;"></i></th>
         </tr></thead>
         <tbody>
             ${data.map(d => `<tr>
-                <td><strong>${escapeHTML(d.nombre)}</strong><br><small>UID: ${escapeHTML(d.identificador_unico)}</small></td>
-                <td>${escapeHTML(d.usuario_nombre || 'Sin asignar')}</td>
-                <td>${d.last_connection ? new Date(d.last_connection).toLocaleString() : 'N/A'}</td>
-                <td><span class="badge ${d.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${d.estado_id === 1 ? 'Activo' : 'Inactivo'}</span></td>
+                <td>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-weight:600; color:var(--text-primary)">${escapeHTML(d.nombre)}</span>
+                        <code style="font-size:10px; opacity:0.5;">UID: ${escapeHTML(d.identificador_unico)}</code>
+                    </div>
+                </td>
+                <td><span style="display:flex; align-items:center; gap:8px;"><i data-lucide="user" style="width:14px; opacity:0.5;"></i> ${escapeHTML(d.usuario_nombre || 'Unassigned')}</span></td>
+                <td style="font-family:monospace; font-size:12px;">${d.last_connection ? new Date(d.last_connection).toLocaleString() : 'PENDING'}</td>
+                <td><span class="badge ${d.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${d.estado_id === 1 ? 'ONLINE' : 'OFFLINE'}</span></td>
             </tr>`).join('')}
         </tbody>
     </table>`;
 }
 
 function generateVehicleTable(data) {
-    if (!data.length) return `<div class="empty-state">No hay vehículos registrados</div>`;
+    if (!data.length) return `<div class="empty-state">No fleet units found.</div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="nombre">Vehículo ↕</th>
-            <th class="sortable" data-sort="identificador_unico">Placa ↕</th>
-            <th class="sortable" data-sort="usuario_nombre">Propietario ↕</th>
-            <th class="sortable" data-sort="medio_transporte">Categoría ↕</th>
-            <th>Acciones</th>
+            <th class="sortable" data-sort="nombre">UNIT MODEL <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="identificador_unico">PLATE LICENSE <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">LEGAL PROPRIETOR <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="medio_transporte">CLASSIFICATION <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th style="text-align:right;">EDIT</th>
         </tr></thead>
         <tbody>
             ${data.map(v => `<tr>
-                <td><strong>${escapeHTML(v.nombre)}</strong></td>
-                <td><span class="badge badge-info" style="font-family:monospace; font-size:14px;">${escapeHTML(v.identificador_unico)}</span></td>
+                <td><strong style="color:var(--text-primary)">${escapeHTML(v.nombre)}</strong></td>
+                <td><span class="badge badge-info" style="font-family:monospace; font-size:13px; font-weight:700;">${escapeHTML(v.identificador_unico)}</span></td>
                 <td>${escapeHTML(v.usuario_nombre)}</td>
-                <td>${escapeHTML(v.medio_transporte || 'Particular')}</td>
-                <td><button class="btn-table btn-edit" data-item='${JSON.stringify(v)}'>✏️</button></td>
+                <td><span style="opacity:0.8;">${escapeHTML(v.medio_transporte || 'PRIVATE')}</span></td>
+                <td style="text-align:right;"><button class="btn-icon btn-edit" data-item='${JSON.stringify(v)}' style="color:var(--warning-color);"><i data-lucide="edit-2"></i></button></td>
             </tr>`).join('')}
         </tbody>
     </table>`;
@@ -874,20 +960,20 @@ function generateVehicleTable(data) {
 
 function generateAccessTable(data) {
     if (!data.length) return `<div class="empty-state">
-        <div class="empty-state-icon">🚪</div>
-        <div class="empty-state-text"><h3>Sin accesos</h3><p>No se han registrado entradas o salidas aún.</p></div>
+        <i data-lucide="shield-off" style="width:48px; height:48px; opacity:0.2; margin-bottom:16px;"></i>
+        <h3>VOID LOGS</h3><p>No secure access events recorded for this period.</p>
     </div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="fecha_hora">Fecha/Hora ↕</th>
-            <th class="sortable" data-sort="usuario_nombre">Usuario ↕</th>
-            <th class="sortable" data-sort="tipo">Tipo ↕</th>
+            <th class="sortable" data-sort="fecha_hora">EVENT TIMESTAMP <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">SECURITY SUBJECT <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="tipo">OPERATION <i data-lucide="chevron-down" style="width:12px;"></i></th>
         </tr></thead>
         <tbody>
-            ${data.map((a, i) => `<tr class="animate-row" style="animation-delay: ${i * 0.05}s">
-                <td>${new Date(a.fecha_hora).toLocaleString()}</td>
-                <td>${escapeHTML(a.usuario_nombre)}</td>
-                <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo}</span></td>
+            ${data.map((a, i) => `<tr class="animate-row" style="animation-delay: ${i * 0.03}s">
+                <td style="font-family:monospace; font-size:12px; color:var(--text-muted);">${new Date(a.fecha_hora).toLocaleString()}</td>
+                <td><span style="font-weight:600; color:var(--text-primary)">${escapeHTML(a.usuario_nombre)}</span></td>
+                <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo.toUpperCase()}</span></td>
             </tr>`).join('')}
         </tbody>
     </table>`;
@@ -895,25 +981,25 @@ function generateAccessTable(data) {
 
 function generateAuditTable(data) {
     if (!data.length) return `<div class="empty-state">
-        <div class="empty-state-icon">📋</div>
-        <div class="empty-state-text"><h3>Sin auditoría</h3><p>El registro de acciones administrativas está vacío.</p></div>
+        <i data-lucide="file-search" style="width:48px; height:48px; font-size:24px;"></i>
+        <h3>CLEAN AUDIT</h3><p>Administrative trace is currently empty.</p>
     </div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="fecha_hora">Fecha / Hora ↕</th>
-            <th class="sortable" data-sort="usuario_nombre">Usuario ↕</th>
-            <th class="sortable" data-sort="accion">Acción ↕</th>
-            <th class="sortable" data-sort="modulo">Módulo ↕</th>
-            <th class="sortable" data-sort="ip_address">IP ↕</th>
+            <th class="sortable" data-sort="fecha_hora">SYSTEM TIMESTAMP <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">OPERATOR <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="accion">ACTION <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="modulo">SCOPE <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="ip_address">SOURCE IP <i data-lucide="chevron-down" style="width:12px;"></i></th>
         </tr></thead>
         <tbody>
             ${data.map((l, i) => `
-                <tr class="animate-row" style="animation-delay: ${i * 0.05}s">
-                    <td style="font-size:12px;">${new Date(l.fecha_hora).toLocaleString()}</td>
-                    <td><strong>${escapeHTML(l.usuario_nombre || 'Sistema')}</strong></td>
-                    <td><span class="badge ${l.accion.includes('Crear') ? 'badge-success' : (l.accion.includes('Eliminar') ? 'badge-danger' : 'badge-info')}">${l.accion}</span></td>
-                    <td><small>${l.modulo}</small></td>
-                    <td style="font-family:monospace; font-size:11px; opacity:0.7;">${l.ip_address || '-'}</td>
+                <tr class="animate-row" style="animation-delay: ${i * 0.02}s">
+                    <td style="font-size:11px; font-family:monospace; color:var(--text-muted);">${new Date(l.fecha_hora).toLocaleString()}</td>
+                    <td><strong style="color:var(--text-primary)">${escapeHTML(l.usuario_nombre || 'CORE')}</strong></td>
+                    <td><span class="badge ${l.accion.includes('Crear') ? 'badge-success' : (l.accion.includes('Eliminar') ? 'badge-danger' : 'badge-info')}">${l.accion.toUpperCase()}</span></td>
+                    <td><span style="font-size:11px; opacity:0.6;">${l.modulo.toUpperCase()}</span></td>
+                    <td style="font-family:monospace; font-size:11px; opacity:0.8;">${l.ip_address || '::1'}</td>
                 </tr>
             `).join('')}
         </tbody>
@@ -1329,12 +1415,7 @@ async function handleModalSave(type, id) {
     }
 }
 
-// Helper to escape HTML for safe display
-function escapeHTML(str) {
-    const div = document.createElement('div');
-    div.appendChild(document.createTextNode(str));
-    return div.innerHTML;
-}
+// Helper functions are imported from utils.js
 
 function setupSocket() {
     const socket = io();
