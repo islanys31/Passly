@@ -9,8 +9,8 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 
-<body style="background: var(--bg-primary); overflow: hidden;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px; height: 100vh; display: flex; flex-direction: column;">
+<body style="background: var(--bg-primary); overflow-y: auto;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px; min-height: 100vh; display: flex; flex-direction: column;">
         <div style="text-align: center; margin-bottom: 20px;">
             <h1
                 style="background: linear-gradient(135deg, var(--accent-green), var(--accent-blue)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 32px; margin-bottom: 10px;">
@@ -38,15 +38,22 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button onclick="location.href='dashboard.html'"
-                style="flex: 1; background: var(--bg-secondary); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer;">←
-                Volver al Panel</button>
-            <button id="btnReset" onclick="resetScanner()"
-                style="flex: 1; background: var(--accent-blue); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; display: none;">Escanear
-                Otro</button>
+        <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 32px;">
+            <button id="btnReset" class="btn-primary" onclick="resetScanner()" style="display: none;">
+                <i data-lucide="refresh-cw"></i> EXECUTAR NUEVO ESCANEO
+            </button>
+            <button class="btn-auth" onclick="location.href='dashboard.html'" style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary); box-shadow: none;">
+                <i data-lucide="arrow-left"></i> VOLVER AL PANEL DE CONTROL
+            </button>
         </div>
     </div>
+
+    <script>
+        // Init Lucide
+        window.addEventListener('load', () => {
+            if (window.lucide) window.lucide.createIcons();
+        });
+    </script>
 
     <script type="module">
         import { apiRequest } from '/js/api.js';
