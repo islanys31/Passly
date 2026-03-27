@@ -1,17 +1,22 @@
 /**
  * @file dashboard.js
  * @description Controlador principal del Panel de Control (Dashboard) de Passly.
- * Maneja la navegación entre módulos, carga de datos dinámica, WebSockets y gestión de sesión.
+ * 
+ * [ESTUDIO: ARQUITECTURA SPA (Single Page Application)]
+ * Passly funciona como una sola página. En lugar de recargar archivos .html distintos,
+ * este script "intercambia" el contenido interno del contenedor principal según 
+ * el módulo que el usuario elija en el menú lateral.
  */
 import { apiRequest, checkAuth, handleLogout } from './api.js';
 import { initTheme } from './theme.js';
 import { showToast, escapeHTML, validarEmail, validarPassword } from './utils.js';
 
-let userData = null;          // Datos del usuario logueado
-let currentData = [];         // Datos del módulo actual para filtrado/búsqueda
-let currentView = 'overview'; // Nombre de la vista activa
-let currentPagination = null; // Metadatos de paginación de la última respuesta
-let notifications = [];       // Almacena notificaciones recibidas por websocket
+// --- ESTADO GLOBAL DEL DASHBOARD ---
+let userData = null;          // Identidad del usuario que inició sesión
+let currentData = [];         // Caché temporal de datos del módulo activo (usuarios, vehículos, etc.)
+let currentView = 'overview'; // Seguimiento de qué "página interna" estamos viendo
+let currentPagination = null; // Control de páginas para tablas con muchos registros
+let notifications = [];       // Almacén para alertas en tiempo real (WebSockets)
 
 // Exposición al objeto global 'window' para que los botones con onclick en HTML funcionen con módulos ES
 window.closeModal = closeModal;
@@ -21,23 +26,24 @@ window.showModal = showModal;
 window.showUserDetail = (id) => showUserDetail(id);
 
 /**
- * CICLO DE VIDA INICIAL:
- * Se ejecuta cuando el navegador termina de procesar el HTML.
+ * [ESTUDIO: CICLO DE VIDA - INICIALIZACIÓN]
+ * Se ejecuta apenas el navegador tiene listo el DOM.
+ * Es el "Punto de Arranque" (Bootstrap) de la aplicación.
  */
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Verificar seguridad: ¿Hay un usuario autenticado?
+    // 1. CONTROL DE ACCESO: ¿Tiene permiso para estar aquí?
     userData = checkAuth();
-    if (!userData) return; // checkAuth se encarga de redirigir al login si no hay token
+    if (!userData) return; // Si no hay token, checkAuth redirige al index.html
 
-    // 2. Inicializar componentes visuales
-    initTheme();          // Cargar modo oscuro/claro preferido
-    setupUI();            // Personalizar el Sidebar con el nombre y rol del usuario
-    setupSidebarToggle(); // Permitir colapsar el menú lateral
+    // 2. CONSTRUCCIÓN DE INTERFAZ: Adaptar el diseño al usuario
+    initTheme();          // Aplicar Modo Oscuro o Claro
+    setupUI();            // Construir el menú lateral según el ROL del usuario (Admin/Residente)
+    setupSidebarToggle(); // Activar el botón de colapsar menú
 
-    // 3. Cargar la vista por defecto (Resumen)
+    // 3. CARGA INICIAL: Mostrar el resumen por defecto
     await loadView('overview');
 
-    // 4. Conectar WebSockets para actualizaciones en tiempo real
+    // 4. TIEMPO REAL: Abrir canal de comunicación bidireccional
     setupSocket();
 });
 
@@ -59,58 +65,62 @@ function setupSidebarToggle() {
 }
 
 /**
- * Personaliza los elementos de la interfaz según el perfil del usuario.
+ * setupUI: Adapta la visión del sistema según el perfil del usuario.
+ * 
+ * [ESTUDIO: SEGURIDAD BASADA EN ROLES (RBAC)]
+ * No todos los usuarios ven lo mismo. El frontend oculta menús sensibles (como 'Gestor de Usuarios')
+ * para residentes, dejando solo lo necesario.
  */
 function setupUI() {
     if (!userData) return;
 
     const navMenu = document.querySelector('.nav-menu');
-    navMenu.innerHTML = ''; // Limpiar previo
+    navMenu.innerHTML = ''; // Limpiar el menú para reconstruirlo de cero
 
-    const role = userData.rol_id;
+    const role = userData.rol_id; // 1: Admin, 2: Residente, 3: Seguridad
 
-    // Configuration of views by role
+    // Configuración de Módulos por ROL
     const viewConfigs = {
-        1: [ // Admin
-            { section: 'SYSTEM CONTROL', views: [
-                { id: 'overview', icon: 'layout-dashboard', text: 'Dashboard' },
-                { id: 'usuarios', icon: 'users', text: 'Identity Manager' },
-                { id: 'dispositivos', icon: 'monitor', text: 'Hardware Assets' },
-                { id: 'vehiculos', icon: 'truck', text: 'Fleet Registry' },
-                { id: 'accesos', icon: 'lock', text: 'Access Logs' }
+        1: [ // PERFIL ADMINISTRADOR: Control Total
+            { section: 'CONTROL DEL SISTEMA', views: [
+                { id: 'overview', icon: 'layout-dashboard', text: 'Resumen' },
+                { id: 'usuarios', icon: 'users', text: 'Identidades' },
+                { id: 'dispositivos', icon: 'monitor', text: 'Hardware' },
+                { id: 'vehiculos', icon: 'truck', text: 'Flota' },
+                { id: 'accesos', icon: 'lock', text: 'Logs Colectivos' }
             ]},
-            { section: 'TERMINALS', views: [
-                { id: 'scanner', icon: 'qr-code', text: 'QR Scanner', external: 'scanner.html' }
+            { section: 'SEGURIDAD FÍSICA', views: [
+                { id: 'scanner', icon: 'qr-code', text: 'Terminal QR', external: 'scanner.html' }
             ]},
-            { section: 'SECURITY & AUDIT', views: [
-                { id: 'logs', icon: 'clipboard-list', text: 'Audit Trail' },
-                { id: 'perfil', icon: 'user-cog', text: 'Account Settings' },
-                { id: 'security', icon: 'shield-check', text: 'Shield 2FA' }
+            { section: 'AJUSTES', views: [
+                { id: 'logs', icon: 'clipboard-list', text: 'Auditoría' },
+                { id: 'perfil', icon: 'user-cog', text: 'Mi Cuenta' },
+                { id: 'security', icon: 'shield-check', text: 'Escudo 2FA' }
             ]}
         ],
-        3: [ // Security
-            { section: 'OPERATIONS', views: [
-                { id: 'overview', icon: 'layout-dashboard', text: 'Operations' },
-                { id: 'accesos', icon: 'lock', text: 'Live Logs' }
+        3: [ // PERFIL SEGURIDAD: Monitoreo y Escaneo
+            { section: 'VIGILANCIA EN VIVO', views: [
+                { id: 'overview', icon: 'layout-dashboard', text: 'Resumen' },
+                { id: 'accesos', icon: 'lock', text: 'Últimos Cruces' }
             ]},
-            { section: 'TERMINALS', views: [
-                { id: 'scanner', icon: 'qr-code', text: 'QR Scanner', external: 'scanner.html' }
+            { section: 'OPERACIONES', views: [
+                { id: 'scanner', icon: 'qr-code', text: 'Cámara Escáner', external: 'scanner.html' }
             ]},
-            { section: 'IDENTITY', views: [
-                { id: 'perfil', icon: 'user-cog', text: 'Profile' },
-                { id: 'security', icon: 'shield-check', text: 'Security' }
+            { section: 'PERSONAL', views: [
+                { id: 'perfil', icon: 'user-cog', text: 'Perfil' },
+                { id: 'security', icon: 'shield-check', text: '2FA' }
             ]}
         ],
-        2: [ // User
-            { section: 'PERSONAL ASSETS', views: [
-                { id: 'overview', icon: 'layout-dashboard', text: 'My Summary' },
-                { id: 'dispositivos', icon: 'monitor', text: 'My Devices' },
-                { id: 'vehiculos', icon: 'truck', text: 'My Vehicles' },
-                { id: 'accesos', icon: 'lock', text: 'My History' }
+        2: [ // PERFIL RESIDENTE: Gestión de su propia información
+            { section: 'MIS PERMISOS', views: [
+                { id: 'overview', icon: 'layout-dashboard', text: 'Mis Datos' },
+                { id: 'dispositivos', icon: 'monitor', text: 'Mis Equipos' },
+                { id: 'vehiculos', icon: 'truck', text: 'Mis Autos' },
+                { id: 'accesos', icon: 'lock', text: 'Mis Entradas' }
             ]},
-            { section: 'ACCOUNT', views: [
-                { id: 'perfil', icon: 'user-cog', text: 'Settings' },
-                { id: 'security', icon: 'shield-check', text: 'Security' }
+            { section: 'IDENTIDAD', views: [
+                { id: 'perfil', icon: 'user-cog', text: 'Ajustes' },
+                { id: 'security', icon: 'shield-check', text: 'Seguridad' }
             ]}
         ]
     };
@@ -153,14 +163,14 @@ function setupUI() {
         avatarEl.textContent = nombre.charAt(0).toUpperCase();
     }
 
-    const roleLabel = role === 1 ? 'ADMINISTRATOR' : (role === 3 ? 'SECURITY' : 'RESIDENT');
+    const roleLabel = role === 1 ? 'ADMINISTRADOR' : (role === 3 ? 'SEGURIDAD' : 'RESIDENTE');
     document.getElementById('userRole').textContent = roleLabel;
 
     // Session Management
     const logoutBtn = document.querySelector('.logout-btn');
     if (logoutBtn) {
         logoutBtn.onclick = () => {
-            if (confirm('Verify exit from secure session?')) handleLogout();
+            if (confirm('¿Verificar salida de sesión segura?')) handleLogout();
         };
     }
 
@@ -176,12 +186,11 @@ function setupUI() {
 }
 
 /**
- * NAVEGACIÓN SPA (Single Page Application):
- * Carga el contenido de un módulo dinámicamente en el contenedor central.
- * Evita la recarga de toda la página para una experiencia más fluida.
+ * [ESTUDIO: MOTOR SPA - loadView]
+ * Es el cerebro de la navegación. En lugar de cambiar de URL, 
+ * limpiamos el contenedor central y volvemos a renderizar los datos.
  * 
- * @param {string} view - Nombre del módulo a cargar
- * @param {boolean} force - Si se debe recargar el contenido incluso si ya está cargado
+ * @param {string} view - El ID del módulo (usuarios, accesos, perfil...)
  */
 async function loadView(view, force = false) {
     if (currentView === view && view !== 'overview' && !force) return;
@@ -270,10 +279,17 @@ function renderSkeleton(container, view) {
     container.innerHTML = html;
 }
 
+/**
+ * renderOverview: Construye la "Home" del Dashboard.
+ * 
+ * [ESTUDIO: ASINCRONÍA EN PARALELO]
+ * Usamos Promise.all para disparar dos peticiones al servidor al mismo tiempo.
+ * Esto ahorra tiempo de espera al usuario, ya que las peticiones viajan juntas.
+ */
 async function renderOverview(container) {
     const [statsRes, trafficRes] = await Promise.all([
-        apiRequest('/stats'),
-        apiRequest('/stats/traffic')
+        apiRequest('/stats'),         // Cantidad de usuarios, vehículos, etc.
+        apiRequest('/stats/traffic')  // Historial de accesos hoy
     ]);
 
     const stats = statsRes?.data?.stats || { users: 0, accessToday: 0, tech: 0, vehicles: 0, alerts: 0 };
@@ -283,14 +299,14 @@ async function renderOverview(container) {
     const isUser = role === 2;
 
     const grid = [
-        { label: isUser ? 'ACCOUNT STATUS' : 'ACTIVE USERS', val: isUser ? 'VERIFIED' : stats.users, icon: 'users', color: 'hsla(220, 90%, 65%, 1)' },
-        { label: isUser ? 'MY LOGS TODAY' : 'ENTRIES TODAY', val: stats.accessToday, icon: 'door-open', color: 'hsla(150, 70%, 45%, 1)' },
-        { label: isUser ? 'MY ASSETS' : 'HARDWARE ASSETS', val: stats.tech, icon: 'monitor', color: 'hsla(280, 50%, 60%, 1)' },
-        { label: isUser ? 'MY VEHICLES' : 'FLEET UNITS', val: stats.vehicles, icon: 'truck', color: 'hsla(170, 60%, 50%, 1)' }
+        { label: isUser ? 'ESTADO DE CUENTA' : 'USUARIOS ACTIVOS', val: isUser ? 'VERIFICADO' : stats.users, icon: 'users', color: 'hsla(220, 90%, 65%, 1)' },
+        { label: isUser ? 'MIS LOGS HOY' : 'ENTRADAS HOY', val: stats.accessToday, icon: 'door-open', color: 'hsla(150, 70%, 45%, 1)' },
+        { label: isUser ? 'MIS ACTIVOS' : 'ACTIVOS DE HARDWARE', val: stats.tech, icon: 'monitor', color: 'hsla(280, 50%, 60%, 1)' },
+        { label: isUser ? 'MIS VEHÍCULOS' : 'UNIDADES DE FLOTA', val: stats.vehicles, icon: 'truck', color: 'hsla(170, 60%, 50%, 1)' }
     ];
 
     if (role === 1 || role === 3) {
-        grid.push({ label: 'SYSTEM ALERTS', val: stats.alerts, icon: 'shield-alert', color: 'hsla(0, 85%, 65%, 1)' });
+        grid.push({ label: 'ALERTAS DEL SISTEMA', val: stats.alerts, icon: 'shield-alert', color: 'hsla(0, 85%, 65%, 1)' });
     }
 
     container.innerHTML = `
@@ -311,12 +327,12 @@ async function renderOverview(container) {
         <div class="dashboard-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-top: 32px;">
             <div class="card glass-glow" style="padding: 32px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <h3 style="margin:0; font-size:18px; letter-spacing:-0.02em;">REAL-TIME ACTIVITY</h3>
-                    <button class="btn-table" onclick="loadView('accesos')">View History</button>
+                    <h3 style="margin:0; font-size:18px; letter-spacing:-0.02em;">ACTIVIDAD EN TIEMPO REAL</h3>
+                    <button class="btn-table" onclick="loadView('accesos')">Ver Historial</button>
                 </div>
                 <div class="data-table-container">
                     <table>
-                        <thead><tr><th>Security Subject</th><th>Operation</th><th>Timestamp</th></tr></thead>
+                        <thead><tr><th>Sujeto de Seguridad</th><th>Operación</th><th>Marca de Tiempo</th></tr></thead>
                         <tbody>
                             ${recentAccess.length ? recentAccess.map((a, index) => `
                                 <tr class="animate-row" style="animation-delay: ${index * 0.05}s">
@@ -335,7 +351,7 @@ async function renderOverview(container) {
                                 <tr>
                                     <td colspan="3" style="padding:48px 0; text-align:center; color:var(--text-muted);">
                                         <div style="font-size:32px; margin-bottom:12px;">📡</div>
-                                        <div>Waiting for system activity...</div>
+                                        <div>Esperando actividad del sistema...</div>
                                     </td>
                                 </tr>
                             `}
@@ -348,20 +364,20 @@ async function renderOverview(container) {
                 ${role !== 2 ? `
                 <div class="card glass-glow" style="padding: 32px; flex:1;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin:0; font-size:18px;">TRAFFIC TRENDS</h3>
-                        <div class="badge badge-success"><span class="pulse-online" style="margin-right:8px;"></span>LIVE</div>
+                        <h3 style="margin:0; font-size:18px;">TENDENCIAS DE TRÁFICO</h3>
+                        <div class="badge badge-success"><span class="pulse-online" style="margin-right:8px;"></span>EN VIVO</div>
                     </div>
                     <div style="height: 200px;"><canvas id="peakHoursChart"></canvas></div>
                 </div>` : ''}
 
                 <div class="card glass-glow" style="padding: 32px; text-align: center;">
-                    <h3 style="margin-bottom:20px; font-size:18px;">DIGITAL KEY (MFA)</h3>
+                    <h3 style="margin-bottom:20px; font-size:18px;">LLAVE DIGITAL (MFA)</h3>
                     <div id="qrContainer" style="width:160px; height:160px; margin:0 auto 24px; border-radius:16px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:white; box-shadow:0 8px 24px rgba(0,0,0,0.1); border:4px solid var(--bg-secondary);">
                         <i data-lucide="qr-code" style="width:48px; height:48px; color:var(--bg-primary); opacity:0.2;"></i>
                     </div>
                     <div style="display:flex; gap:12px;">
-                        <button id="btnGenerateQR" style="flex:2;">GENERATE SECURE KEY</button>
-                        <button id="btnDownloadQR" class="btn-icon" style="flex:0.5; display:none; height:auto; padding:12px;" title="Export Key">
+                        <button id="btnGenerateQR" style="flex:2;">GENERAR LLAVE SEGURA</button>
+                        <button id="btnDownloadQR" class="btn-icon" style="flex:0.5; display:none; height:auto; padding:12px;" title="Exportar Llave">
                             <i data-lucide="download"></i>
                         </button>
                     </div>
@@ -509,15 +525,33 @@ function renderPagination(pagination, onPageChange) {
     if (pagination.hasNext) nav.querySelector('#pgNext').onclick = () => onPageChange(pagination.page + 1);
 }
 
+/**
+ * renderUsuarios: Módulo de Gestión de Identidad.
+ * 
+ * [ESTUDIO: FILTRADO Y BÚSQUEDA]
+ * Aquí se demuestra cómo enviar parámetros de búsqueda al servidor
+ * para que este haga el filtrado en la base de datos (más eficiente que hacerlo en JS).
+ */
 async function renderUsuarios(container, page = 1) {
     const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    
+    // Petición paginada al backend
     const { ok, data } = await apiRequest(`/usuarios?page=${page}&limit=20${searchParam}`);
     if (!ok) return;
+
     currentData = data.data || data;
     currentPagination = data.pagination || null;
+
     if (page === 1 && !search) {
-        renderModuleHeader(container, { buttonId: 'btnAddUser', buttonText: '+ Usuario', buttonColor: 'var(--accent-green)', searchPlaceholder: 'Buscar nombre, email...', module: 'usuarios' });
+        // Solo renderizamos la cabecera (botones y buscador) la primera vez
+        renderModuleHeader(container, { 
+            buttonId: 'btnAddUser', 
+            buttonText: '+ Usuario', 
+            buttonColor: 'var(--accent-green)', 
+            searchPlaceholder: 'Buscar nombre, email...', 
+            module: 'usuarios' 
+        });
     }
     const div = document.createElement('div');
     div.className = "data-table-container";
@@ -530,15 +564,21 @@ async function renderUsuarios(container, page = 1) {
     renderPagination(currentPagination, (p) => renderUsuarios(container, p));
 }
 
+/**
+ * [ESTUDIO: RENDERIZADO DINÁMICO DE TABLAS]
+ * En lugar de usar frameworks como React, Passly usa Template Strings de JS.
+ * Esto permite construir HTML complejo de forma legible y eficiente.
+ * @param {Array} data - Lista de objetos proveniente de la API.
+ */
 function generateUserTable(data) {
-    if (!data.length) return `<div class="empty-state">No users matching current criteria.</div>`;
+    if (!data.length) return `<div class="empty-state">No hay usuarios que coincidan con los criterios.</div>`;
     return `<table>
         <thead><tr>
-            <th>IDENTITY</th>
-            <th class="sortable" data-sort="nombre">FULL NAME <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="email">EMAIL ADDRESS <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="rol_id">ACCESS LEVEL <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th style="text-align:right;">OPERATIONS</th>
+            <th>IDENTIDAD</th>
+            <th class="sortable" data-sort="nombre">NOMBRE COMPLETO <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="email">DIRECCIÓN DE CORREO <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="rol_id">NIVEL DE ACCESO <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th style="text-align:right;">OPERACIONES</th>
         </tr></thead>
         <tbody>
             ${data.map(u => `<tr>
@@ -563,6 +603,13 @@ function generateUserTable(data) {
     </table>`;
 }
 
+/**
+ * renderSecurity: Módulo de configuración MFA (TOTP).
+ * 
+ * [ESTUDIO: SEGURIDAD DE SEGUNDO FACTOR]
+ * Este flujo permite vincular una App (como Google Authenticator) con Passly.
+ * Involucra generar un secreto (QR) y verificarlo antes de activar la protección.
+ */
 async function renderSecurity(container) {
     container.innerHTML = `
         <div class="card glass-glow animate-fade-in" style="max-width:640px; margin:20px auto; padding:40px;">
@@ -571,33 +618,33 @@ async function renderSecurity(container) {
                     <i data-lucide="shield-check" style="width:28px; height:28px;"></i>
                 </div>
                 <div>
-                    <h3 style="margin:0; font-size:20px;">SECURITY CENTER</h3>
-                    <p style="margin:0; font-size:13px; color:var(--text-muted);">Manage your multi-factor authentication and session security.</p>
+                    <h3 style="margin:0; font-size:20px;">CENTRO DE SEGURIDAD</h3>
+                    <p style="margin:0; font-size:13px; color:var(--text-muted);">Gestiona tu autenticación de múltiples factores (MFA) para proteger tu cuenta.</p>
                 </div>
             </div>
 
             <div id="mfaStatusContainer" style="padding:24px; background:hsla(0,0%,100%,0.03); border:1px solid var(--glass-border); border-radius:16px; display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span style="font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:0.05em;">PROTECTION STATUS</span>
-                    <span id="mfaStatusBadge" class="badge">VERIFYING...</span>
+                    <span style="font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:0.05em;">ESTADO DE PROTECCIÓN</span>
+                    <span id="mfaStatusBadge" class="badge">VERIFICANDO...</span>
                 </div>
-                <button id="btnToggleMFA" style="height:40px; padding:0 16px; font-size:13px;">CONFIGURE</button>
+                <button id="btnToggleMFA" style="height:40px; padding:0 16px; font-size:13px;">CONFIGURAR</button>
             </div>
 
             <div id="mfaSetupPanel" style="display:none; margin-top:32px; padding-top:32px; border-top:1px solid var(--glass-border); text-align:center;">
-                <p style="font-size:14px; color:var(--text-secondary); margin-bottom:24px;">Scan this QR code with your authenticator app (Google, Authy, etc.)</p>
+                <p style="font-size:14px; color:var(--text-secondary); margin-bottom:24px;">Escanea este código QR con tu aplicación de autenticador (Google, Authy, etc.)</p>
                 <div id="mfaQRCode" style="background:white; padding:16px; width:180px; height:180px; margin:0 auto; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.2);"></div>
                 
                 <div style="margin-top:32px; max-width:280px; margin-inline:auto;">
-                    <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-align:left; margin-bottom:8px;">VERIFICATION CODE</label>
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-align:left; margin-bottom:8px;">CÓDIGO DE VERIFICACIÓN</label>
                     <input type="text" id="mfaConfirmCode" placeholder="000 000" style="text-align:center; font-size:24px; letter-spacing:0.2em; height:64px;">
-                    <button id="btnVerifyMFA" class="btn-primary" style="width:100%; margin-top:16px; height:52px;">ACTIVATE PROTECTION</button>
+                    <button id="btnVerifyMFA" class="btn-primary" style="width:100%; margin-top:16px; height:52px;">ACTIVAR PROTECCIÓN</button>
                 </div>
             </div>
             
             <div style="margin-top:40px; padding:20px; border-radius:12px; background:hsla(150, 70%, 45%, 0.05); border:1px solid hsla(150, 70%, 45%, 0.1); display:flex; gap:16px; align-items:flex-start;">
                 <i data-lucide="info" style="width:18px; color:hsla(150, 70%, 45%, 1); margin-top:2px;"></i>
-                <p style="margin:0; font-size:12px; line-height:1.6; color:hsla(150, 70%, 45%, 0.8);">MFA adds an extra layer of security to your account by requiring more than just a password to log in.</p>
+                <p style="margin:0; font-size:12px; line-height:1.6; color:hsla(150, 70%, 45%, 0.8);">MFA añade una capa extra de seguridad a tu cuenta al requerir algo más que una contraseña para iniciar sesión.</p>
             </div>
         </div>
     `;
@@ -651,24 +698,24 @@ async function renderMiPerfil(container) {
                 </div>
                 <div>
                     <h3 style="margin:0; font-size:24px; letter-spacing:-0.03em;">${u.nombre} ${u.apellido || ''}</h3>
-                    <p style="margin:4px 0 0; color:var(--text-muted); font-size:14px;">Resident Identity & Profile Access</p>
-                    <div class="badge badge-info" style="margin-top:12px;">${u.rol_id === 1 ? 'ADMINISTRATOR' : 'RESIDENT'}</div>
+                    <p style="margin:4px 0 0; color:var(--text-muted); font-size:14px;">Identidad de Residente y Acceso al Perfil</p>
+                    <div class="badge badge-info" style="margin-top:12px;">${u.rol_id === 1 ? 'ADMINISTRADOR' : 'RESIDENTE'}</div>
                 </div>
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:32px;">
                 <div class="input-group">
-                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">GIVEN NAME</label>
-                    <input type="text" id="profileNombre" value="${escapeHTML(u.nombre)}" placeholder="e.g. John">
+                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">NOMBRE</label>
+                    <input type="text" id="profileNombre" value="${escapeHTML(u.nombre)}" placeholder="ej. Juan">
                 </div>
                 <div class="input-group">
-                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">SURNAME</label>
-                    <input type="text" id="profileApellido" value="${escapeHTML(u.apellido || '')}" placeholder="e.g. Doe">
+                    <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">APELLIDO</label>
+                    <input type="text" id="profileApellido" value="${escapeHTML(u.apellido || '')}" placeholder="ej. Pérez">
                 </div>
             </div>
 
             <div class="input-group" style="margin-bottom:40px;">
-                <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">REGISTERED EMAIL (PROTECTED)</label>
+                <label style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">CORREO REGISTRADO (PROTEGIDO)</label>
                 <div style="position:relative;">
                     <i data-lucide="mail" style="position:absolute; left:16px; top:50%; transform:translateY(-50%); width:16px; opacity:0.3;"></i>
                     <input type="email" value="${escapeHTML(u.email)}" disabled style="padding-left:48px; opacity:0.6; cursor:not-allowed;">
@@ -676,23 +723,23 @@ async function renderMiPerfil(container) {
             </div>
             
             <button id="btnSaveProfile" class="btn-primary" style="width:100%; height:56px; font-size:15px; letter-spacing:0.02em;">
-                <i data-lucide="save" style="width:18px; margin-right:8px;"></i> COMMIT IDENTITY CHANGES
+                <i data-lucide="save" style="width:18px; margin-right:8px;"></i> GUARDAR CAMBIOS DE IDENTIDAD
             </button>
         </div>
 
         <div class="card glass-glow animate-fade-in" style="max-width:720px; margin:40px auto; padding:40px; border-bottom: 4px solid var(--error);">
             <div style="display:flex; align-items:center; gap:16px; margin-bottom:32px;">
                 <i data-lucide="key-round" style="width:24px; color:var(--error);"></i>
-                <h3 style="margin:0; font-size:18px; color:var(--error);">CREDENTIAL ROTATION</h3>
+                <h3 style="margin:0; font-size:18px; color:var(--error);">ROTACIÓN DE CREDENCIALES</h3>
             </div>
             
             <div class="input-group" style="margin-bottom:24px;">
-                <input type="password" id="profileCurrentPass" placeholder="Current Security Password" style="height:52px;">
+                <input type="password" id="profileCurrentPass" placeholder="Contraseña de Seguridad Actual" style="height:52px;">
             </div>
             
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:24px;">
-                <input type="password" id="profileNewPass" placeholder="New Secret Code" style="height:52px;">
-                <input type="password" id="profileConfirmPass" placeholder="Repeat New Code" style="height:52px;">
+                <input type="password" id="profileNewPass" placeholder="Nuevo Código Secreto" style="height:52px;">
+                <input type="password" id="profileConfirmPass" placeholder="Repetir Nuevo Código" style="height:52px;">
             </div>
 
             <div style="height:6px; background:var(--bg-secondary); border-radius:10px; margin-bottom:32px; overflow:hidden;">
@@ -700,7 +747,7 @@ async function renderMiPerfil(container) {
             </div>
 
             <button id="btnChangePassword" style="width:100%; height:52px; background:transparent; border:1px solid var(--error); color:var(--error);">
-                EXECUTE CREDENTIAL UPDATE
+                EJECUTAR ACTUALIZACIÓN DE CREDENCIALES
             </button>
         </div>
     `;
@@ -826,16 +873,26 @@ async function renderMiPerfil(container) {
 }
 
 // REST OF THE MINIMAL FUNCTIONS TO KEEP DASHBOARD WORKING
+/**
+ * renderDispositivos: Gestión de activos tecnológicos (Laptops, Tablets, etc.)
+ */
 async function renderDispositivos(container, page = 1) {
     const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
     const { ok, data } = await apiRequest(`/equipos?page=${page}&limit=20${searchParam}`);
     if (!ok) return;
+
     currentData = data.data || data;
     currentPagination = data.pagination || null;
 
     if (page === 1 && !search) {
-        renderModuleHeader(container, { buttonId: 'btnAddDevice', buttonText: '+ Dispositivo', buttonColor: 'var(--accent-blue)', searchPlaceholder: 'Buscar equipo, serial...', module: 'dispositivos' });
+        renderModuleHeader(container, { 
+            buttonId: 'btnAddDevice', 
+            buttonText: '+ Dispositivo', 
+            buttonColor: 'var(--accent-blue)', 
+            searchPlaceholder: 'Buscar equipo, serial...', 
+            module: 'dispositivos' 
+        });
     }
     const div = document.createElement('div');
     div.className = "data-table-container";
@@ -848,16 +905,28 @@ async function renderDispositivos(container, page = 1) {
     renderPagination(currentPagination, (p) => renderDispositivos(container, p));
 }
 
+/**
+ * renderVehiculos: Control de flota y estacionamiento.
+ */
 async function renderVehiculos(container, page = 1) {
     const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    
+    // Obsérvese que usamos el mismo endpoint de /dispositivos pero filtrando por vehículos
     const { ok, data } = await apiRequest(`/dispositivos?page=${page}&limit=20&soloVehiculos=true${searchParam}`);
     if (!ok) return;
+
     currentData = data.data || data;
     currentPagination = data.pagination || null;
 
     if (page === 1 && !search) {
-        renderModuleHeader(container, { buttonId: 'btnAddVehicle', buttonText: '+ Vehículo', buttonColor: 'var(--accent-lavender)', searchPlaceholder: 'Buscar placa, marca...', module: 'vehiculos' });
+        renderModuleHeader(container, { 
+            buttonId: 'btnAddVehicle', 
+            buttonText: '+ Vehículo', 
+            buttonColor: 'var(--accent-lavender)', 
+            searchPlaceholder: 'Buscar placa, marca...', 
+            module: 'vehiculos' 
+        });
     }
     const div = document.createElement('div');
     div.className = "data-table-container";
@@ -870,15 +939,30 @@ async function renderVehiculos(container, page = 1) {
     renderPagination(currentPagination, (p) => renderVehiculos(container, p));
 }
 
+/**
+ * renderAccesos: Historial de vigilancia y entradas/salidas.
+ */
 async function renderAccesos(container, page = 1) {
     const search = document.getElementById('moduleSearch')?.dataset.activeSearch || '';
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    
+    // Recupera la lista de eventos de acceso registrados por los escáneres
     const { ok, data } = await apiRequest(`/accesos?page=${page}&limit=25${searchParam}`);
     if (!ok) return;
+
     currentData = data.data || data;
     currentPagination = data.pagination || null;
+
     if (page === 1 && !search) {
-        renderModuleHeader(container, { buttonId: 'btnLogAccess', buttonText: '+ Manual', buttonColor: 'var(--accent-emerald)', searchPlaceholder: 'Filtrar usuario, tipo...', module: 'accesos', hasExport: true, hasDateFilter: true });
+        renderModuleHeader(container, { 
+            buttonId: 'btnLogAccess', 
+            buttonText: '+ Manual', 
+            buttonColor: 'var(--accent-emerald)', 
+            searchPlaceholder: 'Filtrar usuario, tipo...', 
+            module: 'accesos', 
+            hasExport: true,         // Habilita botones de PDF/CSV
+            hasDateFilter: true      // Habilita selección de fechas
+        });
     }
     const div = document.createElement('div');
     div.className = "data-table-container";
@@ -912,13 +996,13 @@ async function renderAuditLogs(container, page = 1) {
 }
 
 function generateDeviceTable(data) {
-    if (!data.length) return `<div class="empty-state">No hardware assets registered.</div>`;
+    if (!data.length) return `<div class="empty-state">No hay activos de hardware registrados.</div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="nombre">HARDWARE NAME <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="usuario_nombre">ASSIGNED OWNER <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="last_connection">LAST HEARTBEAT <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="estado_id">HEALTH STATUS <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="nombre">NOMBRE DEL HARDWARE <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">PROPIETARIO ASIGNADO <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="last_connection">ÚLTIMO LATIDO <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="estado_id">ESTADO DE SALUD <i data-lucide="chevron-down" style="width:12px;"></i></th>
         </tr></thead>
         <tbody>
             ${data.map(d => `<tr>
@@ -928,30 +1012,30 @@ function generateDeviceTable(data) {
                         <code style="font-size:10px; opacity:0.5;">UID: ${escapeHTML(d.identificador_unico)}</code>
                     </div>
                 </td>
-                <td><span style="display:flex; align-items:center; gap:8px;"><i data-lucide="user" style="width:14px; opacity:0.5;"></i> ${escapeHTML(d.usuario_nombre || 'Unassigned')}</span></td>
-                <td style="font-family:monospace; font-size:12px;">${d.last_connection ? new Date(d.last_connection).toLocaleString() : 'PENDING'}</td>
-                <td><span class="badge ${d.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${d.estado_id === 1 ? 'ONLINE' : 'OFFLINE'}</span></td>
+                <td><span style="display:flex; align-items:center; gap:8px;"><i data-lucide="user" style="width:14px; opacity:0.5;"></i> ${escapeHTML(d.usuario_nombre || 'Sin asignar')}</span></td>
+                <td style="font-family:monospace; font-size:12px;">${d.last_connection ? new Date(d.last_connection).toLocaleString() : 'PENDIENTE'}</td>
+                <td><span class="badge ${d.estado_id === 1 ? 'badge-success' : 'badge-danger'}">${d.estado_id === 1 ? 'EN LÍNEA' : 'DESCONECTADO'}</span></td>
             </tr>`).join('')}
         </tbody>
     </table>`;
 }
 
 function generateVehicleTable(data) {
-    if (!data.length) return `<div class="empty-state">No fleet units found.</div>`;
+    if (!data.length) return `<div class="empty-state">No se han encontrado unidades de flota.</div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="nombre">UNIT MODEL <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="identificador_unico">PLATE LICENSE <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="usuario_nombre">LEGAL PROPRIETOR <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="medio_transporte">CLASSIFICATION <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th style="text-align:right;">EDIT</th>
+            <th class="sortable" data-sort="nombre">MODELO DE UNIDAD <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="identificador_unico">PLACA / MATRÍCULA <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">PROPIETARIO LEGAL <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="medio_transporte">CLASIFICACIÓN <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th style="text-align:right;">EDITAR</th>
         </tr></thead>
         <tbody>
             ${data.map(v => `<tr>
                 <td><strong style="color:var(--text-primary)">${escapeHTML(v.nombre)}</strong></td>
                 <td><span class="badge badge-info" style="font-family:monospace; font-size:13px; font-weight:700;">${escapeHTML(v.identificador_unico)}</span></td>
                 <td>${escapeHTML(v.usuario_nombre)}</td>
-                <td><span style="opacity:0.8;">${escapeHTML(v.medio_transporte || 'PRIVATE')}</span></td>
+                <td><span style="opacity:0.8;">${escapeHTML(v.medio_transporte || 'PRIVADO')}</span></td>
                 <td style="text-align:right;"><button class="btn-icon btn-edit" data-item='${JSON.stringify(v)}' style="color:var(--warning-color);"><i data-lucide="edit-2"></i></button></td>
             </tr>`).join('')}
         </tbody>
@@ -961,13 +1045,13 @@ function generateVehicleTable(data) {
 function generateAccessTable(data) {
     if (!data.length) return `<div class="empty-state">
         <i data-lucide="shield-off" style="width:48px; height:48px; opacity:0.2; margin-bottom:16px;"></i>
-        <h3>VOID LOGS</h3><p>No secure access events recorded for this period.</p>
+        <h3>SIN REGISTROS</h3><p>No se han registrado eventos de acceso seguro en este período.</p>
     </div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="fecha_hora">EVENT TIMESTAMP <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="usuario_nombre">SECURITY SUBJECT <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="tipo">OPERATION <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="fecha_hora">FECHA / HORA <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">SUJETO DE SEGURIDAD <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="tipo">OPERACIÓN <i data-lucide="chevron-down" style="width:12px;"></i></th>
         </tr></thead>
         <tbody>
             ${data.map((a, i) => `<tr class="animate-row" style="animation-delay: ${i * 0.03}s">
@@ -982,15 +1066,15 @@ function generateAccessTable(data) {
 function generateAuditTable(data) {
     if (!data.length) return `<div class="empty-state">
         <i data-lucide="file-search" style="width:48px; height:48px; font-size:24px;"></i>
-        <h3>CLEAN AUDIT</h3><p>Administrative trace is currently empty.</p>
+        <h3>AUDITORÍA LIMPIA</h3><p>El rastro administrativo está actualmente vacío.</p>
     </div>`;
     return `<table>
         <thead><tr>
-            <th class="sortable" data-sort="fecha_hora">SYSTEM TIMESTAMP <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="usuario_nombre">OPERATOR <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="accion">ACTION <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="modulo">SCOPE <i data-lucide="chevron-down" style="width:12px;"></i></th>
-            <th class="sortable" data-sort="ip_address">SOURCE IP <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="fecha_hora">MARCA DE TIEMPO <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="usuario_nombre">OPERADOR <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="accion">ACCIÓN <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="modulo">ÁMBITO <i data-lucide="chevron-down" style="width:12px;"></i></th>
+            <th class="sortable" data-sort="ip_address">IP DE ORIGEN <i data-lucide="chevron-down" style="width:12px;"></i></th>
         </tr></thead>
         <tbody>
             ${data.map((l, i) => `
@@ -1063,12 +1147,21 @@ function exportToCSV(title, columns, rows, fileName) {
     showToast("Archivo Excel/CSV descargado", "success");
 }
 
+/**
+ * setupModuleEvents: Vincula los elementos de interacción de cada vista.
+ * 
+ * [ESTUDIO: OPTIMIZACIÓN DE BÚSQUEDA (DEBOUNCE)]
+ * No queremos saturar al servidor con una petición por cada letra que el usuario escribe.
+ * Por eso usamos un 'setTimeout'. El servidor solo se consulta cuando el usuario
+ * deja de escribir por 350ms.
+ */
 function setupModuleEvents(container, type) {
     const searchInput = document.getElementById('moduleSearch');
     const tableContainer = document.getElementById('moduleTableContainer');
     const exportBtn = document.getElementById('btnExportPDF');
     const exportCSVBtn = document.getElementById('btnExportCSV');
 
+    // Manejo de exportación de datos (Reportes)
     if (exportBtn || exportCSVBtn) {
         const handleExport = (format) => {
             if (type === 'accesos') {
@@ -1204,6 +1297,14 @@ function setupTableSorting(container, type) {
     });
 }
 
+/**
+ * showModal: El centro de creación y edición de datos.
+ * 
+ * [ESTUDIO: REUTILIZACIÓN DE COMPONENTES]
+ * Un solo modal se adapta para ser: Alta de Usuario, Edición de Vehículo o Generador de Invitaciones.
+ * @param {string} type - Tipo de recurso (usuarios, vehiculos, etc.)
+ * @param {object} item - Datos existentes si es edición, null si es creación.
+ */
 function showModal(type, item = null) {
     const overlay = document.getElementById('modalOverlay');
     const title = document.getElementById('modalTitle');
@@ -1212,7 +1313,8 @@ function showModal(type, item = null) {
 
     if (!overlay || !body) return;
 
-    title.textContent = item ? `Editar ${type}` : `Nuevo ${type.slice(0, -1)}`;
+    // Cambiar el título según la acción
+    title.textContent = item ? `Actualizar Registro: ${type}` : `Nuevo Registro: ${type.slice(0, -1)}`;
     saveBtn.style.display = 'block'; // Asegurar que sea visible si venimos de Ficha Médica
     saveBtn.onclick = () => handleModalSave(type, item?.id);
 
@@ -1338,10 +1440,14 @@ function renderDynamicForm(type, item, users, trans) {
     }
 }
 
+/**
+ * handleModalSave: El orquestador de persistencia.
+ * Determina si debe hacer un POST (Crear) o un PUT (Actualizar) hacia el servidor.
+ */
 async function handleModalSave(type, id) {
     let payload = {};
     let url = type === 'vehiculos' ? '/dispositivos' : `/${type}`;
-    let method = id ? 'PUT' : 'POST';
+    let method = id ? 'PUT' : 'POST'; // Si hay ID, estamos editando
     if (id) url += `/${id}`;
 
     if (type === 'vehiculos') {
@@ -1417,20 +1523,31 @@ async function handleModalSave(type, id) {
 
 // Helper functions are imported from utils.js
 
+/**
+ * [ESTUDIO: COMUNICACIÓN EN TIEMPO REAL (WEBSOCKETS)]
+ * Passly usa Socket.io para que el Dashboard se actualice solo.
+ * Si un guardia escanea un QR en la entrada, este socket recibe una señal
+ * y refresca la tabla de accesos automáticamente sin que nadie toque nada.
+ */
 function setupSocket() {
-    const socket = io();
+    const socket = io(); // Conexión persistente con el servidor
+
+    // Escucha eventos globales de actualización
     socket.on('stats_update', () => {
         if (currentView === 'overview') loadView('overview', true);
         if (currentView === 'accesos') loadView('accesos', true);
     });
 
     socket.on('disconnect', () => {
-        console.warn('WebSocket Desconectado');
+        console.warn('⚠️ Canal de tiempo real perdido...');
     });
 
+    // Evento específico: Nuevo registro de acceso detectado
     socket.on('new_access', (data) => {
         showToast(`🔔 Acceso: ${data.usuario_nombre} (${data.tipo})`, 'info');
-        addNotification('access', `Acceso de ${data.usuario_nombre} (${data.tipo})`); // Add notification for new access
+        addNotification('access', `Acceso de ${data.usuario_nombre} (${data.tipo})`);
+        
+        // Refrescamos la vista si el usuario está viendo los logs
         if (currentView === 'overview' || currentView === 'accesos') {
             loadView(currentView, true);
         }
@@ -1471,16 +1588,26 @@ function updateNotificationUI() {
     `).join('');
 }
 
+/**
+ * showUserDetail: La "Ficha Maestra" del sistema.
+ * 
+ * [ESTUDIO: AGREGACIÓN DE DATOS]
+ * Un perfil de usuario es aburrido sin contexto. Esta función consulta:
+ * 1. Dispositivos (Laptops, Tablets).
+ * 2. Vehículos vinculados.
+ * 3. Últimos movimientos (Logs).
+ * Luego une toda esa información en una vista unificada para el administrador.
+ */
 async function showUserDetail(userId) {
     const overlay = document.getElementById('modalOverlay');
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
     const saveBtn = document.getElementById('btnSave');
 
-    title.textContent = "Ficha Maestra - Perfil de Usuario";
-    saveBtn.style.display = 'none'; // No se edita aquí
+    title.textContent = "Centro de Inteligencia de Identidad - Ficha Maestra";
+    saveBtn.style.display = 'none'; // Vista de solo lectura para auditoría
 
-    body.innerHTML = `<div class="loading-spinner"></div> Consultando historial...`;
+    body.innerHTML = `<div class="loading-spinner"></div> Cruzando bases de datos...`;
     overlay.style.display = 'flex';
     overlay.classList.add('active');
 

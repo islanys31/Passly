@@ -1,9 +1,17 @@
 /**
  * @file auth.js
  * @description Lógica central de autenticación y registro de usuarios para Passly.
- * Maneja el flujo de login (incluyendo verificación MFA de dos factores),
- * validación en tiempo real de formularios, y persistencia de sesión local.
+ * 
+ * [ESTRUCTURA DE ESTUDIO: SEGURIDAD EN EL CLIENTE]
+ * Este archivo es el "Portero" de la aplicación. Se encarga de:
+ * 1. Validaciones: No dejar que datos basura lleguen al servidor.
+ * 2. MFA: Gestionar la transición visual cuando se requiere un segundo factor.
+ * 3. Token: Manejar el pase de acceso (JWT) que nos da el servidor.
  */
+window.onerror = function(msg, url, line) {
+    alert("⚠️ FALLO CRÍTICO PASSLY:\n" + msg + "\nEn: " + url + " L:" + line);
+};
+
 import { apiRequest, checkAuth } from './api.js';
 import { initTheme } from './theme.js';
 import {
@@ -15,44 +23,50 @@ import {
     escapeHTML
 } from './utils.js';
 
-// Contador de intentos de login fallidos para prevención de ataques local
+// Contador de intentos de login fallidos (Seguridad visual preventiva)
 let intentos = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar el tema (oscuro/claro) según preferencia guardada
+    console.log("🚀 Passly Auth Loaded - v2");
+    // Inicializar el tema (oscuro/claro) según preferencia guardada en el navegador
     initTheme();
 
     /**
-     * REDIRECCIÓN AUTOMÁTICA
-     * Si el navegador ya tiene un token de sesión válido, el usuario 
-     * ya no necesita ver el login y se le envía al Dashboard directamente.
+     * [ESTUDIO: PERSISTENCIA DE SESIÓN]
+     * Si ya tenemos un token, redirigimos al Dashboard. 
+     * Esto evita que un usuario ya logueado vea de nuevo la pantalla de Login.
      */
-    if (localStorage.getItem('auth_token')) {
+    if (localStorage.getItem('auth_token') && localStorage.getItem('usuario_activo')) {
         window.location.href = "dashboard.html";
     }
 
-    // Configurar listeners de eventos para interactividad
+    // Configurar listeners de eventos (clics, escritura, etc.)
     initEventListeners();
 
     // Validar estado inicial del botón de registro
     checkRegistrationFormValidity();
 
-    // Iniciar Iconos
+    // Iniciar Iconos Lucide (Sustituye etiquetas <i data-lucide="..."> por SVGs)
     if (window.lucide) window.lucide.createIcons();
 });
 
+/**
+ * initEventListeners: Vincula las acciones del usuario con las funciones de JS.
+ */
 function initEventListeners() {
-    // Toggles
+    // Cambios entre pestañas de Login y Registro
     document.getElementById("toRegister").onclick = () => toggleForms("register");
     document.getElementById("toLogin").onclick = () => toggleForms("login");
+    
+    // Flujo de recuperación de contraseña (Modal)
     document.getElementById("resetLink").onclick = () => {
         document.getElementById('recoveryModal').style.display = 'flex';
         document.getElementById('recoveryStep1').style.display = 'block';
         document.getElementById('recoveryStep2').style.display = 'none';
+        // Auto-completar el email si ya lo escribió en el login
         document.getElementById('recoveryEmail').value = document.getElementById('emailLogin').value;
     };
     
-    // Recovery flow events
     document.getElementById("btnCancelRecovery").onclick = () => {
         document.getElementById('recoveryModal').style.display = 'none';
     };
@@ -60,7 +74,7 @@ function initEventListeners() {
     document.getElementById("btnSendRecovery").onclick = handleSendRecovery;
     document.getElementById("btnResetPassword").onclick = handleResetPassword;
 
-    // Login inputs
+    // Validación EN VIVO (Live Validation): Da feedback mientras el usuario escribe
     document.getElementById('emailLogin').oninput = (e) => {
         validateLive(e.target.id, 'email', 'login');
         clearLoginError();
@@ -71,7 +85,7 @@ function initEventListeners() {
     };
     document.getElementById('rolLogin').oninput = clearLoginError;
 
-    // Register inputs
+    // Entradas del Registro: Cada campo tiene su propia regla
     const regInputs = [
         { id: 'nombreRegistro', type: 'text' },
         { id: 'apellidoRegistro', type: 'text' },
@@ -89,6 +103,7 @@ function initEventListeners() {
         }
     });
 
+    // Especial: La contraseña de registro actualiza una lista de requisitos visuales
     document.getElementById('passRegistro').oninput = (e) => {
         updatePasswordChecklist();
         clearFormError(e.target);
@@ -103,29 +118,81 @@ function initEventListeners() {
         checkRegistrationFormValidity();
     };
 
-    // Show passwords
+    // Control visual: Mostrar/Ocultar contraseñas (Mejorado con botones dedicados)
+    const togglePass = (btnId, inputId) => {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if (!btn || !input) return;
+
+        btn.onclick = () => {
+            console.log("👁️ Toggle Password clicked for:", inputId);
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            
+            // Actualizar icono dinámicamente
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+                if (window.lucide) window.lucide.createIcons();
+            }
+            btn.style.opacity = isPass ? "1" : "0.7";
+            btn.style.color = isPass ? "var(--accent-primary)" : "var(--text-muted)";
+            btn.style.filter = isPass ? "drop-shadow(0 0 5px var(--accent-glow))" : "none";
+        };
+    };
+
+    togglePass('togglePassLogin', 'passLogin');
+
+    // Mantenemos el soporte para los checkboxes ocultos por compatibilidad, 
+    // pero priorizamos los botones de icono.
     document.getElementById("showReg").onchange = e => {
         const type = e.target.checked ? "text" : "password";
         document.getElementById("passRegistro").type = type;
         document.getElementById("passConfirm").type = type;
     };
 
-    document.getElementById("showLogin").onchange = e => {
-        document.getElementById("passLogin").type = e.target.checked ? "text" : "password";
-    };
-
-    // Form Submissions
+    // Acción de envío de formularios
     const btnLogin = document.getElementById("btnLogin");
-    if (btnLogin) btnLogin.onclick = handleLogin;
+    // Tecla Enter para Login: Prevenir recargas accidentales y agilizar el acceso
+    const loginInputs = ['emailLogin', 'passLogin', 'rolLogin'];
+    loginInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    console.log("⌨️ Enter detectado en campo de login");
+                    handleLogin();
+                }
+            });
+        }
+    });
+
+    if (btnLogin) {
+        btnLogin.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log("🖱️ Click detectado en botón de login");
+            await handleLogin();
+        });
+    }
 
     const btnRegistrar = document.getElementById("btnRegistrar");
-    if (btnRegistrar) btnRegistrar.onclick = handleRegister;
+    if (btnRegistrar) {
+        btnRegistrar.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await handleRegister();
+        });
+    }
 }
 
-let currentMfaToken = null;
+let currentMfaToken = null; // Almacena el token temporal si el login requiere un 2do paso
 
 /**
- * Procesa el inicio de sesión. Soporta flujo de un solo paso o de dos pasos (MFA).
+ * handleLogin: Orquesta el proceso de entrada al sistema.
+ * 
+ * [ESTUDIO: FLUJO MULTI-FACTOR (MFA)]
+ * Si el backend responde 'MFA_REQUIRED', transformamos la interfaz 
+ * en una pantalla de ingreso de código de seguridad (TOTP).
  */
 async function handleLogin() {
     const emailEl = document.getElementById("emailLogin");
@@ -134,10 +201,7 @@ async function handleLogin() {
     const errorEl = document.getElementById("loginError");
     const resetLink = document.getElementById("resetLink");
 
-    /**
-     * PASO 2: VERIFICACIÓN MFA
-     * Si ya tenemos un token MFA pendiente, enviamos solo el código de 6 dígitos.
-     */
+    // CASO: El usuario ya puso su clave y ahora está poniendo el código de su celular (App MFA)
     if (currentMfaToken) {
         const mfaInput = document.getElementById("mfaCode");
         const code = mfaInput?.value.trim();
@@ -155,7 +219,7 @@ async function handleLogin() {
         setLoading("btnLogin", false);
 
         if (ok) {
-            // Guardar sesión y redirigir
+            // Guardar sesión definitiva y redirigir
             localStorage.setItem("usuario_activo", JSON.stringify(data.user));
             localStorage.setItem("auth_token", data.token);
             showToast("¡Verificación exitosa!", "success");
@@ -166,10 +230,7 @@ async function handleLogin() {
         return;
     }
 
-    /**
-     * PASO 1: LOGIN ESTÁNDAR
-     * Envío de credenciales básicas al servidor.
-     */
+    // CASO: Intento inicial de entrada con Email y Clave
     const email = emailEl.value.trim();
     const password = passwordEl.value;
     const rol_id = rolEl.value;
@@ -180,29 +241,37 @@ async function handleLogin() {
     }
 
     setLoading("btnLogin", true);
-    const { ok, data, error } = await apiRequest("/auth/login", "POST", { email, password, rol_id });
+    const response = await apiRequest("/auth/login", "POST", { email, password, rol_id });
+    setLoading("btnLogin", false);
+
+    if (!response) {
+        showToast("Error de conexión con el servidor", "error");
+        return;
+    }
+
+    const { ok, data } = response;
 
     if (ok) {
-        // Caso A: Requiere MFA
+        // ¿El servidor pide un segundo factor de seguridad?
         if (data.mfaRequired) {
             setLoading("btnLogin", false);
             currentMfaToken = data.mfaToken;
 
-            // Transformar UI para MFA
+            // Ocultamos el login estándar para mostrar el campo de código MFA
             emailEl.style.display = 'none';
             passwordEl.style.display = 'none';
             rolEl.style.display = 'none';
             document.querySelector('.checkbox-row').style.display = 'none';
             if (resetLink) resetLink.style.display = 'none';
 
-            // Insertar campo de código MFA
+            // Inyectamos la sección visual de MFA
             const mfaHtml = `
                 <div id="mfaSection" class="animate-fade-in" style="margin-top:24px; text-align:center;">
                     <div class="stat-icon" style="margin-inline:auto; background:hsla(220, 90%, 65%, 0.1); color:hsla(220, 90%, 65%, 1); margin-bottom:16px;">
                         <i data-lucide="shield-check"></i>
                     </div>
                     <p style="font-size:13px; margin-bottom:20px; color:var(--text-muted);">
-                        SECURE TOKEN REQUIRED
+                        SE REQUIERE TOKEN DE SEGURIDAD
                     </p>
                     <div class="input-group" style="max-width:240px; margin-inline:auto;">
                         <input id="mfaCode" type="text" placeholder="000 000" maxlength="6" 
@@ -218,39 +287,36 @@ async function handleLogin() {
             );
 
             if (window.lucide) window.lucide.createIcons();
-            document.getElementById('btnLogin').textContent = "VERIFY IDENTITY";
-            loginCard.querySelector('h2').textContent = "Security Step";
-            showToast("MFA token requested", "info");
+            document.getElementById('btnLogin').textContent = "VERIFICAR IDENTIDAD";
+            loginCard.querySelector('h2').textContent = "Paso de Seguridad";
+            showToast("Token MFA solicitado", "info");
             return;
         }
 
-        // Caso B: Login directo
+        // Éxito: Guardamos la información en el 'Bolsillo' del navegador (LocalStorage)
         localStorage.setItem("usuario_activo", JSON.stringify(data.user));
         localStorage.setItem("auth_token", data.token);
         setLoading("btnLogin", false);
         showToast("¡Bienvenido a Passly!", "success");
         setTimeout(() => window.location.href = "dashboard.html", 1000);
     } else {
+        // ERROR: Ya no se refresca la página gracias al cambio en api.js
         setLoading("btnLogin", false);
-        intentos++;
-        const errorMsg = data?.error || (data?.errors ? data.errors[0].message : null) || error || `Credenciales incorrectas (${intentos}/3)`;
-
+        const errorMsg = data?.message || "Credenciales no válidas para el nivel de acceso seleccionado.";
+        showToast(errorMsg, "error");
+        
         if (errorEl) {
             errorEl.textContent = errorMsg;
             errorEl.style.display = "block";
             errorEl.classList.add("shake");
             setTimeout(() => errorEl.classList.remove("shake"), 500);
         }
-
-        if (intentos >= 3 && resetLink) {
-            resetLink.style.display = "block";
-            showToast("Demasiados intentos. Usa la opción de recuperación.", "error");
-        } else {
-            showToast(errorMsg, "error");
-        }
     }
 }
 
+/**
+ * handleRegister: Crea una nueva cuenta en el sistema.
+ */
 async function handleRegister() {
     const nombre = document.getElementById("nombreRegistro").value.trim();
     const apellido = document.getElementById("apellidoRegistro").value.trim();
@@ -260,14 +326,14 @@ async function handleRegister() {
     const rol_id = document.getElementById("rolRegistro").value;
     const acepto = document.getElementById("aceptoTerminos").checked;
 
-    // Validación final antes de enviar
+    // Validación Final (Guardas de seguridad)
     if (!nombre || !apellido || !email || !password || !rol_id) {
         showToast("Por favor, completa todos los campos requeridos.", "error");
         return;
     }
 
     if (!validarEmail(email)) {
-        showToast("El formato del correo no es válido (ej: usuario@gmail.com).", "error");
+        showToast("El formato del correo no es válido.", "error");
         return;
     }
 
@@ -283,7 +349,7 @@ async function handleRegister() {
     }
 
     if (!acepto) {
-        showToast("Debes aceptar los términos y condiciones.", "warning");
+        showToast("Debes aceptar el protocolo de seguridad.", "warning");
         return;
     }
 
@@ -294,13 +360,16 @@ async function handleRegister() {
     setLoading("btnRegistrar", false);
 
     if (ok) {
-        showToast("Registro exitoso. Ahora puedes iniciar sesión.", "success");
+        showToast("Registro exitoso. Ahora puedes entrar.", "success");
         setTimeout(() => toggleForms("login"), 2000);
     } else {
-        showToast(data?.error || (data?.errors ? data.errors[0].message : null) || error || "Error al registrar usuario", "error");
+        showToast(data?.error || "Error al registrar identidad", "error");
     }
 }
 
+/**
+ * toggleForms: Alterna visualmente entre Login y Registro.
+ */
 function toggleForms(form) {
     const loginCard = document.getElementById("loginCard");
     const regCard = document.getElementById("registroCard");
@@ -318,6 +387,9 @@ function toggleForms(form) {
     if (window.lucide) window.lucide.createIcons();
 }
 
+/**
+ * validateLive: Valida campos en tiempo real (mientras el usuario escribe).
+ */
 function validateLive(inputId, type, formId) {
     const input = document.getElementById(inputId);
     const value = input.value.trim();
@@ -330,11 +402,11 @@ function validateLive(inputId, type, formId) {
             case 'text':
                 if (/\s/.test(value)) error = "Sin espacios internos.";
                 else if (!/^[a-zA-ZÁÉÍÓÚÑáéíóúñ]+$/.test(value)) error = "Solo letras.";
-                else if (value[0] !== value[0].toUpperCase()) error = "Debe iniciar en Mayúscula.";
+                else if (value[0] !== value[0].toUpperCase()) error = "Inicia con Mayúscula.";
                 break;
             case 'email':
-                if (/[A-Z]/.test(value)) error = "Solo minúsculas.";
-                else if (!validarEmail(value)) error = "Dominio @gmail o @hotmail válido.";
+                if (/[A-Z]/.test(value)) error = "Solo letras minúsculas.";
+                else if (!validarEmail(value)) error = "Correo no válido.";
                 break;
             case 'password':
                 error = validarPassword(value);
@@ -342,20 +414,23 @@ function validateLive(inputId, type, formId) {
             case 'confirmPassword':
                 const passVal = document.getElementById('passRegistro').value;
                 if (value !== passVal) {
-                    error = "Las contraseñas no coinciden.";
+                    error = "No coincide con la clave original.";
                 } else if (value === "") {
-                    error = "Campo obligatorio.";
+                    error = "Confirma tu clave.";
                 }
                 break;
         }
     }
 
     displayFieldError(inputId, error);
-    setInputBorder(inputId, !!error);
+    setInputBorder(inputId, !!error); // Pone el borde rojo si hay error
 
     if (formId === 'registro') checkRegistrationFormValidity();
 }
 
+/**
+ * updatePasswordChecklist: Actualiza los indicadores visuales de fortaleza de clave.
+ */
 function updatePasswordChecklist() {
     const pass = document.getElementById('passRegistro').value;
     const rules = {
@@ -385,37 +460,12 @@ function updatePasswordChecklist() {
     checkRegistrationFormValidity();
 }
 
+/**
+ * checkRegistrationFormValidity: Verifica que todo el formulario sea válido.
+ * (Se usa para activar o dar feedback del botón de Registro).
+ */
 function checkRegistrationFormValidity() {
-    const nombre = document.getElementById("nombreRegistro").value.trim();
-    const apellido = document.getElementById("apellidoRegistro").value.trim();
-    const email = document.getElementById("emailRegistro").value.trim();
-    const pass = document.getElementById("passRegistro").value;
-    const confirm = document.getElementById("passConfirm").value;
-    const rol = document.getElementById("rolRegistro").value;
-    const acepto = document.getElementById("aceptoTerminos").checked;
-
-    // Validar nombre/apellido
-    const isNombreValid = nombre.length >= 2 && nombre[0] === nombre[0].toUpperCase() && /^[a-zA-ZÁÉÍÓÚÑáéíóúñ]+$/.test(nombre);
-    const isApellidoValid = apellido.length >= 2 && apellido[0] === apellido[0].toUpperCase() && /^[a-zA-ZÁÉÍÓÚÑáéíóúñ]+$/.test(apellido);
-
-    // Validar email
-    const isEmailValid = validarEmail(email);
-
-    // Validar contraseña (checklist completa)
-    const isPassValid = validarPassword(pass) === null;
-
-    // Validar coincidencia
-    const isMatch = (confirm === pass) && (confirm !== "");
-
-    // Habilitar/Deshabilitar botón (Opcional: Lo dejamos habilitado para mejor UX)
-    const btn = document.getElementById("btnRegistrar");
-    if (btn) {
-        // btn.disabled = !isValid; 
-        // Comentado para permitir que handleRegister maneje el feedback del error
-    }
-
-    // Log para depuración (opcional)
-    // console.log({ isNombreValid, isApellidoValid, isEmailValid, isPassValid, isMatch, rol, acepto, isValid });
+    // Aquí se podrían añadir chequeos más estrictos para el UX
 }
 
 function clearLoginError() {
@@ -436,14 +486,14 @@ function clearFormError(el) {
 }
 
 /**
- * Inicia el proceso de recuperación de contraseña enviando un código al correo.
+ * handleSendRecovery: Paso 1 del Reset de Clave.
  */
 async function handleSendRecovery() {
     const emailEl = document.getElementById("recoveryEmail");
     const email = emailEl.value.trim();
 
     if (!email || !validarEmail(email)) {
-        showToast("Ingresa un correo @gmail o @hotmail válido.", "error");
+        showToast("Ingresa un correo institucional válido.", "error");
         setInputBorder("recoveryEmail", true);
         return;
     }
@@ -453,17 +503,17 @@ async function handleSendRecovery() {
     setLoading("btnSendRecovery", false);
 
     if (ok) {
-        showToast("Código enviado. Revisa tu correo.", "success");
+        showToast("Código enviado. Revisa tu bandeja.", "success");
         document.getElementById('recoveryStep1').style.display = 'none';
         document.getElementById('recoveryStep2').style.display = 'block';
-        document.getElementById('recoveryTitle').textContent = "Verificar Código";
+        document.getElementById('recoveryTitle').textContent = "Ingresar Código";
     } else {
-        showToast(data?.error || "Error al enviar el código.", "error");
+        showToast(data?.error || "Fallo al enviar código.", "error");
     }
 }
 
 /**
- * Completa el restablecimiento de contraseña usando el código recibido.
+ * handleResetPassword: Paso 2 del Reset de Clave.
  */
 async function handleResetPassword() {
     const email = document.getElementById("recoveryEmail").value.trim();
@@ -471,7 +521,7 @@ async function handleResetPassword() {
     const newPassword = document.getElementById("recoveryNewPass").value;
 
     if (!code || code.length !== 6) {
-        showToast("Ingresa el código de 6 dígitos.", "error");
+        showToast("Código de 6 dígitos requerido.", "error");
         return;
     }
 
@@ -486,33 +536,37 @@ async function handleResetPassword() {
     setLoading("btnResetPassword", false);
 
     if (ok) {
-        showToast("Contraseña actualizada exitosamente.", "success");
+        showToast("¡Contraseña actualizada!", "success");
         document.getElementById('recoveryModal').style.display = 'none';
-        // Limpiar campos
+        // Limpiamos campos para seguridad
         document.getElementById("recoveryCode").value = "";
         document.getElementById("recoveryNewPass").value = "";
-        showToast("Ya puedes iniciar sesión con tu nueva clave.", "info");
+        showToast("Ya puedes entrar con tus nuevas credenciales.", "info");
     } else {
-        showToast(data?.error || "Código inválido o expirado.", "error");
+        showToast(data?.error || "Autorización denegada.", "error");
     }
 }
 
+/**
+ * [ESTUDIO: CONTROL DE ESTADO DE UI]
+ * setLoading: Cambia el aspecto de un botón para indicar una tarea en curso.
+ * Evita que el usuario haga múltiples clics ("Double Click") desesperados 
+ * que podrían saturar el servidor.
+ */
 function setLoading(btnId, isLoading) {
     const btn = document.getElementById(btnId);
     if (!btn) return;
     if (isLoading) {
         btn.dataset.originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="loading-spinner"></span> Procesando...';
+        btn.innerHTML = '<span class="loading-spinner"></span> ENVIANDO...';
         btn.disabled = true;
     } else {
-        // Restaurar texto original o poner uno por defecto según el botón
-        let defaultText = "Entrar";
-        if (btnId === "btnRegistrar") defaultText = "Registrar";
-        if (btnId === "btnSendRecovery") defaultText = "Enviar Código";
-        if (btnId === "btnResetPassword") defaultText = "Cambiar Contraseña";
+        let defaultText = "IDENTIFICARSE";
+        if (btnId === "btnRegistrar") defaultText = "REGISTRAR IDENTIDAD";
+        if (btnId === "btnSendRecovery") defaultText = "ENVIAR";
+        if (btnId === "btnResetPassword") defaultText = "ACTUALIZAR";
 
         btn.innerHTML = btn.dataset.originalText || defaultText;
         btn.disabled = false;
-        if (btnId === 'btnRegistrar') checkRegistrationFormValidity();
     }
 }

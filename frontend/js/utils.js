@@ -1,23 +1,37 @@
 /**
- * Valida un formato de correo electrónico.
- * Reglas: No mayúsculas, formato estándar usuario@dominio.com
+ * @file utils.js
+ * @description Herramientas transversales de validación, sanitización y UI.
+ * 
+ * [ESTUDIO: COMMON UTILITIES]
+ * En el desarrollo profesional, agrupamos funciones repetitivas en un archivo 'utils'.
+ * Esto evita el código duplicado ("Don't Repeat Yourself" - DRY) y facilita pruebas unitarias.
+ */
+
+/**
+ * [ESTUDIO: VALIDACIÓN DE IDENTIDAD - EMAIL]
+ * El sistema de Passly normaliza los correos a minúsculas para evitar cuentas duplicadas 
+ * causadas por variaciones como "Juan@gmail.com" y "juan@gmail.com".
+ * 
  * @param {string} email - Correo a validar
  * @returns {boolean} - True si es válido
  */
 export function validarEmail(email) {
     if (!email) return false;
-    if (/[A-Z]/.test(email)) return false; // El sistema bloquea mayúsculas por política de normalización
+    if (/[A-Z]/.test(email)) return false; // Bloqueo de mayúsculas preventivo
 
-    // Regex flexible para cualquier dominio de primer nivel
+    // Regex estándar para dominios internacionales
     const regexEmail = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
     return regexEmail.test(email.trim());
 }
 
 /**
- * Valida la robustez de una contraseña según políticas de seguridad Passly.
- * Reglas: 8-12 carac, 1 mayus, 1 minus, 1 num, 1 especial.
+ * [ESTUDIO: POLÍTICA DE CONTRASEÑAS SEGURAS]
+ * Las contraseñas son la primera línea de defensa. Passly exige:
+ * - Longitud específica (8-12) para balancear seguridad y memoria del usuario.
+ * - Variedad de caracteres para resistir ataques de fuerza bruta.
+ * 
  * @param {string} pass - Contraseña a evaluar
- * @returns {string|null} - Mensaje de error o null si es perfecta
+ * @returns {string|null} - Mensaje de error pedagógico o null si es válida
  */
 export function validarPassword(pass) {
     const tieneEspacios = /\s/.test(pass);
@@ -27,36 +41,35 @@ export function validarPassword(pass) {
     const tieneCaracterEspecial = /[!@#$%^*/_.]/.test(pass);
     const regexPermitidos = /^[a-zA-Z0-9!@#$%^*/_.]+$/;
 
-    if (pass.length < 8) return "Mínimo 8 caracteres.";
-    if (pass.length > 12) return "Máximo 12 caracteres.";
-    if (tieneEspacios) return "Sin espacios.";
-    if (!regexPermitidos.test(pass)) return "Contiene caracteres no permitidos.";
-    if (!tieneMayuscula || !tieneMinuscula) return "Requiere Mayúscula y Minúscula.";
-    if (!tieneNumero) return "Requiere al menos un número.";
-    if (tieneCaracterEspecial) return "No se permiten caracteres especiales.";
-
+    if (pass.length < 8) return "Mínimo 8 caracteres requeridos.";
+    if (pass.length > 12) return "Máximo 12 caracteres permitidos.";
+    if (tieneEspacios) return "La clave no puede contener espacios.";
+    if (!regexPermitidos.test(pass)) return "Contiene caracteres prohibidos.";
+    if (!tieneMayuscula || !tieneMinuscula) return "Requiere mezcla de Mayúsculas y Minúsculas.";
+    if (!tieneNumero) return "Debe incluir al menos un número.";
+    
+    // Nota: El sistema permite o bloquea según la configuración de seguridad actual
     return null;
 }
 
 /**
- * Escapa caracteres HTML para prevenir ataques XSS al renderizar contenido dinámico.
- * @param {string} str - Texto plano
- * @returns {string} - Texto sanitizado para HTML
+ * [ESTUDIO: PREVENCIÓN DE XSS (Cross-Site Scripting)]
+ * JAMÁS inyectes texto del usuario directamente en el HTML.
+ * 'escapeHTML' convierte caracteres peligrosos como '<' en '&lt;', 
+ * desactivando cualquier script malicioso que un atacante intente inyectar.
  */
 export function escapeHTML(str) {
     const div = document.createElement('div');
-    div.textContent = str;
+    div.textContent = str; // 'textContent' sanitiza automáticamente
     return div.innerHTML;
 }
 
-// --- SISTEMA DE NOTIFICACIONES (TOASTS) ---
 /**
- * Sistema de notificaciones visuales (Toasts) estilo premium.
- * @param {string} message - Texto a mostrar
- * @param {string} type - 'success', 'error', 'info' o 'warning'
+ * [ESTUDIO: EXPERIENCIA DE USUARIO (UX) - TOASTS]
+ * Las notificaciones 'Toasts' son mensajes no invasivos que informan el éxito 
+ * o fracaso de una operación sin interrumpir el flujo del usuario.
  */
 export function showToast(message, type = 'info') {
-    // Buscar o crear el contenedor global de notificaciones
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -64,7 +77,6 @@ export function showToast(message, type = 'info') {
         document.body.appendChild(container);
     }
 
-    // Crear la burbuja del toast
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
@@ -74,14 +86,15 @@ export function showToast(message, type = 'info') {
 
     container.appendChild(toast);
 
-    // Animación de salida sincronizada con el progreso visual
+    // Protocolo de auto-eliminación
     setTimeout(() => {
         toast.classList.add('fade-out');
-        setTimeout(() => toast.remove(), 500); // Eliminar del DOM tras desaparecer
-    }, 4000);
+        setTimeout(() => toast.remove(), 500);
+    }, 4500); // 4.5 segundos de visibilidad
 }
 
-// --- UI HELPERS ---
+// --- HELPERS DE INTERFAZ GRÁFICA ---
+
 export function setInputBorder(id, isError) {
     const el = document.getElementById(id);
     if (el) {
