@@ -101,7 +101,10 @@ function setupUI() {
         3: [ // PERFIL SEGURIDAD: Monitoreo y Escaneo
             { section: 'VIGILANCIA EN VIVO', views: [
                 { id: 'overview', icon: 'layout-dashboard', text: 'Resumen' },
-                { id: 'accesos', icon: 'lock', text: 'Últimos Cruces' }
+                { id: 'accesos', icon: 'lock', text: 'Últimos Cruces' },
+                { id: 'usuarios', icon: 'users', text: 'Identidades (Búsqueda)' },
+                { id: 'dispositivos', icon: 'monitor', text: 'Hardware (Búsqueda)' },
+                { id: 'vehiculos', icon: 'truck', text: 'Flota (Búsqueda)' }
             ]},
             { section: 'OPERACIONES', views: [
                 { id: 'scanner', icon: 'qr-code', text: 'Cámara Escáner', external: 'scanner.html' }
@@ -482,10 +485,12 @@ function renderModuleHeader(container, config) {
                         <i data-lucide="file-text"></i>
                     </button>
                 ` : ''}
-                <button id="${config.buttonId}" style="height:44px; display:flex; align-items:center; gap:8px; padding:0 20px; border-radius:12px;">
-                    <i data-lucide="plus" style="width:18px;"></i>
-                    ${config.buttonText}
-                </button>
+                ${userData?.rol_id !== 3 ? `
+                    <button id="${config.buttonId}" style="height:44px; display:flex; align-items:center; gap:8px; padding:0 20px; border-radius:12px;">
+                        <i data-lucide="plus" style="width:18px;"></i>
+                        ${config.buttonText}
+                    </button>
+                ` : ''}
             </div>
         </div>
     `;
@@ -591,12 +596,14 @@ function generateUserTable(data) {
                 <td style="font-family:monospace; opacity:0.8;">${escapeHTML(u.email)}</td>
                 <td><span class="badge ${u.rol_id === 1 ? 'badge-info' : 'badge-success'}">${u.rol_id === 1 ? 'ADMIN' : 'RESIDENT'}</span></td>
                 <td style="text-align:right;">
+                    ${userData?.rol_id !== 3 ? `
                     <button class="btn-icon btn-detail" data-id="${u.id}" title="Inspección" style="color:var(--accent-blue);">
                         <i data-lucide="search"></i>
                     </button>
                     <button class="btn-icon btn-edit" data-item='${JSON.stringify(u)}' title="Modificar" style="color:var(--warning-color);">
                         <i data-lucide="edit-3"></i>
                     </button>
+                    ` : '<span style="opacity:0.5; font-size:12px;">Solo lectura</span>'}
                 </td>
             </tr>`).join('')}
         </tbody>
@@ -1036,7 +1043,11 @@ function generateVehicleTable(data) {
                 <td><span class="badge badge-info" style="font-family:monospace; font-size:13px; font-weight:700;">${escapeHTML(v.identificador_unico)}</span></td>
                 <td>${escapeHTML(v.usuario_nombre)}</td>
                 <td><span style="opacity:0.8;">${escapeHTML(v.medio_transporte || 'PRIVADO')}</span></td>
-                <td style="text-align:right;"><button class="btn-icon btn-edit" data-item='${JSON.stringify(v)}' style="color:var(--warning-color);"><i data-lucide="edit-2"></i></button></td>
+                <td style="text-align:right;">
+                    ${userData?.rol_id !== 3 ? `
+                    <button class="btn-icon btn-edit" data-item='${JSON.stringify(v)}' style="color:var(--warning-color);"><i data-lucide="edit-2"></i></button>
+                    ` : '<span style="opacity:0.5; font-size:12px;">Solo lectura</span>'}
+                </td>
             </tr>`).join('')}
         </tbody>
     </table>`;

@@ -21,65 +21,6 @@ const API_BASE = "/api"; // Prefijo estándar para todas las llamadas al servido
  * @param {object} body - Los datos que enviamos al servidor (opcional)
  */
 export async function apiRequest(endpoint, method = 'GET', body = null) {
-    
-    // ============================================
-    // ☢️ MODO DEMO NUCLEAR (Bypass Total Frontend)
-    // ============================================
-    // Si el sistema detecta que estamos en una demo crítica, servimos datos
-    // "perfectos" directamente, sin esperar al servidor.
-    // ============================================
-    // ☢️ MODO DEMO NUCLEAR v11 (Bypass Total Flexible)
-    // ============================================
-    const demoDataMap = {
-        '/stats': { stats: { users: 125, accessToday: 312, tech: 48, vehicles: 56, alerts: 0 } },
-        '/stats/traffic': { 
-            data: [
-                { id: 101, usuario_nombre: 'Juan Residente', tipo: 'Entrada', fecha_hora: new Date().toISOString() },
-                { id: 102, usuario_nombre: 'Ana María', tipo: 'Entrada', fecha_hora: new Date(Date.now() - 3600000).toISOString() },
-                { id: 103, usuario_nombre: 'Carlos Seguridad', tipo: 'Entrada', fecha_hora: new Date(Date.now() - 7200000).toISOString() }
-            ] 
-        },
-        '/usuarios': {
-            data: [
-                { id: 1, nombre: 'Admin', apellido: 'Estratégico', email: 'admin@gmail.com', rol_id: 1, estado_id: 1 },
-                { id: 2, nombre: 'Juan', apellido: 'Residente', email: 'residente@gmail.com', rol_id: 2, estado_id: 1 },
-                { id: 3, nombre: 'Oficial', apellido: 'Vigilante', email: 'seguridad@gmail.com', rol_id: 3, estado_id: 1 }
-            ]
-        },
-        '/equipos': { // Módulo de Hardware
-            data: [
-                { id: 301, nombre: 'Laptop Corporativa v9', identificador_unico: 'SN-X9920', estado_id: 1 },
-                { id: 302, nombre: 'Tablet de Seguridad', identificador_unico: 'SN-T4410', estado_id: 1 }
-            ]
-        },
-        '/dispositivos': { // Módulo de Vehículos
-            data: [
-                { id: 1, nombre: 'Mazda CX-5', identificador_unico: 'ABC-123', usuario_id: 2, medio_transporte_id: 1 },
-                { id: 2, nombre: 'Toyota Hilux', identificador_unico: 'XYZ-789', usuario_id: 2, medio_transporte_id: 1 }
-            ]
-        },
-        '/accesos': {
-            data: [
-                { id: 101, usuario_nombre: 'Juan Residente', tipo: 'Entrada', fecha_hora: new Date().toISOString(), observaciones: 'Acceso Normal' },
-                { id: 102, usuario_nombre: 'Invitado Especial', tipo: 'Entrada', fecha_hora: new Date().toISOString(), observaciones: 'VIP' }
-            ]
-        },
-        '/logs': {
-            data: [
-                { id: 1, accion: 'LOGIN_EXITOSO', modulo: 'AUTH', detalles: 'Bypass de demostración activo', fecha_hora: new Date().toISOString() }
-            ]
-        }
-    };
-
-    // Coincidencia flexible para ignorar parámetros de búsqueda (?page=1, etc.)
-    if (method === 'GET') {
-        const baseEndpoint = endpoint.split('?')[0];
-        if (demoDataMap[baseEndpoint]) {
-            console.warn('⚡ DATA DEMO NUCLEAR INYECTADA PARA:', baseEndpoint);
-            return { ok: true, data: demoDataMap[baseEndpoint] };
-        }
-    }
-
     const token = localStorage.getItem('auth_token');
 
     try {

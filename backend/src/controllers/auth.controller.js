@@ -90,30 +90,6 @@ exports.login = async (req, res) => {
     try {
         const { email, password, rol_id } = req.body;
 
-        // ============================================
-        // 🚨 BYPASS DE EMERGENCIA MULTI-ROL (Demo Mode)
-        // ============================================
-        const bypassUsers = {
-            'admin@gmail.com': { id: 1, nombre: 'Admin', apellido: 'Estratégico', rol_id: 1, cargo: 'Director de Seguridad' },
-            'residente@gmail.com': { id: 2, nombre: 'Juan', apellido: 'Residente', rol_id: 2, cargo: 'Residente Principal' },
-            'seguridad@gmail.com': { id: 3, nombre: 'Oficial', apellido: 'Vigilante', rol_id: 3, cargo: 'Jefe de Turno' }
-        };
-
-        if (bypassUsers[email] && password === 'Passly@2025*') {
-            console.log('⚠️ ACCESO DE EMERGENCIA (DEMO) CONCEDIDO PARA:', email);
-            const user = bypassUsers[email];
-            const token = jwt.sign(
-                { id: user.id, email, rol_id: user.rol_id, cliente_id: 1 },
-                process.env.JWT_SECRET,
-                { expiresIn: '24h' }
-            );
-            return res.json({
-                ok: true,
-                message: 'Acceso de demostración concedido',
-                user: { ...user, email },
-                token
-            });
-        }
 
         if (!email || !password || !rol_id) {
             return res.status(400).json({ error: 'Se requiere correo, contraseña y nivel de acceso' });
