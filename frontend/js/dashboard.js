@@ -347,7 +347,7 @@ async function renderOverview(container) {
                                             <span style="font-weight:600;">${escapeHTML(a.usuario_nombre)}</span>
                                         </div>
                                     </td>
-                                    <td><span class="badge ${a.tipo === 'Entrada' ? 'badge-success' : 'badge-info'}">${a.tipo.toUpperCase()}</span></td>
+                                    <td><span class="badge ${(a.tipo || '') === 'Entrada' ? 'badge-success' : 'badge-info'}">${(a.tipo || 'DESCONOCIDO').toUpperCase()}</span></td>
                                     <td style="color:var(--text-muted); font-family:monospace;">${new Date(a.fecha_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                                 </tr>
                             `).join('') : `

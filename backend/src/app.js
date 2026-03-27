@@ -31,6 +31,8 @@ const transportRoutes = require('./routes/transport.routes'); // Tipos de vehíc
 const accessRoutes = require('./routes/access.routes');     // Registro de movimientos
 const statsRoutes = require('./routes/stats.routes');       // Datos estadísticos para gráficas
 const logRoutes = require('./routes/log.routes');           // Rastro de auditoría para admin
+const configRoutes = require('./routes/config.routes');     // Configuraciones del sistema
+const clientRoutes = require('./routes/client.routes');     // Módulo Multi-tenancy
 
 // ============================================
 // SEGURIDAD REFORZADA (HARDENING)
@@ -163,6 +165,8 @@ app.use('/api/transportes', transportRoutes); // Diccionario de Medios
 app.use('/api/accesos', accessRoutes);     // Inteligencia de Acceso y códigos QR
 app.use('/api/stats', statsRoutes);       // Analítica y KPI's
 app.use('/api/logs', logRoutes);           // Transparencia y Trazabilidad (Auditoría)
+app.use('/api/config', configRoutes);      // Configuración General
+app.use('/api/clientes', clientRoutes);    // Módulo Multi-tenancy
 
 // ============================================
 // AUTO-REPARACIÓN TEMPORAL (SEED)

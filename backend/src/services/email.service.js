@@ -24,13 +24,15 @@ try {
     });
 
     // 🛡️ NO bloqueamos el inicio de la App si el email falla
-    transporter.verify((error) => {
-        if (error) {
-            console.warn('⚠️ Advertencia: El servicio de correos no está disponible. Verifique SMTP.');
-        } else {
-            console.log('📧 Correo: El servidor está listo para enviar mensajes.');
-        }
-    });
+    if (process.env.NODE_ENV !== 'test') {
+        transporter.verify((error) => {
+            if (error) {
+                console.warn('⚠️ Advertencia: El servicio de correos no está disponible. Verifique SMTP.');
+            } else {
+                console.log('📧 Correo: El servidor está listo para enviar mensajes.');
+            }
+        });
+    }
 } catch (e) {
     console.error('❌ Error fatal al inicializar Nodemailer:', e.message);
 }
