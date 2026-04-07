@@ -1,4 +1,4 @@
-const { pool: db } = require('./src/config/db');
+const { pool: db } = require('../src/config/db');
 
 const migrate = async () => {
     console.log('🚀 Iniciando migración de tablas de seguridad...');

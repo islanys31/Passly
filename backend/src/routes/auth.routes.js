@@ -14,6 +14,7 @@ const { verifyToken } = require('../middlewares/authMiddleware');
 
 router.post('/register', [registerLimiter, ...validateRegister, handleValidationErrors], authController.register);
 router.post('/login', [loginLimiter, ...validateLogin, handleValidationErrors], authController.login);
+router.get('/verify', authController.verifyEmail);
 router.post('/logout', authController.logout); // Elimina la cookie httpOnly de sesión
 router.post('/forgot-password', [forgotPasswordLimiter], authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);

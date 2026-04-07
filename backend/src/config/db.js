@@ -15,7 +15,7 @@
  */
 
 const mysql = require('mysql2/promise'); // Versión compatible con 'async/await' para código limpio
-require('dotenv').config();               // Carga las variables de entorno del archivo .env
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }); // Carga las variables de entorno del archivo .env
 
 /**
  * CONFIGURACIÓN DEL POOL

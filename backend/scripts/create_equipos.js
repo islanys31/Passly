@@ -1,5 +1,5 @@
 const { pool: db } = require('../src/config/db');
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 
 async function createEquiposTable() {
     try {

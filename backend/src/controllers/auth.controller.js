@@ -27,44 +27,83 @@ exports.register = async (req, res) => {
     try {
         const { nombre, apellido, email, password, cliente_id, rol_id } = req.body;
 
+        console.log(`📝 INTENTO DE REGISTRO: ${email} (Rol ID: ${rol_id})`);
+
         // 1. Validaciones básicas: ¿Viene toda la información necesaria?
         if (!nombre || !apellido || !email || !password || !rol_id) {
+            console.error('❌ REGISTRO FALLIDO: Faltan campos obligatorios');
             return res.status(400).json({ error: 'Todos los campos son obligatorios para el registro' });
         }
 
-        // 2. ¿El correo ya existe? (Evitar colisiones de identidad)
+        // 2. ¿El correo ya existe?
         const [existingUser] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
         if (existingUser.length > 0) {
+            console.warn(`⚠️ REGISTRO RECHAZADO: El email ${email} ya existe`);
             return res.status(400).json({ error: 'Este correo electrónico ya se encuentra registrado' });
         }
 
-        /**
-         * [ESTUDIO: HASHING DE CONTRASEÑAS]
-         * Nunca guardamos contraseñas en texto plano. Si la base de datos es hackeada,
-         * las contraseñas estarían libres.
-         * Bcrypt usa 'Salt' (un dato aleatorio extra) para que dos contraseñas iguales
-         * tengan un "hash" (resultado) diferente en la base de datos.
-         */
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Guardar en la base de datos (Estado 1 = Activo por defecto)
+        // 3. Generar Token de Verificación (Simplificado para 1 solo clic)
+        const verificationToken = require('crypto').randomBytes(32).toString('hex');
+
+        // 4. Guardar en la base de datos (email_verified = 0 por defecto)
         const [result] = await db.query(
-            'INSERT INTO usuarios (nombre, apellido, email, password, cliente_id, rol_id, estado_id) VALUES (?, ?, ?, ?, ?, ?, 1)',
-            [nombre, apellido, email, hashedPassword, cliente_id || null, rol_id]
+            'INSERT INTO usuarios (nombre, apellido, email, password, cliente_id, rol_id, estado_id, email_verified, verification_token) VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?)',
+            [nombre, apellido, email, hashedPassword, cliente_id || null, rol_id, verificationToken]
         );
 
-        // Actualizar estadísticas del Dashboard vía Sockets (Notificación en tiempo real)
+        console.log(`✅ USUARIO CREADO EXITOSAMENTE: ID ${result.insertId}`);
+
+        // Actualizar estadísticas del Dashboard vía Sockets
         const { getIO } = require('../config/socket');
         getIO().emit('stats_update');
 
-        // Enviar correo de bienvenida (Proceso secundario)
-        emailService.sendWelcomeEmail(email, nombre).catch(err => console.error('Error bienvenida:', err));
+        // Enviar correo de verificación (Botón de un solo clic)
+        emailService.sendVerificationEmail(email, nombre, verificationToken).catch(err => {
+            console.error('❌ ERROR AL ENVIAR EMAIL DE VERIFICACIÓN:', err.message);
+        });
 
-        res.status(201).json({ message: 'Usuario registrado exitosamente en el sistema Passly', userId: result.insertId });
+        res.status(201).json({ 
+            message: 'Identidad creada. Por favor, verifique su correo para activar el acceso.', 
+            userId: result.insertId 
+        });
     } catch (error) {
-        console.error('ERROR REGISTRO:', error);
-        res.status(500).json({ error: 'Error sistémico al registrar usuario' });
+        console.error('💥 ERROR SISTÉMICO EN REGISTRO:', error);
+        res.status(500).json({ error: `Error sistémico: ${error.message}` });
+    }
+};
+
+/**
+ * VERIFICACIÓN DE EMAIL (One-Click)
+ * El usuario hace clic en el botón del correo y el sistema lo valida directamente.
+ */
+exports.verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.query;
+        if (!token) return res.status(400).send('Token de verificación no proporcionado.');
+
+        // 1. Buscar usuario por token
+        const [users] = await db.query('SELECT id, nombre, email FROM usuarios WHERE verification_token = ?', [token]);
+        if (users.length === 0) {
+            return res.status(400).send('El enlace de verificación es inválido o ya ha sido utilizado.');
+        }
+
+        const user = users[0];
+
+        // 2. Marcar como verificado y limpiar el token
+        await db.query('UPDATE usuarios SET email_verified = 1, verification_token = NULL WHERE id = ?', [user.id]);
+
+        // 3. Notificar éxito (Dashboard y Email final)
+        emailService.sendWelcomeEmail(user.email, user.nombre).catch(e => {});
+        
+        // 4. Redirigir a la landing con mensaje de éxito
+        res.redirect('/?verified=true');
+
+    } catch (error) {
+        console.error('ERROR VERIFICACION:', error);
+        res.status(500).send('Fallo interno al procesar la verificación.');
     }
 };
 
@@ -97,7 +136,7 @@ exports.login = async (req, res) => {
 
         // 1. Buscar al usuario
         const [users] = await db.query(
-            'SELECT id, email, password, nombre, apellido, rol_id, estado_id, cliente_id, mfa_enabled, mfa_secret, foto_url FROM usuarios WHERE email = ?',
+            'SELECT id, email, password, nombre, apellido, rol_id, estado_id, cliente_id, mfa_enabled, mfa_secret, foto_url, email_verified FROM usuarios WHERE email = ?',
             [email]
         );
 
@@ -114,9 +153,13 @@ exports.login = async (req, res) => {
             return res.status(401).json({ error: 'Nivel de autorización incorrecto para esta identidad' });
         }
 
-        // 3. Verificar estado: ¿Cuenta suspendida?
+        // 3. Verificar estado y verificación de email
         if (user.estado_id !== 1) {
             return res.status(403).json({ error: 'Su acceso ha sido suspendido. Contacte al área de sistemas.' });
+        }
+
+        if (user.email_verified !== 1) {
+            return res.status(403).json({ error: 'Su cuenta aún no ha sido verificada. Revise su correo electrónico.' });
         }
 
         /**

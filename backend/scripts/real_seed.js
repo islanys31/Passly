@@ -1,6 +1,6 @@
 const { pool: db } = require('../src/config/db');
 const bcrypt = require('bcrypt');
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 
 async function runRealSeed() {
     try {

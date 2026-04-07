@@ -6,19 +6,21 @@ const jwt = require('jsonwebtoken');
  */
 exports.shareByWhatsApp = async (req, res) => {
     try {
-        const { guestName, token } = req.body;
+        const { guestName, token, phone } = req.body;
 
         if (!guestName || !token) {
             return res.status(400).json({ ok: false, error: 'Nombre e invitación son requeridos' });
         }
 
-        // En un entorno real, aquí podríamos usar una API de WhatsApp.
-        // Por ahora generaremos el enlace "wa.me" para que el usuario comparta manualmente.
+        const message = `👋 Hola ${guestName}, te envío tu invitación de acceso para Passly. Puedes usar este código QR al llegar.\n\n📍 Enlace de invitación: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/guest.html?token=${token}`;
 
-        const message = `Hola ${guestName}, te envío tu invitación de acceso para Passly. Puedes usar este código QR al llegar.\n\nEnlace de invitación: ${process.env.FRONTEND_URL}/guest.html?token=${token}`;
-
-        // Usamos wa.me que es más moderno y directo
-        const waLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        // Limpiar el número de teléfono (solo dígitos)
+        const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+        
+        // Usamos wa.me/{phone}?text=... para que abra directamente el chat
+        const waLink = cleanPhone 
+            ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`
+            : `https://wa.me/?text=${encodeURIComponent(message)}`;
 
         res.json({ ok: true, waLink });
     } catch (error) {

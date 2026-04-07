@@ -100,8 +100,8 @@ const validateRegister = [
     body('password')
         .isLength({ min: 8, max: 12 })
         .withMessage('La contraseña debe tener entre 8 y 12 caracteres')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]+$/)
-        .withMessage('La contraseña debe contener al menos una mayúscula, una minúscula, un número y NO debe contener caracteres especiales'),
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^*/_.]).+$/)
+        .withMessage('La clave requiere Mayúscula, Minúscula, Número y Carácter Especial (!@#_)'),
 
     body('rol_id')
         .notEmpty()

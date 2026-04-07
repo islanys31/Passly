@@ -315,7 +315,7 @@ async function renderOverview(container) {
     container.innerHTML = `
         <div class="stats-grid">
             ${grid.map(s => `
-                <div class="stat-card glass-glow">
+                <div class="stat-card glass-glow" style="cursor:pointer;" onclick="const target = '${s.icon === 'users' ? 'usuarios' : s.icon === 'door-open' ? 'accesos' : s.icon === 'monitor' ? 'dispositivos' : s.icon === 'truck' ? 'vehiculos' : s.icon === 'shield-alert' ? 'logs' : 'overview'}'; if(target !== 'overview') loadView(target); else showToast('Módulo en construcción', 'info');">
                     <div class="stat-icon" style="color: ${s.color}; background: ${s.color.replace('1)', '0.1)')}">
                         <i data-lucide="${s.icon}"></i>
                     </div>
@@ -1388,6 +1388,7 @@ function renderModalFields(type, item) {
                 <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">Crea una invitación temporal para un invitado o registra un acceso manual.</p>
                 <div class="form-group"><label>Nombre del Invitado</label><input type="text" id="guest_name" placeholder="Ej: Juan Pérez"></div>
                 <div class="form-group"><label>Email del Invitado (Opcional)</label><input type="email" id="guest_email" placeholder="Para enviarle el QR directamente"></div>
+                <div class="form-group"><label>Teléfono WhatsApp (Opcional)</label><input type="tel" id="guest_phone" placeholder="Ej: 573123456789"></div>
                 <div class="form-group">
                     <label>Expiración (Horas)</label>
                     <select id="guest_expires">
@@ -1400,7 +1401,7 @@ function renderModalFields(type, item) {
                 <div id="invitationResult" style="margin-top:20px; display:none; text-align:center;">
                     <div id="guestQR" style="background:white; padding:10px; width:150px; height:150px; margin:0 auto; border-radius:8px;"></div>
                     <button class="btn-table" id="btnShareWA" style="background:#25D366; color:white; margin-top:15px; width:100%;">
-                        <i>📱</i> Compartir por WhatsApp
+                        <i>📱</i> Abrir WhatsApp Directo
                     </button>
                 </div>
             </div>
@@ -1496,7 +1497,8 @@ async function handleModalSave(type, id) {
                 resultDiv.style.display = 'block';
 
                 waBtn.onclick = async () => {
-                    const waRes = await apiRequest('/accesos/invitation/whatsapp', 'POST', { guestName, token: res.data.token });
+                    const phone = document.getElementById('guest_phone').value;
+                    const waRes = await apiRequest('/accesos/invitation/whatsapp', 'POST', { guestName, token: res.data.token, phone });
                     if (waRes.ok) window.open(waRes.data.waLink, '_blank');
                 };
 

@@ -31,6 +31,14 @@ const PORT = process.env.PORT || 3000;
  */
 const { pool } = require('./src/config/db');
 
+server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+        console.error(`❌ ERROR CRÍTICO: El puerto ${PORT} ya está en uso.`);
+        console.log(`👉 Intenta cerrar otros procesos de Node.js o usa 'taskkill /F /IM node.exe'`);
+        process.exit(1);
+    }
+});
+
 server.listen(PORT, async () => {
     try {
         // Prueba de conexión a la base de datos

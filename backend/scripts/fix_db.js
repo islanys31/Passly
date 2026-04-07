@@ -1,4 +1,4 @@
-const { pool } = require('./backend/src/config/db');
+const { pool } = require('.../src/config/db');
 
 async function fixDB() {
     try {

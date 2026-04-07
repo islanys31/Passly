@@ -46,46 +46,119 @@ document.addEventListener('DOMContentLoaded', () => {
     // Validar estado inicial del botón de registro
     checkRegistrationFormValidity();
 
-    // Iniciar Iconos Lucide (Sustituye etiquetas <i data-lucide="..."> por SVGs)
+    // Iniciar Iconos Lucide
     if (window.lucide) window.lucide.createIcons();
+
+    // 📩 Detectar si el usuario viene de verificar su email exitosamente
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified')) {
+        showToast("¡Cuenta verificada! Ya puedes iniciar sesión.", "success");
+        // Limpiar URL para que no salga el mensaje al recargar
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 });
+
+// Exponer funciones visuales al objeto window para que funcionen desde el HTML
+window.showAuth = (type) => {
+    const overlay = document.getElementById('authOverlay');
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.classList.add('active'), 10);
+    toggleForms(type);
+};
+
+window.hideAuth = () => {
+    const overlay = document.getElementById('authOverlay');
+    overlay.classList.remove('active');
+    setTimeout(() => { if(!overlay.classList.contains('active')) overlay.style.display = 'none'; }, 400);
+};
 
 /**
  * initEventListeners: Vincula las acciones del usuario con las funciones de JS.
  */
 function initEventListeners() {
     // Cambios entre pestañas de Login y Registro
-    document.getElementById("toRegister").onclick = () => toggleForms("register");
-    document.getElementById("toLogin").onclick = () => toggleForms("login");
+    const toRegister = document.getElementById("toRegister");
+    if (toRegister) toRegister.addEventListener('click', () => toggleForms("register"));
+
+    const toLogin = document.getElementById("toLogin");
+    if (toLogin) toLogin.addEventListener('click', () => toggleForms("login"));
+
+    // Botones de la Landing Page (Compatibilidad CSP)
+    const btnNavLogin = document.getElementById("btnNavLogin");
+    if (btnNavLogin) btnNavLogin.addEventListener('click', () => window.showAuth('login'));
+
+    const btnHeroRegister = document.getElementById("btnHeroRegister");
+    if (btnHeroRegister) btnHeroRegister.addEventListener('click', () => window.showAuth('registro'));
+
+    const btnHeroLearnMore = document.getElementById("btnHeroLearnMore");
+    if (btnHeroLearnMore) {
+        btnHeroLearnMore.addEventListener('click', () => {
+            const el = document.getElementById('funciones');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    // Cerrar Modal
+    const btnCloseAuth = document.getElementById("btnCloseAuth");
+    if (btnCloseAuth) btnCloseAuth.addEventListener('click', () => window.hideAuth());
+
+    const authOverlay = document.getElementById("authOverlay");
+    if (authOverlay) {
+        authOverlay.addEventListener('click', (e) => {
+            if (e.target === authOverlay) window.hideAuth();
+        });
+    }
     
     // Flujo de recuperación de contraseña (Modal)
-    document.getElementById("resetLink").onclick = () => {
-        document.getElementById('recoveryModal').style.display = 'flex';
-        document.getElementById('recoveryStep1').style.display = 'block';
-        document.getElementById('recoveryStep2').style.display = 'none';
-        // Auto-completar el email si ya lo escribió en el login
-        document.getElementById('recoveryEmail').value = document.getElementById('emailLogin').value;
+    const resetLink = document.getElementById("resetLink");
+    if (resetLink) {
+        resetLink.onclick = () => {
+            const recoveryModal = document.getElementById('recoveryModal');
+            const step1 = document.getElementById('recoveryStep1');
+            const step2 = document.getElementById('recoveryStep2');
+            const recEmail = document.getElementById('recoveryEmail');
+            const emailLogin = document.getElementById('emailLogin');
+
+            if (recoveryModal) recoveryModal.style.display = 'flex';
+            if (step1) step1.style.display = 'block';
+            if (step2) step2.style.display = 'none';
+            if (recEmail && emailLogin) recEmail.value = emailLogin?.value;
+        };
+    }
+    
+    const btnCancelRecovery = document.getElementById("btnCancelRecovery");
+    if (btnCancelRecovery) btnCancelRecovery.onclick = () => {
+        const modal = document.getElementById('recoveryModal');
+        if (modal) modal.style.display = 'none';
     };
     
-    document.getElementById("btnCancelRecovery").onclick = () => {
-        document.getElementById('recoveryModal').style.display = 'none';
-    };
-    
-    document.getElementById("btnSendRecovery").onclick = handleSendRecovery;
-    document.getElementById("btnResetPassword").onclick = handleResetPassword;
+    const btnSendRecovery = document.getElementById("btnSendRecovery");
+    if (btnSendRecovery) btnSendRecovery.onclick = handleSendRecovery;
 
-    // Validación EN VIVO (Live Validation): Da feedback mientras el usuario escribe
-    document.getElementById('emailLogin').oninput = (e) => {
-        validateLive(e.target.id, 'email', 'login');
-        clearLoginError();
-    };
-    document.getElementById('passLogin').oninput = (e) => {
-        validateLive(e.target.id, 'password', 'login');
-        clearLoginError();
-    };
-    document.getElementById('rolLogin').oninput = clearLoginError;
+    const btnResetPassword = document.getElementById("btnResetPassword");
+    if (btnResetPassword) btnResetPassword.onclick = handleResetPassword;
 
-    // Entradas del Registro: Cada campo tiene su propia regla
+    // Validación EN VIVO (Live Validation)
+    const emailLoginField = document.getElementById('emailLogin');
+    if (emailLoginField) {
+        emailLoginField.oninput = (e) => {
+            validateLive(e.target.id, 'email', 'login');
+            clearLoginError();
+        };
+    }
+
+    const passLoginField = document.getElementById('passLogin');
+    if (passLoginField) {
+        passLoginField.oninput = (e) => {
+            validateLive(e.target.id, 'password', 'login');
+            clearLoginError();
+        };
+    }
+
+    const rolLoginField = document.getElementById('rolLogin');
+    if (rolLoginField) rolLoginField.oninput = clearLoginError;
+
+    // Entradas del Registro
     const regInputs = [
         { id: 'nombreRegistro', type: 'text' },
         { id: 'apellidoRegistro', type: 'text' },
@@ -103,57 +176,68 @@ function initEventListeners() {
         }
     });
 
-    // Especial: La contraseña de registro actualiza una lista de requisitos visuales
-    document.getElementById('passRegistro').oninput = (e) => {
-        updatePasswordChecklist();
-        clearFormError(e.target);
-    };
+    // Especial: La contraseña de registro actualiza checklist
+    const passRegistro = document.getElementById('passRegistro');
+    if (passRegistro) {
+        passRegistro.oninput = (e) => {
+            updatePasswordChecklist();
+            clearFormError(e.target);
+        };
+    }
 
-    document.getElementById('passConfirm').oninput = (e) => {
-        validateLive(e.target.id, 'confirmPassword', 'registro');
-        clearFormError(e.target);
-    };
+    const passConfirm = document.getElementById('passConfirm');
+    if (passConfirm) {
+        passConfirm.oninput = (e) => {
+            validateLive(e.target.id, 'confirmPassword', 'registro');
+            clearFormError(e.target);
+        };
+    }
 
-    document.getElementById('aceptoTerminos').onchange = () => {
-        checkRegistrationFormValidity();
-    };
+    const aceptoTerminos = document.getElementById('aceptoTerminos');
+    if (aceptoTerminos) {
+        aceptoTerminos.onchange = () => checkRegistrationFormValidity();
+    }
 
-    // Control visual: Mostrar/Ocultar contraseñas (Mejorado con botones dedicados)
+    // Control visual: Mostrar/Ocultar contraseñas
     const togglePass = (btnId, inputId) => {
         const btn = document.getElementById(btnId);
         const input = document.getElementById(inputId);
         if (!btn || !input) return;
 
         btn.onclick = () => {
-            console.log("👁️ Toggle Password clicked for:", inputId);
             const isPass = input.type === 'password';
             input.type = isPass ? 'text' : 'password';
-            
-            // Actualizar icono dinámicamente
             const icon = btn.querySelector('i');
             if (icon) {
                 icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
                 if (window.lucide) window.lucide.createIcons();
             }
-            btn.style.opacity = isPass ? "1" : "0.7";
-            btn.style.color = isPass ? "var(--accent-primary)" : "var(--text-muted)";
-            btn.style.filter = isPass ? "drop-shadow(0 0 5px var(--accent-glow))" : "none";
         };
     };
 
     togglePass('togglePassLogin', 'passLogin');
 
-    // Mantenemos el soporte para los checkboxes ocultos por compatibilidad, 
-    // pero priorizamos los botones de icono.
-    document.getElementById("showReg").onchange = e => {
-        const type = e.target.checked ? "text" : "password";
-        document.getElementById("passRegistro").type = type;
-        document.getElementById("passConfirm").type = type;
-    };
+    // Soporte para checkbox showReg opcional
+    const showReg = document.getElementById("showReg");
+    if (showReg) {
+        showReg.onchange = e => {
+            const type = e.target.checked ? "text" : "password";
+            const passReg = document.getElementById("passRegistro");
+            const passConf = document.getElementById("passConfirm");
+            if (passReg) passReg.type = type;
+            if (passConf) passConf.type = type;
+        };
+    }
 
-    // Acción de envío de formularios
+    // Acción de envío
     const btnLogin = document.getElementById("btnLogin");
-    // Tecla Enter para Login: Prevenir recargas accidentales y agilizar el acceso
+    if (btnLogin) {
+        btnLogin.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await handleLogin();
+        });
+    }
+
     const loginInputs = ['emailLogin', 'passLogin', 'rolLogin'];
     loginInputs.forEach(id => {
         const el = document.getElementById(id);
@@ -161,20 +245,11 @@ function initEventListeners() {
             el.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    console.log("⌨️ Enter detectado en campo de login");
                     handleLogin();
                 }
             });
         }
     });
-
-    if (btnLogin) {
-        btnLogin.addEventListener('click', async (e) => {
-            e.preventDefault();
-            console.log("🖱️ Click detectado en botón de login");
-            await handleLogin();
-        });
-    }
 
     const btnRegistrar = document.getElementById("btnRegistrar");
     if (btnRegistrar) {
@@ -318,15 +393,16 @@ async function handleLogin() {
  * handleRegister: Crea una nueva cuenta en el sistema.
  */
 async function handleRegister() {
-    const nombre = document.getElementById("nombreRegistro").value.trim();
-    const apellido = document.getElementById("apellidoRegistro").value.trim();
-    const email = document.getElementById("emailRegistro").value.trim();
-    const password = document.getElementById("passRegistro").value;
-    const confirm = document.getElementById("passConfirm").value;
-    const rol_id = document.getElementById("rolRegistro").value;
-    const acepto = document.getElementById("aceptoTerminos").checked;
+    const nombre = document.getElementById("nombreRegistro")?.value.trim();
+    const apellido = document.getElementById("apellidoRegistro")?.value.trim();
+    const email = document.getElementById("emailRegistro")?.value.trim();
+    const password = document.getElementById("passRegistro")?.value;
+    const confirm = document.getElementById("passConfirm")?.value;
+    const rol_id = document.getElementById("rolRegistro")?.value;
+    const aceptoCheckbox = document.getElementById("aceptoTerminos");
+    const acepto = aceptoCheckbox ? aceptoCheckbox.checked : false;
 
-    // Validación Final (Guardas de seguridad)
+    // Validación Final
     if (!nombre || !apellido || !email || !password || !rol_id) {
         showToast("Por favor, completa todos los campos requeridos.", "error");
         return;
@@ -360,7 +436,7 @@ async function handleRegister() {
     setLoading("btnRegistrar", false);
 
     if (ok) {
-        showToast("Registro exitoso. Ahora puedes entrar.", "success");
+        showToast(data?.message || "Identidad creada. Por favor, verifique su correo.", "success");
         setTimeout(() => toggleForms("login"), 2000);
     } else {
         showToast(data?.error || "Error al registrar identidad", "error");
@@ -377,11 +453,9 @@ function toggleForms(form) {
     if (form === "login") {
         regCard.classList.add("hidden");
         loginCard.classList.remove("hidden");
-        loginCard.style.animation = "fadeInUp 0.5s ease";
     } else {
         loginCard.classList.add("hidden");
         regCard.classList.remove("hidden");
-        regCard.style.animation = "fadeInUp 0.5s ease";
         checkRegistrationFormValidity();
     }
     if (window.lucide) window.lucide.createIcons();
@@ -437,7 +511,7 @@ function updatePasswordChecklist() {
         'reqLength': pass.length >= 8 && pass.length <= 12,
         'reqUpper': /[A-Z]/.test(pass) && /[a-z]/.test(pass),
         'reqNumber': /[0-9]/.test(pass),
-        'reqSpecial': !/[!@#$%^*/_.]/.test(pass)
+        'reqSpecial': /[!@#$%^*/_.]/.test(pass)
     };
 
     for (const [id, isValid] of Object.entries(rules)) {
