@@ -172,9 +172,14 @@ app.use('/api/clientes', clientRoutes);    // Módulo Multi-tenancy
 // AUTO-REPARACIÓN TEMPORAL (SEED)
 // ============================================
 
-// RUTA RAIZ: Punto de entrada a la aplicación web
+// RUTA RAIZ: Mensaje de estado para verificar que la API está viva
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/index.html'));
+    res.json({
+        success: true,
+        message: '🚀 Passly API is Online & Secure',
+        version: '3.0 (Cloud Edition)',
+        author: 'catira3132@mail.com'
+    });
 });
 
 // ============================================
