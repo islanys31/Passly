@@ -15,8 +15,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passly - Panel de Seguridad y Acceso</title>
     
-    <!-- Archivos de recursos y librerías -->
-    <link rel="stylesheet" href="/css/index.css">
+    <!-- Archivos de recursos y librerías (?v=5 purga la caché) -->
+    <link rel="stylesheet" href="/css/index.css?v=5">
     <link rel="manifest" href="/manifest.json">
     
     <!-- Sockets: Para actualizaciones en tiempo real (ej. notificaciones de acceso) -->
@@ -33,7 +33,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <!-- Lógica del Panel de Control -->
-    <script type="module" src="/js/dashboard.js"></script>
+    <script type="module" src="/js/dashboard.js?v=5"></script>
 </head>
 
 <body>
@@ -78,7 +78,7 @@
         <div class="header-right" style="display:flex; align-items:center; gap:24px;">
           
           <!-- CONTENEDOR DE ALERTAS: Recibe avisos vía Socket.io de forma instantánea -->
-          <div class="notification-container" style="position:relative; cursor:pointer;" onclick="document.getElementById('notifDropdown').classList.toggle('hidden')">
+          <div class="notification-container" style="position:relative; cursor:pointer;" onclick="toggleNotifications(event)">
             <div class="btn-icon">🔔</div>
             <div id="notifBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--error); color:white; font-size:10px; font-weight:bold; border-radius:10px; padding:2px 6px; border:2px solid var(--bg-primary);">0</div>
             
@@ -120,8 +120,8 @@
       </div>
       <div id="modalBody"></div>
       <div class="modal-footer" style="display:flex; gap:16px; margin-top:40px;">
-        <button class="btn-table" style="flex:1; background:hsla(0,0%,100%,0.05); color:var(--text-primary);" onclick="closeModal()">Cancelar</button>
-        <button id="btnSave" style="flex:1;">Confirmar Cambios</button>
+        <button type="button" class="btn-primary" style="flex:1; background:hsla(0,0%,100%,0.05); color:var(--text-primary); box-shadow:none; border: 1px solid var(--glass-border-light);" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btnSave" style="flex:1;">Confirmar Cambios</button>
       </div>
     </div>
   </div>

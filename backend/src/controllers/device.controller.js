@@ -2,6 +2,17 @@ const { pool: db } = require('../config/db');
 const { logAction } = require('../utils/logger');
 const { getPagination, paginatedResponse } = require('../utils/pagination');
 
+/**
+ * @file device.controller.js
+ * @description Gestión de Activos Tecnológicos y Parque Automotor.
+ * 
+ * [ESTRUCTURA DE ESTUDIO]
+ * Modela un inventario dinámico (Hardware o Vehículos) asignados a Usuarios específicos.
+ * Es crucial en la lógica empresarial porque define si a un auto particular se le
+ * permite o se le deniega el acceso mediante filtros de Tenant.
+ */
+
+
 exports.getAllDevices = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;

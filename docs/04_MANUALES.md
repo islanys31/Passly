@@ -29,8 +29,8 @@
     JWT_SECRET=tu_clave_secreta_muy_segura
     PORT=3000
     NODE_ENV=development
-    EMAIL_USER=tu_correo@gmail.com        # Opcional
-    EMAIL_PASS=tu_contraseña_aplicacion   # Opcional
+    EMAIL_USER=catira3132@mail.com        # Requerido para notificaciones
+    EMAIL_PASS=tu_contraseña_aplicacion   # Obtener desde Google App Passwords
     ```
 4.  **Instalar dependencias e iniciar**:
     ```bash

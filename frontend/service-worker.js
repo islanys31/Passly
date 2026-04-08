@@ -1,4 +1,4 @@
-const CACHE_NAME = 'passly-v2';
+const CACHE_NAME = 'passly-v3';
 const ASSETS = [
     '/',
     '/index.html',

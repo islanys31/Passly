@@ -8,8 +8,17 @@
 require('dotenv').config(); // Carga las variables de entorno desde el archivo .env
 const http = require('http');
 const app = require('./src/app'); // Importa la aplicación Express configurada
+const fs = require('fs');
+const path = require('path');
 const { initIO } = require('./src/config/socket'); // Importa el inicializador de Socket.IO
 const { scheduleBackups } = require('./src/utils/backup'); // Tareas programadas de respaldo
+
+// Crear carpeta de uploads/profiles si no existe
+const profilesDir = path.join(__dirname, 'uploads/profiles');
+if (!fs.existsSync(profilesDir)) {
+    fs.mkdirSync(profilesDir, { recursive: true });
+    console.log(`✅ Directorio creado: ${profilesDir}`);
+}
 
 /**
  * Crea el servidor HTTP utilizando la aplicación Express.
@@ -39,7 +48,7 @@ server.on('error', (e) => {
     }
 });
 
-server.listen(PORT, async () => {
+server.listen(PORT, '0.0.0.0', async () => {
     try {
         // Prueba de conexión a la base de datos
         await pool.query('SELECT 1');

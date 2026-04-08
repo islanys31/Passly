@@ -29,10 +29,15 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME,     // Nombre de la base de datos de Passly
     port: process.env.DB_PORT || 3306, // Puerto estándar de MySQL
     
+    // Configuración de SSL (Requerido por Aiven y otros proveedores de nube)
+    ssl: process.env.DB_SSL === 'true' ? {
+        rejectUnauthorized: false // Permite certificados auto-firmados comunes en niveles gratuitos
+    } : null,
+    
     // Configuración avanzada de gestión:
     waitForConnections: true, // Si todas las conexiones están en uso, espera en lugar de dar error
-    connectionLimit: 10,      // Máximo de conexiones simultáneas permitidas
-    queueLimit: 0            // Sin límite de peticiones en espera (cola infinita)
+    connectionLimit: 100,     // Aumentado a 100 para soportar picos de inicio de sesión matutinos
+    queueLimit: 0             // Sin límite de peticiones en espera (cola infinita)
 });
 
 /**

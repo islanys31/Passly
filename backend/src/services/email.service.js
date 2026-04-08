@@ -160,12 +160,14 @@ exports.sendVerificationEmail = async (to, userName, token) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
+        return { success: true };
     } catch (error) {
         console.log(`\n---------------------------------------------------------`);
         console.log(`[DEBUG VERIFICACIÓN] Usuario: ${userName} (${to})`);
         console.log(`👉 Link: ${verificationLink}`);
         console.log(`---------------------------------------------------------\n`);
+        return { success: false, link: verificationLink };
     }
 };
 
@@ -178,16 +180,22 @@ exports.sendWelcomeEmail = async (to, userName) => {
         to: to,
         subject: '🚀 ¡Todo listo en Passly!',
         html: `
-            <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 16px;">
-                <div style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); padding: 50px 20px; text-align: center; border-radius: 12px 12px 0 0;">
-                    <h1 style="color: white; margin: 0; font-size: 40px; font-weight: 900;">¡Hola ${userName}!</h1>
+            <div style="font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden;">
+                <div style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); padding: 60px 20px; text-align: center;">
+                    <div style="background: white; width: 70px; height: 70px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        <span style="font-size: 35px; color: ${APP_COLOR_PRIMARY};">✨</span>
+                    </div>
+                    <h1 style="color: white; margin: 0; font-size: 42px; font-weight: 900; letter-spacing: -1px;">¡Bienvenido ${userName}!</h1>
                 </div>
-                <div style="background: white; padding: 40px; border-radius: 0 0 12px 12px; border: 1px solid #eee; border-top: none; text-align: center;">
-                    <p style="color: #444; line-height: 1.6; font-size: 16px;">Tu cuenta ha sido verificada. Ya puedes entrar al panel.</p>
-                    <div style="margin: 40px 0;">
+                <div style="padding: 50px 40px; text-align: center;">
+                    <h2 style="color: #1e293b; font-size: 24px; margin-top: 0; font-weight: 800;">Tu cuenta está verificada</h2>
+                    <p style="color: #475569; line-height: 1.8; font-size: 16px; margin-bottom: 40px;">
+                        Descubre una nueva era de gestión y seguridad. Ya puedes acceder al panel de control de Passly y explorar todas las herramientas disponibles.
+                    </p>
+                    <div style="margin: 40px 0 20px;">
                         <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" 
-                           style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); color: white; padding: 16px 32px; text-decoration: none; border-radius: 50px; font-weight: bold;">
-                            ENTRAR AHORA
+                           style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 18px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(15,23,42,0.3); transition: all 0.3s ease;">
+                            ENTRAR AL PANEL
                         </a>
                     </div>
                 </div>

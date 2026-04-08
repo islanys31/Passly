@@ -128,6 +128,23 @@ body::after {
   position: relative;
 }
 
+/* Ocultar barra lateral si por error entra al contexto de autenticación */
+.auth-page .sidebar {
+  display: none !important;
+}
+.auth-page .dashboard-container {
+  display: block !important;
+}
+
+/* FOTOS DE PERFIL CIRCULARES */
+.user-avatar img,
+img[src*="profiles"] {
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  width: 100%;
+  height: 100%;
+}
+
 .auth-container {
   display: flex;
   flex-direction: column;

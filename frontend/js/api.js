@@ -10,7 +10,10 @@
  * 3. Mantenimiento: Si la URL del servidor cambia, solo la editamos aquí.
  */
 
-const API_BASE = "/api"; // Prefijo estándar para todas las llamadas al servidor
+// Prefijo para las llamadas al servidor. En local usa relativo, en nube usa la URL de Render.
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? "/api" 
+    : "https://passly-backend.onrender.com/api"; // Esta URL se actualizará cuando tengamos la real de Render
 
 /**
  * [ESTUDIO: COMUNICACIÓN ASÍNCRONA]

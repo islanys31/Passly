@@ -341,13 +341,13 @@ NODE_ENV=development
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_SECURE=false
-EMAIL_USER=tu_correo@gmail.com
-EMAIL_PASS=contraseña_de_aplicacion_gmail
+EMAIL_USER=catira3132@mail.com
+EMAIL_PASS=contraseña_de_aplicacion
 
 # Producción
-DOMAIN_NAME=passly.com
-EMAIL_ADMIN=admin@passly.com
-FRONTEND_URL=https://passly.com
+DOMAIN_NAME=localhost
+EMAIL_ADMIN=catira3132@mail.com
+FRONTEND_URL=http://localhost:3000
 ```
 
 ---
@@ -356,29 +356,17 @@ FRONTEND_URL=https://passly.com
 
 | Documento | Descripción |
 |-----------|-------------|
-| `README.md` | Documentación principal (este archivo) |
-| `ANALISIS_PROYECTO.md` | Análisis técnico detallado |
-| `ANALISIS_FUNCIONALIDADES.md` | Estado de funcionalidades |
-| `RESUMEN_EJECUTIVO.md` | Resumen de logros |
-| `RESUMEN_ANALISIS.md` | Análisis rápido del proyecto |
-| `REPORTE_TECNICO_HARDENING.md` | Reporte de endurecimiento |
-| `DOCUMENTACION_PROYECTO_PASSLY.md` | Documentación estratégica |
-| `GUIA_RAPIDA.md` | Guía de inicio rápido |
-| `GUIA_DISENO.md` | Especificaciones de diseño |
-| `INTEGRACION_COMPLETA.md` | Detalles de integración |
-| `FRONTEND_BACKEND.md` | Arquitectura de servidor |
-| `docs/01_REQUISITOS_Y_PROPUESTA.md` | Requisitos y propuesta técnica |
-| `docs/02_DIAGRAMAS_SISTEMA.md` | Diagramas UML y técnicos |
-| `docs/03_BASE_DE_DATOS.md` | Modelo de base de datos |
-| `docs/04_MANUALES.md` | Manuales de operación |
-| `docs/05_PRUEBAS_Y_DISEÑO.md` | Pruebas y diseño UX/UI |
+| `README.md` | Documentación principal e instrucciones (este archivo) |
+| `docs/` | Carpeta reservada para manuales técnicos y requerimientos |
+| `INSTRUCCIONES_DEMO.md` | Guía de uso rápido para evaluar la plataforma y probar roles |
+| `PASO_A_PRODUCCION.md` | Recomendaciones de seguridad al lanzar la app |
 
 ---
 
 ## 🆘 Soporte
 
-- 📧 Email: soporte@passly.com
-- 🐛 Issues: https://github.com/tu-usuario/Passly/issues
+- 📧 Email: catira3132@mail.com
+- 🐛 Issues: https://github.com/islanys31/Passly/issues
 - 📖 API Docs: http://localhost:3000/api-docs
 
 ---

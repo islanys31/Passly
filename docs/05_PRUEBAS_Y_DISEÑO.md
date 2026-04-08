@@ -21,6 +21,12 @@ El sistema cumple estrictamente con los mockups aprobados, manteniendo una relac
 | **Login** | Ingreso con usuario inactivo o bloqueado | ✅ BLOQUEADO (Estado 403) |
 | **Login MFA** | Ingreso con contraseña correcta pero código TOTP inválido | ✅ RECHAZADO |
 | **Login MFA** | Ingreso con contraseña y código TOTP correctos | ✅ ÉXITO |
+| **Frontend UI** | Renderizado de Modales con Backdrop Blur (Glassmorphism) | ✅ VERIFICADO |
+| **Dashboard** | Tarjetas Dinámicas con Elevación y Toasts Globales | ✅ VERIFICADO |
+| **Historial** | Carga de Actividad en Tiempo Real con Fotos de Usuario | ✅ VERIFICADO |
+| **PWA Cache** | Purga Automática de Caché mediante Versionado v5 | ✅ VERIFICADO |
+| **Escáner QR** | Corrección de Cierre de Etiquetas HTML (Estabilidad iOS) | ✅ VERIFICADO |
+
 | **Registro** | Intento de inyectar scripts `<script>` en el nombre | ✅ BLOQUEADO (Sanitización) |
 | **Registro** | Email en mayúsculas o dominio no permitido | ✅ RECHAZADO (express-validator) |
 | **Registro** | Contraseña sin complejidad requerida | ✅ RECHAZADO (Regex estricto) |

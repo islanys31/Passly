@@ -1,5 +1,42 @@
 const express = require('express');
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Autenticación y gestión de identidad
+ * 
+ * /api/auth/login:
+ *   post:
+ *     summary: Iniciar sesión en la plataforma
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login exitoso, devuelve JWT
+ *       401:
+ *         description: Credenciales inválidas
+ * 
+ * /api/auth/register:
+ *   post:
+ *     summary: Registro de nuevo usuario (Tenant owner)
+ *     tags: [Auth]
+ *     responses:
+ *       201:
+ *         description: Usuario creado exitosamente
+ */
+
 const authController = require('../controllers/auth.controller');
 const {
     registerLimiter,

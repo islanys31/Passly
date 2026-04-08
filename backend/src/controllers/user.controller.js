@@ -7,6 +7,17 @@ const emailService = require('../services/email.service');
 const { getPagination, paginatedResponse } = require('../utils/pagination');
 const { invalidateUserCache } = require('../middlewares/authMiddleware');
 
+/**
+ * @file user.controller.js
+ * @description Gestión de identidades y ciclo de vida del usuario.
+ * 
+ * [ESTRUCTURA DE ESTUDIO]
+ * Este controlador procesa el CRUD (Crear, Leer, Actualizar, Borrar) de la capa "Personas".
+ * Incluye mecanismos de seguridad transaccionales, subida estática de imágenes de perfil (Multer),
+ * y vinculación robusta y forzosa al ID de Inquilino (`cliente_id`) para salvaguardar el Multi-Tenancy.
+ */
+
+
 
 exports.getAllUsers = async (req, res) => {
     try {

@@ -23,7 +23,49 @@ window.closeModal = closeModal;
 window.loadView = loadView;
 window.handleLogout = handleLogout;
 window.showModal = showModal;
+window.showToast = showToast;
 window.showUserDetail = (id) => showUserDetail(id);
+
+window.toggleNotifications = async function(e) {
+    if(e) e.stopPropagation();
+    const dropdown = document.getElementById('notifDropdown');
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden')) {
+        const notifList = document.getElementById('notifList');
+        notifList.innerHTML = '<div style="padding:20px; text-align:center;"><span class="pulse-online"></span> Obteniendo datos...</div>';
+        
+        let url = userData?.rol_id === 1 ? '/logs?limit=5' : '/accesos?limit=5';
+        const res = await apiRequest(url);
+        
+        if (res.ok && res.data && ((res.data.data && res.data.data.length > 0) || (res.data.logs && res.data.logs.length > 0) || (res.data.data && res.data.data.data))) {
+            let items = res.data.logs ? res.data.logs : (res.data.data.data ? res.data.data.data : res.data.data);
+            if (!Array.isArray(items)) items = [res.data.data]; // fallback
+            const logs = items.slice(0, 5);
+            notifList.innerHTML = logs.map(log => `
+                <div style="padding:10px; border-bottom:1px solid var(--glass-border); font-size:12px; display:flex; gap:10px; align-items:flex-start;">
+                    <div style="color:var(--accent-primary);">🔔</div>
+                    <div>
+                        <strong style="color:var(--text-primary);">${escapeHTML(log.accion || log.tipo || 'Evento')}</strong><br>
+                        <span style="color:var(--text-muted);">${escapeHTML(log.detalles || log.usuario_nombre || log.modulo || '')}</span><br>
+                        <small style="color:var(--text-muted); opacity:0.7;">${new Date(log.fecha_hora).toLocaleString()}</small>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            notifList.innerHTML = '<div class="empty-state" style="padding:24px 0; font-size:13px;">Sistemas operativos. Sin alertas.</div>';
+        }
+        
+        document.getElementById('notifBadge').style.display = 'none';
+        document.getElementById('notifBadge').textContent = '0';
+    }
+};
+
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('notifDropdown');
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+        if(!e.target.closest('.notification-container')) dropdown.classList.add('hidden');
+    }
+});
 
 /**
  * [ESTUDIO: CICLO DE VIDA - INICIALIZACIÓN]
@@ -290,13 +332,18 @@ function renderSkeleton(container, view) {
  * Esto ahorra tiempo de espera al usuario, ya que las peticiones viajan juntas.
  */
 async function renderOverview(container) {
-    const [statsRes, trafficRes] = await Promise.all([
+    const [statsRes, trafficRes, accessRes] = await Promise.all([
         apiRequest('/stats'),         // Cantidad de usuarios, vehículos, etc.
-        apiRequest('/stats/traffic')  // Historial de accesos hoy
+        apiRequest('/stats/traffic'), // Para la gráfica de horas pico
+        apiRequest('/accesos?limit=5')// Historial de accesos real para la tabla
     ]);
 
     const stats = statsRes?.data?.stats || { users: 0, accessToday: 0, tech: 0, vehicles: 0, alerts: 0 };
-    const recentAccess = (trafficRes?.data?.data || []).slice(0, 5);
+    
+    // Resolvemos la paginación según el formato del backend res.data.data.data
+    let rawAccessData = accessRes?.data?.data;
+    let itemsArray = Array.isArray(rawAccessData) ? rawAccessData : (rawAccessData?.data || []);
+    const recentAccess = itemsArray.slice(0, 5);
 
     const role = userData.rol_id;
     const isUser = role === 2;
@@ -793,7 +840,7 @@ async function renderMiPerfil(container) {
             
             if (res.ok) {
                 showToast("Foto de perfil actualizada", "success");
-                userData.foto_url = result.url;
+                userData.foto_url = result.photoUrl;
                 localStorage.setItem('usuario_activo', JSON.stringify(userData));
                 setupUI(); 
             } else {

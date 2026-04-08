@@ -61,14 +61,20 @@ exports.register = async (req, res) => {
         getIO().emit('stats_update');
 
         // Enviar correo de verificación (Botón de un solo clic)
-        emailService.sendVerificationEmail(email, nombre, verificationToken).catch(err => {
-            console.error('❌ ERROR AL ENVIAR EMAIL DE VERIFICACIÓN:', err.message);
-        });
-
-        res.status(201).json({ 
-            message: 'Identidad creada. Por favor, verifique su correo para activar el acceso.', 
-            userId: result.insertId 
-        });
+        const emailResult = await emailService.sendVerificationEmail(email, nombre, verificationToken);
+        
+        if (emailResult && !emailResult.success) {
+            res.status(201).json({ 
+                message: 'Identidad creada (Aviso: Email no configurado). Use el siguiente enlace para activar su cuenta.', 
+                userId: result.insertId,
+                verificationLink: emailResult.link
+            });
+        } else {
+            res.status(201).json({ 
+                message: 'Identidad creada. Por favor, verifique su correo para activar el acceso.', 
+                userId: result.insertId 
+            });
+        }
     } catch (error) {
         console.error('💥 ERROR SISTÉMICO EN REGISTRO:', error);
         res.status(500).json({ error: `Error sistémico: ${error.message}` });
