@@ -4,7 +4,7 @@
 
 ### 1.1 Requisitos Funcionales (RF)
 *   **RF-01: Gestión de Identidad**: El sistema debe permitir el registro (con email de bienvenida), login, autenticación de dos factores (MFA/2FA) vía TOTP y recuperación de contraseña de usuarios mediante códigos de verificación enviados por email.
-*   **RF-10: Notificaciones por Email**: Envío automático de invitaciones a huéspedes y alertas de seguridad por cambios en la cuenta (MFA activado).
+*   **RF-10: Notificaciones por Email (Zero-SMTP)**: Envío automático de invitaciones a huéspedes y alertas. Si el SMTP no está configurado, el sistema no bloquea el registro y expone un enlace de auto-activación por seguridad.
 *   **RF-11: Auditoría de Sistema**: Registro automático de acciones administrativas críticas con IP y marca de tiempo.
 *   **RF-02: Control de Dispositivos**: Los administradores deben poder registrar y asignar medios de transporte (vehículos, motocicletas, bicicletas) a usuarios.
 *   **RF-03: Registro de Accesos**: Captura en tiempo real de entradas y salidas con marca de tiempo, observaciones y notificación vía WebSockets.
@@ -20,8 +20,8 @@
 ### 1.2 Requisitos No Funcionales (RNF)
 *   **RNF-01: Seguridad (Hardening)**: Encriptación con Bcrypt (salt 10), protección de headers con Helmet.js (CSP, HSTS), Rate Limiting por endpoint, sanitización de inputs, autenticación de dos factores (MFA/TOTP) y validaciones estrictas con express-validator.
 *   **RNF-02: Disponibilidad**: Despliegue en contenedores Docker con restart automático y Nginx como reverse proxy.
-*   **RNF-03: Desempeño**: Respuestas optimizadas con Gzip (compression middleware + Nginx), caché de assets (7 días + ETags), latencia < 400ms.
-*   **RNF-04: Escalabilidad**: Arquitectura MVC orientada a servicios con pool de conexiones MySQL (10 conexiones), WebSockets para tiempo real.
+*   **RNF-03: Desempeño**: Respuestas optimizadas con Gzip (compression middleware + Nginx), caché de assets (7 días + ETags), Service Workers activos. Latencia < 400ms.
+*   **RNF-04: Escalabilidad**: Arquitectura MVC orientada a servicios con pool de conexiones MySQL (100+ conexiones para alto tráfico), WebSockets para tiempo real.
 *   **RNF-05: Responsividad**: Interfaz adaptativa con diseño Mobile-First que se ajusta a móviles, tablets y escritorio.
 
 ---

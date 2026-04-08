@@ -1,46 +1,77 @@
+<!-- 
+    ESTRUCTURA DE ESTUDIO: RESET.HTML
+    Este archivo es el "Finalizador de Recuperación".
+    Aquí el usuario canjea su código temporal por una nueva identidad digital.
+    
+    [CONCEPTO CLAVE: VALIDACIÓN DE FORTALEZA]
+    No permitimos cualquier contraseña. La interfaz guía al usuario mediante
+    un checklist visual para asegurar que la nueva clave sea robusta y difícil de hackear.
+-->
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Establecer Nueva Contraseña - Passly</title>
-  <link rel="stylesheet" href="/css/index.css">
-  <script type="module" src="/js/reset.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Establecer Nueva Contraseña - Passly</title>
+    
+    <!-- Estilos base -->
+    <link rel="stylesheet" href="/css/index.css">
+    
+    <!-- Lógica de validación y envío de la nueva contraseña -->
+    <script type="module" src="/js/reset.js"></script>
 </head>
 
 <body>
-  <div class="theme-toggle" id="themeToggle">
-    <span class="theme-toggle-icon" id="themeIcon">🌙</span>
-    <span class="theme-toggle-text" id="themeText">Modo Claro</span>
-  </div>
-
-  <div class="card">
-    <h1>Restablecer Contraseña</h1>
-    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
-      Ingresa el token y tu nueva contraseña segura.
-    </p>
-
-    <input id="token" type="text" placeholder="Token de recuperación">
-    <input id="nuevaPass" type="password" placeholder="Nueva contraseña">
-    <input id="confirmPass" type="password" placeholder="Confirmar contraseña">
-
-    <ul class="password-requirements" style="margin-top:15px; margin-bottom:15px;">
-      <li id="reqLength">Entre 8 y 12 caracteres.</li>
-      <li id="reqUpper">Mayúscula y minúscula.</li>
-      <li id="reqNumber">Al menos un número.</li>
-      <li id="reqSpecial">Carácter especial (!@#$%^*/_.).</li>
-    </ul>
-
-    <div class="checkbox-row">
-      <input type="checkbox" id="showPass">
-      <label for="showPass">Mostrar contraseñas</label>
+    <!-- Selector de tema -->
+    <div class="theme-toggle" id="themeToggle">
+        <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+        <span class="theme-toggle-text" id="themeText">Modo Claro</span>
     </div>
 
-    <button id="btnReset"><span>Actualizar contraseña</span></button>
+    <!-- TARJETA DE ACCIÓN -->
+    <div class="card glass-glow animate-fade-in" style="max-width: 450px; padding: 40px;">
+        <h1>Restablecer Contraseña</h1>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">
+            Ingresa el código OTP enviado a tu correo y establece tu nueva clave de acceso.
+        </p>
 
-    <a href="index.html" class="toggle">Volver al inicio de sesión</a>
-  </div>
+        <!-- Formulario de actualización -->
+        <div class="input-group">
+            <input id="token" type="text" placeholder="Código de Recuperación (6 dígitos)" maxlength="6">
+        </div>
+        
+        <div class="input-group">
+            <input id="nuevaPass" type="password" placeholder="Nueva Contraseña Maestra">
+        </div>
+        
+        <div class="input-group" style="margin-bottom: 16px;">
+            <input id="confirmPass" type="password" placeholder="Confirmar Nueva Contraseña">
+        </div>
+
+        <!-- GUÍA DE SEGURIDAD: Checklist visual para el usuario -->
+        <div class="password-checklist card glass" style="padding: 16px; margin-bottom: 20px; text-align: left;">
+            <ul class="password-requirements" style="list-style: none; padding: 0; margin: 0; font-size: 12px; display: grid; grid-template-columns: 1fr; gap: 8px;">
+                <li id="reqLength">🔹 Entre 8 y 12 caracteres</li>
+                <li id="reqUpper">🔹 Mayúscula y minúscula</li>
+                <li id="reqNumber">🔹 Al menos un número</li>
+                <li id="reqSpecial">🔹 Carácter especial (!@#$%^*)</li>
+            </ul>
+        </div>
+
+        <div class="checkbox-row" style="margin-bottom: 24px;">
+            <input type="checkbox" id="showPass">
+            <label for="showPass" style="font-size: 13px;">👁️ Mostrar contraseñas escribiendo</label>
+        </div>
+
+        <button id="btnReset" class="btn-primary" style="width: 100%;">
+            ACTUALIZAR CREDENCIALES
+        </button>
+
+        <footer style="margin-top: 24px; text-align: center;">
+            <a href="index.html" class="link-text">Volver al inicio de sesión</a>
+        </footer>
+    </div>
 </body>
 
 </html>

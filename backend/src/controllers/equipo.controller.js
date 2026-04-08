@@ -20,21 +20,29 @@ exports.getAllEquipos = async (req, res) => {
 
         // Búsqueda server-side por nombre del equipo o serial
         const search = req.query.search ? `%${req.query.search}%` : null;
-        const searchFilter = search ? 'AND (e.nombre LIKE ? OR e.serial LIKE ?)' : '';
-        const searchParams = search ? [search, search] : [];
+        let searchFilter = search ? 'AND (e.nombre LIKE ? OR e.serial LIKE ?)' : '';
+        let searchParams = search ? [search, search] : [];
+
+        const roleId = req.user.rol_id;
+        const userId = req.user.id;
+        const roleFilter = roleId === 2 ? 'AND e.usuario_id = ?' : '';
+        
+        if (roleId === 2) {
+            searchParams.unshift(userId);
+        }
 
         const [[{ total }]] = await db.query(`
             SELECT COUNT(*) AS total
             FROM equipos e
             INNER JOIN usuarios u ON e.usuario_id = u.id
-            WHERE u.cliente_id = ? ${searchFilter}
+            WHERE u.cliente_id = ? ${roleFilter} ${searchFilter}
         `, [tenantId, ...searchParams]);
 
         const [rows] = await db.query(`
             SELECT e.*, u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, u.foto_url AS usuario_foto
             FROM equipos e
             INNER JOIN usuarios u ON e.usuario_id = u.id
-            WHERE u.cliente_id = ? ${searchFilter}
+            WHERE u.cliente_id = ? ${roleFilter} ${searchFilter}
             ORDER BY e.created_at DESC
             LIMIT ? OFFSET ?
         `, [tenantId, ...searchParams, limit, offset]);

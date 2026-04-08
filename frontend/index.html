@@ -1,3 +1,12 @@
+<!-- 
+    ESTRUCTURA DE ESTUDIO: INDEX.HTML
+    Esta es la puerta de entrada (Landing Page) de Passly. 
+    Aquí se gestiona el acceso inicial y la identidad de los usuarios.
+    Puntos clave:
+    1. Diseño adaptativo (Responsive).
+    2. Cambio de temas (Dark/Light Mode).
+    3. Validación de fuerza de contraseña en tiempo real.
+-->
 <!DOCTYPE html>
 <html lang="es">
 
@@ -5,125 +14,276 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passly - Control de Acceso Seguro</title>
-    <link rel="stylesheet" href="/css/index.css">
+    
+    <!-- Estilos base y variables de diseño del sistema -->
+    <link rel="stylesheet" href="/css/index.css?v=5">
+    
+    <!-- El 'manifest' permite que la web se comporte como una App en móviles (PWA) -->
     <link rel="manifest" href="/manifest.json">
-    <script type="module" src="/js/auth.js"></script>
-    <style>
-        /* Garantizar visibilidad de validación */
-        .password-requirements li.valid {
-            color: #10b981 !important;
-            font-weight: bold;
-        }
-
-        .password-requirements li.valid::before {
-            content: "✔ " !important;
-            color: #10b981 !important;
-        }
-
-        .password-requirements li {
-            color: #ef4444;
-            transition: all 0.3s ease;
-        }
-
-        .password-requirements li::before {
-            content: "✖ ";
-            color: #ef4444;
-            margin-right: 8px;
-            font-weight: bold;
-        }
-
-        #resetLink:hover {
-            text-decoration: underline;
-        }
-    </style>
+    
+    <!-- Lucide Icons: Librería ligera de iconos vectoriales -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Lógica de autenticación: v=5 fuerza la recarga (Cache Busting) -->
+    <script type="module" src="/js/auth.js?v=5"></script>
 </head>
 
-<body>
-    <!-- Theme Toggle -->
-    <div class="theme-toggle" id="themeToggle">
-        <span class="theme-toggle-icon" id="themeIcon">🌙</span>
-        <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+<body class="auth-page">
+    <div class="ambient-bg">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        <div class="glow-3"></div>
     </div>
+    <div class="noise-overlay"></div>
 
-    <div class="card glass-glow" id="loginCard">
-        <h1>Iniciar Sesión</h1>
-        <div class="input-group">
-            <input id="emailLogin" type="email" placeholder="Correo electrónico">
+    <!-- Navegación de la Landing -->
+    <nav class="landing-navbar">
+        <div class="logo">
+            <i data-lucide="shield-check" style="color:var(--accent-green)"></i>
+            <span>Passly<span>.</span></span>
         </div>
-        <div class="input-group">
-            <input id="passLogin" type="password" placeholder="Contraseña">
-            <button class="btn-toggle-pass" type="button" data-input="passLogin"
-                title="Mostrar/Ocultar"><i>👁️</i></button>
-        </div>
-        <select id="rolLogin">
-            <option value="" disabled selected>Selecciona tu rol</option>
-            <option value="1">Administrador</option>
-            <option value="2">Usuario regular</option>
-            <option value="3">Personal de Seguridad</option>
-        </select>
-        <p id="loginError" class="error-message" style="display:none;"></p>
-
-        <button id="btnLogin" class="btn-primary">Entrar</button>
-
-        <p id="resetLink"
-            style="display:none; color: var(--accent-blue); cursor: pointer; font-size: 13px; margin-top: 15px; font-weight: 500;">
-            ¿Olvidaste tu contraseña? Restablécela aquí
-        </p>
-
-        <span class="toggle" id="toRegister">¿No tienes cuenta? Regístrate aquí</span>
-    </div>
-
-    <div class="card hidden glass-glow" id="registroCard">
-        <h1>Registrar Usuario</h1>
-
-        <div class="input-group">
-            <input id="nombreRegistro" type="text" placeholder="Nombre" maxlength="50">
-            <span class="instruction-message">Mayúscula inicial, solo letras.</span>
-        </div>
-
-        <div class="input-group">
-            <input id="apellidoRegistro" type="text" placeholder="Apellido" maxlength="50">
-            <span class="instruction-message">Mayúscula inicial, solo letras.</span>
-        </div>
-
-        <div class="input-group">
-            <input id="emailRegistro" type="email" placeholder="Correo electrónico">
-            <span id="emailRegistroError" class="field-error"></span>
-        </div>
-
-        <div class="input-group">
-            <input id="passRegistro" type="password" placeholder="Contraseña">
-            <button class="btn-toggle-pass" type="button" data-input="passRegistro"
-                title="Mostrar/Ocultar"><i>👁️</i></button>
-        </div>
-
-        <div class="input-group">
-            <input id="passConfirm" type="password" placeholder="Confirmar contraseña">
-            <button class="btn-toggle-pass" type="button" data-input="passConfirm"
-                title="Mostrar/Ocultar"><i>👁️</i></button>
-        </div>
-
-        <ul class="password-requirements" id="passReqList">
-            <li id="reqLength">Entre 8 y 12 caracteres.</li>
-            <li id="reqUpper">Mayúscula y minúscula.</li>
-            <li id="reqNumber">Al menos un número (0-9).</li>
-            <li id="reqSpecial">Carácter especial (!@#$%^*/_.).</li>
+        <ul class="nav-links">
+            <li><a href="#inicio">Inicio</a></li>
+            <li><a href="#funciones">Funciones</a></li>
+            <li><a href="#nosotros">Nosotros</a></li>
+            <li><a href="#contacto">Contacto</a></li>
         </ul>
-
-        <select id="rolRegistro">
-            <option value="" disabled selected>Selecciona tu rol</option>
-            <option value="1">Administrador</option>
-            <option value="2">Usuario regular</option>
-            <option value="3">Personal de Seguridad</option>
-        </select>
-
-        <div class="checkbox-row">
-            <input type="checkbox" id="aceptoTerminos"> <label for="aceptoTerminos">Acepto los términos</label>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <button class="theme-toggle glass" id="themeToggle" style="position:static; width:40px; height:40px;">
+                <i data-lucide="moon" id="themeIcon"></i>
+            </button>
+            <button class="btn-primary" id="btnNavLogin" style="padding:10px 25px;">Ingresar</button>
         </div>
+    </nav>
 
-        <button id="btnRegistrar" disabled>Registrar</button>
-        <span class="toggle" id="toLogin">¿Ya tienes cuenta? Inicia sesión aquí</span>
+    <!-- Sección HERO -->
+    <header class="hero-section" id="inicio">
+        <div class="hero-content animate-fade-in">
+            <div class="premium-badge">Seguridad de Siguiente Nivel</div>
+            <h1>Gestión de Acceso <span>Inteligente</span> y Segura</h1>
+            <p>Passly transforma la seguridad de tu empresa con tecnología de vanguardia, QR dinámicos y control en tiempo real.</p>
+            <div style="display:flex; gap:20px; justify-content:center;">
+                <button class="btn-primary" id="btnHeroRegister" style="padding:18px 40px; font-size:18px;">Comenzar Ahora</button>
+                <button class="glass" id="btnHeroLearnMore" style="padding:18px 40px; font-size:18px; border:1px solid var(--glass-border);">Saber Más</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sección FUNCIONES -->
+    <section class="landing-section" id="funciones">
+        <div class="section-header">
+            <h2>¿Por qué elegir Passly?</h2>
+            <p style="color:var(--text-muted)">Diseñado para la eficiencia y la seguridad máxima.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="qr-code"></i></div>
+                <h3>QR Dinámicos</h3>
+                <p>Invitaciones temporales seguras que expiras automáticamente para evitar accesos no autorizados.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="zap"></i></div>
+                <h3>Tiempo Real</h3>
+                <p>Monitoreo instantáneo de cada entrada y salida con notificaciones directas a tu dispositivo.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="shield-check"></i></div>
+                <h3>Blindaje MFA</h3>
+                <p>Autenticación de dos factores para asegurar que solo las personas correctas tengan el control.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección NOSOTROS / VISIÓN -->
+    <section class="landing-section" id="nosotros" style="background: rgba(46, 125, 50, 0.02); border-radius: 50px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:60px; align-items:center;">
+            <div>
+                <span style="color:var(--accent-green); font-weight:700; text-transform:uppercase; letter-spacing:2px;">Nuestra Visión</span>
+                <h2 style="font-size:42px; margin:20px 0;">Expandiendo los límites de la confianza</h2>
+                <p style="color:var(--text-secondary); line-height:1.8; margin-bottom:20px;">
+                    En Passly, creemos que la seguridad no debe ser una barrera, sino un facilitador. Nacimos con el objetivo de digitalizar el control de acceso en copropiedades y empresas, eliminando el papel y los procesos lentos.
+                </p>
+                <div style="background:var(--glass-bg); padding:20px; border-radius:15px; border-left:4px solid #f59e0b;">
+                    <h4 style="color:#f59e0b; margin-bottom:5px;">🚀 Futuro: Versión Premium</h4>
+                    <p style="font-size:14px; opacity:0.8;">Estamos trabajando en una versión Premium ultra-personalizada para grandes corporaciones, con integración biométrica avanzada y analítica predictiva.</p>
+                </div>
+            </div>
+            <div style="position:relative;">
+                <div class="glass-glow" style="padding:40px; border-radius:30px; text-align:center;">
+                    <i data-lucide="globe" style="width:100px; height:100px; color:var(--accent-green); opacity:0.5; margin-bottom:20px;"></i>
+                    <h3>Escalabilidad Global</h3>
+                    <p style="font-size:14px; opacity:0.7;">Passly está diseñado para crecer contigo, desde un pequeño edificio hasta complejos industriales masivos.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección CONTACTO -->
+    <section class="landing-section" id="contacto">
+        <div class="contact-card">
+            <div>
+                <h2>¿Listo para dar el siguiente paso?</h2>
+                <p style="margin:20px 0; opacity:0.8;">Agenda una demostración personalizada con uno de nuestros expertos en seguridad.</p>
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <i data-lucide="phone" style="color:var(--accent-green)"></i>
+                        <span>+57 (300) 123-4567</span>
+                    </div>
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <i data-lucide="mail" style="color:var(--accent-green)"></i>
+                        <span>ventas@passly.com</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <form onsubmit="event.preventDefault(); alert('Solicitud enviada. Nos contactaremos pronto.')" style="display:flex; flex-direction:column; gap:15px;">
+                    <input type="text" placeholder="Tu Nombre" class="glass" style="padding:15px; border-radius:10px; border:1px solid var(--glass-border); color:white;">
+                    <input type="email" placeholder="Email Corporativo" class="glass" style="padding:15px; border-radius:10px; border:1px solid var(--glass-border); color:white;">
+                    <textarea placeholder="¿Cómo podemos ayudarte?" class="glass" style="padding:15px; border-radius:10px; border:1px solid var(--glass-border); color:white; min-height:100px;"></textarea>
+                    <button class="btn-primary" style="padding:15px;">Enviar Mensaje</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL DE AUTENTICACIÓN (LOGIN/REGISTRO) -->
+    <div class="modal-overlay" id="authOverlay" style="z-index:2000;">
+        <div class="auth-container" id="authContainer" style="position:relative;">
+            <button id="btnCloseAuth" style="position:absolute; top:-50px; right:0; background:transparent; border:none; color:white; font-size:30px; cursor:pointer;">&times;</button>
+            
+            <header class="auth-header animate-fade-in" style="margin-bottom:30px;">
+                <div class="logo-icon glass">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h1>Passly<span>.</span></h1>
+            </header>
+
+            <!-- Login Card -->
+            <div class="card glass-glow" id="loginCard">
+                <h2 style="margin-bottom: 24px;">Iniciar Sesión</h2>
+                
+                <div class="input-group">
+                    <i data-lucide="mail"></i>
+                    <input id="emailLogin" type="email" placeholder="Correo Corporativo">
+                </div>
+                <p id="emailLoginError" class="error-message" style="display:none;"></p>
+                
+                <div class="input-group">
+                    <i data-lucide="lock"></i>
+                    <input id="passLogin" type="password" placeholder="Contraseña">
+                    <button class="btn-icon" id="togglePassLogin" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); opacity:0.7;">
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+                <p id="passLoginError" class="error-message" style="display:none;"></p>
+
+                <div class="input-group">
+                    <i data-lucide="briefcase"></i>
+                    <select id="rolLogin">
+                        <option value="" disabled selected>Nivel de Autorización</option>
+                        <option value="1">Administrador</option>
+                        <option value="2">Residente</option>
+                        <option value="3">Seguridad</option>
+                    </select>
+                </div>
+                <p id="resetLink" class="link-text" style="margin:15px 0; font-size:12px; text-align:right;">¿Olvidó su contraseña?</p>
+                <p id="loginError" class="error-message" style="display:none;"></p>
+                <button id="btnLogin" class="btn-primary" style="width:100%;">ENTRAR AL SISTEMA</button>
+                <p style="margin-top:20px; font-size:13px; opacity:0.8;">¿No tienes cuenta? <span class="link-text" id="toRegister">Regístrate aquí</span></p>
+            </div>
+
+            <!-- Registro Card -->
+            <div class="card glass-glow hidden" id="registroCard">
+                <h2 style="margin-bottom:24px;">Crear Cuenta</h2>
+                
+                <div class="auth-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <div class="input-group"><input id="nombreRegistro" type="text" placeholder="Nombre"></div>
+                    <div class="input-group"><input id="apellidoRegistro" type="text" placeholder="Apellido"></div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:-10px; margin-bottom:10px;">
+                    <p id="nombreRegistroError" class="error-message" style="display:none;"></p>
+                    <p id="apellidoRegistroError" class="error-message" style="display:none;"></p>
+                </div>
+
+                <div class="input-group">
+                    <i data-lucide="mail"></i>
+                    <input id="emailRegistro" type="email" placeholder="Email">
+                </div>
+                <p id="emailRegistroError" class="error-message" style="display:none;"></p>
+
+                <div class="auth-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <div class="input-group"><input id="passRegistro" type="password" placeholder="Contraseña"></div>
+                    <div class="input-group"><input id="passConfirm" type="password" placeholder="Confirmar"></div>
+                </div>
+
+                <!-- Password Requirements Checklist -->
+                <div class="password-checklist" style="margin-bottom:20px; text-align:left;">
+                    <p style="font-size:12px; margin-bottom:10px; color:var(--text-muted);">REQUISITOS DE ACCESO:</p>
+                    <ul style="list-style:none; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <li id="reqLength" style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--text-muted);"><i data-lucide="circle" style="width:14px;"></i> 8-12 Caracteres</li>
+                        <li id="reqUpper" style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--text-muted);"><i data-lucide="circle" style="width:14px;"></i> Mayús. y Minús.</li>
+                        <li id="reqNumber" style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--text-muted);"><i data-lucide="circle" style="width:14px;"></i> Un Número (0-9)</li>
+                        <li id="reqSpecial" style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--text-muted);"><i data-lucide="circle" style="width:14px;"></i> Carácter (!@#_)</li>
+                    </ul>
+                </div>
+
+                <div class="input-group">
+                    <i data-lucide="briefcase"></i>
+                    <select id="rolRegistro">
+                        <option value="" disabled selected>Rol</option>
+                        <option value="1">Administrador</option>
+                        <option value="2">Residente</option>
+                        <option value="3">Seguridad</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; margin: 15px 0; font-size:12px; opacity:0.9;">
+                    <input type="checkbox" id="aceptoTerminos">
+                    <label for="aceptoTerminos">Aceptar Protocolo de Seguridad</label>
+                </div>
+                <button id="btnRegistrar" class="btn-primary" style="width:100%; margin-top:15px;">REGISTRARME</button>
+                <p style="margin-top:20px; font-size:13px; opacity:0.8;">¿Ya tienes cuenta? <span class="link-text" id="toLogin">Ingresa ahora</span></p>
+            </div>
+        </div>
     </div>
+
+    <!-- Recuperación Modal -->
+    <div class="modal-overlay" id="recoveryModal">
+        <div class="modal-content glass-glow animate-slide-up" style="max-width:400px; text-align:center;">
+            <div class="stat-icon" style="margin-inline:auto; background:hsla(220, 90%, 65%, 0.1); color:hsla(220, 90%, 65%, 1); margin-bottom:20px;">
+                <i data-lucide="key-round"></i>
+            </div>
+            <h2 id="recoveryTitle" style="margin-bottom:8px;">Restablecer Acceso</h2>
+            <p id="recoverySubtitle" style="font-size:13px; color:var(--text-muted); margin-bottom:24px;">
+                Ingrese su correo de identidad para recibir un código de autorización.
+            </p>
+
+            <div id="recoveryStep1">
+                <div class="input-group" style="margin-bottom:16px;">
+                    <i data-lucide="mail"></i>
+                    <input id="recoveryEmail" type="email" placeholder="Correo Registrado">
+                </div>
+                <button id="btnSendRecovery" class="btn-primary" style="width:100%;">SOLICITAR TOKEN</button>
+            </div>
+
+            <div id="recoveryStep2" style="display:none;">
+                <div class="input-group" style="margin-bottom:16px;">
+                    <input id="recoveryCode" type="text" placeholder="000 000" maxlength="6" style="text-align:center; font-size:24px; letter-spacing:0.2em; height:60px;">
+                </div>
+                <div class="input-group" style="margin-bottom:16px;">
+                    <i data-lucide="shield-plus"></i>
+                    <input id="recoveryNewPass" type="password" placeholder="Nueva Clave Secreta">
+                </div>
+                <button id="btnResetPassword" class="btn-primary" style="width:100%;">ACTUALIZAR CREDENCIALES</button>
+            </div>
+
+            <button id="btnCancelRecovery" style="width:100%; margin-top:16px; background:transparent; border:1px solid var(--glass-border); font-size:13px; opacity:0.7;">
+                CANCELAR SOLICITUD
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts se cargan desde el head con type="module" -->
 </body>
+
 
 </html>

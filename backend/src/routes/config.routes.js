@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const configController = require('../controllers/config.controller');
-const { verifyToken } = require('../middlewares/authMiddleware');
+const { verifyToken, verifyRole } = require('../middlewares/authMiddleware');
 
-router.get('/', verifyToken, configController.getSettings);
-router.patch('/', verifyToken, configController.updateSettings);
+// Solo Administradores (Rol 1) pueden testear configuración
+router.get('/test-email', verifyToken, verifyRole([1]), configController.testEmailConfig);
 
 module.exports = router;

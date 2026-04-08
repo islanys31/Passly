@@ -8,8 +8,17 @@
 require('dotenv').config(); // Carga las variables de entorno desde el archivo .env
 const http = require('http');
 const app = require('./src/app'); // Importa la aplicación Express configurada
+const fs = require('fs');
+const path = require('path');
 const { initIO } = require('./src/config/socket'); // Importa el inicializador de Socket.IO
 const { scheduleBackups } = require('./src/utils/backup'); // Tareas programadas de respaldo
+
+// Crear carpeta de uploads/profiles si no existe
+const profilesDir = path.join(__dirname, 'uploads/profiles');
+if (!fs.existsSync(profilesDir)) {
+    fs.mkdirSync(profilesDir, { recursive: true });
+    console.log(`✅ Directorio creado: ${profilesDir}`);
+}
 
 /**
  * Crea el servidor HTTP utilizando la aplicación Express.
@@ -31,7 +40,15 @@ const PORT = process.env.PORT || 3000;
  */
 const { pool } = require('./src/config/db');
 
-server.listen(PORT, async () => {
+server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+        console.error(`❌ ERROR CRÍTICO: El puerto ${PORT} ya está en uso.`);
+        console.log(`👉 Intenta cerrar otros procesos de Node.js o usa 'taskkill /F /IM node.exe'`);
+        process.exit(1);
+    }
+});
+
+server.listen(PORT, '0.0.0.0', async () => {
     try {
         // Prueba de conexión a la base de datos
         await pool.query('SELECT 1');

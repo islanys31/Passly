@@ -1,35 +1,28 @@
-const { pool } = require('../config/db');
+const emailService = require('../services/email.service');
+const { logAction } = require('../utils/logger');
 
-const getSettings = async (req, res) => {
+exports.testEmailConfig = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT clave, valor, descripcion FROM configuracion_global');
-        const settings = {};
-        rows.forEach(r => settings[r.clave] = r.valor);
-        res.json({ ok: true, data: settings, full: rows });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ ok: false, message: 'Error al obtener configuración' });
-    }
-};
-
-const updateSettings = async (req, res) => {
-    if (req.user.rol_id !== 1) {
-        return res.status(403).json({ ok: false, message: 'No autorizado' });
-    }
-
-    try {
-        const settings = req.body; // { clave: valor, ... }
-        for (const [clave, valor] of Object.entries(settings)) {
-            await pool.query('UPDATE configuracion_global SET valor = ? WHERE clave = ?', [valor, clave]);
+        // Obtenemos el email destino, preferiblemente el del admin que hace la prueba
+        const testEmail = req.user?.email || process.env.EMAIL_USER;
+        
+        if (!testEmail) {
+            return res.status(400).json({ error: 'No se pudo determinar el destinatario para la prueba SMTP.' });
         }
-        res.json({ ok: true, message: 'Configuración actualizada correctamente' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ ok: false, message: 'Error al actualizar configuración' });
-    }
-};
 
-module.exports = {
-    getSettings,
-    updateSettings
+        // Usamos una notificación de seguridad fake para probar el envío
+        await emailService.sendSecurityAlert(
+            testEmail, 
+            req.user?.nombre || 'Administrador', 
+            'Prueba de Configuración SMTP', 
+            'Si estás leyendo esto, significa que el servicio de correo electrónico (Nodemailer) funciona correctamente en tu servidor.'
+        );
+
+        await logAction(req.user?.id, 'Test SMTP Exitoso', 'Sistema', `Se envió correo de prueba a ${testEmail}`, req.ip);
+
+        res.json({ success: true, message: `Correo de prueba enviado con éxito a ${testEmail}` });
+    } catch (error) {
+        console.error('ERROR TEST EMAIL:', error);
+        res.status(500).json({ error: 'Fallo al despachar el correo electrónico de prueba. Verifica el log del servidor.' });
+    }
 };

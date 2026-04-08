@@ -2,6 +2,17 @@ const { pool: db } = require('../config/db');
 const { logAction } = require('../utils/logger');
 const { getPagination, paginatedResponse } = require('../utils/pagination');
 
+/**
+ * @file device.controller.js
+ * @description Gestión de Activos Tecnológicos y Parque Automotor.
+ * 
+ * [ESTRUCTURA DE ESTUDIO]
+ * Modela un inventario dinámico (Hardware o Vehículos) asignados a Usuarios específicos.
+ * Es crucial en la lógica empresarial porque define si a un auto particular se le
+ * permite o se le deniega el acceso mediante filtros de Tenant.
+ */
+
+
 exports.getAllDevices = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;
@@ -9,14 +20,23 @@ exports.getAllDevices = async (req, res) => {
 
         // ?soloVehiculos=true → solo dispositivos con medio de transporte (vehículos)
         const soloVehiculos = req.query.soloVehiculos === 'true';
-        const vehiculoFilter = soloVehiculos ? 'AND d.medio_transporte_id IS NOT NULL' : '';
+        let vehiculoFilter = soloVehiculos ? 'AND d.medio_transporte_id IS NOT NULL' : '';
+
+        const roleId = req.user.rol_id;
+        const userId = req.user.id;
+        let queryParams = [tenantId];
+
+        if (roleId === 2) {
+            vehiculoFilter += ' AND d.usuario_id = ?';
+            queryParams.push(userId);
+        }
 
         const [[{ total }]] = await db.query(`
             SELECT COUNT(*) AS total
             FROM dispositivos d
             INNER JOIN usuarios u ON d.usuario_id = u.id
             WHERE u.cliente_id = ? ${vehiculoFilter}
-        `, [tenantId]);
+        `, queryParams);
 
         const [rows] = await db.query(`
             SELECT d.*, u.nombre as usuario_nombre, u.foto_url as usuario_foto, m.nombre as medio_transporte
@@ -25,7 +45,7 @@ exports.getAllDevices = async (req, res) => {
             LEFT JOIN medios_transporte m ON d.medio_transporte_id = m.id
             WHERE u.cliente_id = ? ${vehiculoFilter}
             LIMIT ? OFFSET ?
-        `, [tenantId, limit, offset]);
+        `, [...queryParams, limit, offset]);
 
         res.json(paginatedResponse(rows, total, page, limit));
     } catch (error) {

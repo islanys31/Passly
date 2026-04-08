@@ -1,5 +1,23 @@
 const express = require('express');
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Accesos
+ *   description: Tracking de entradas, salidas y escáner QR
+ * 
+ * /api/accesos:
+ *   get:
+ *     summary: Historial de registros del scanner
+ *     tags: [Accesos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de eventos
+ */
+
 const accessController = require('../controllers/access.controller');
 const invitationController = require('../controllers/invitation.controller');
 const authMiddleware = require('../middlewares/authMiddleware');

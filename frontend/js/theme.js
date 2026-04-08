@@ -23,7 +23,15 @@ function toggleTheme() {
 
 function updateThemeUI(theme) {
     const icon = document.getElementById('themeIcon');
+    if (!icon) return;
+    
+    // Switch between moon and sun icons
+    icon.setAttribute('data-lucide', theme === 'light' ? 'sun' : 'moon');
+    
+    // Update text if exists
     const text = document.getElementById('themeText');
-    if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
-    if (text) text.textContent = theme === 'light' ? 'Modo Oscuro' : 'Modo Claro';
+    if (text) text.textContent = theme === 'light' ? 'Light Mode' : 'Dark Mode';
+
+    // Reload Lucide
+    if (window.lucide) window.lucide.createIcons();
 }

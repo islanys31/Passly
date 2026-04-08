@@ -1,119 +1,154 @@
+<!-- 
+    ESTRUCTURA DE ESTUDIO: DASHBOARD.HTML
+    Este archivo es el "Contenedor Principal" o Shell de la aplicación una vez autenticado.
+    
+    [CONCEPTO CLAVE: SPA (Single Page Application)]
+    Aunque navegues por 'Usuarios', 'Vehículos' o 'Perfil', la página NUNCA se recarga.
+    JavaScript (dashboard.js) se encarga de inyectar el contenido dinámicamente en 
+    el elemento <div id="view-content">.
+-->
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Passly - Panel de Control Administrativo</title>
-  <link rel="stylesheet" href="/css/index.css">
-  <link rel="manifest" href="/manifest.json">
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script type="module" src="/js/dashboard.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passly - Panel de Seguridad y Acceso</title>
+    
+    <!-- Archivos de recursos y librerías (?v=5 purga la caché) -->
+    <link rel="stylesheet" href="/css/index.css?v=5">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Sockets: Para actualizaciones en tiempo real (ej. notificaciones de acceso) -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Chart.js: Para dibujar las gráficas de estadísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jsPDF: Para generar reportes en formato PDF desde el navegador -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Lucide: Iconos vectoriales -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Lógica del Panel de Control -->
+    <script type="module" src="/js/dashboard.js?v=5"></script>
 </head>
 
 <body>
   <div class="dashboard-container">
+    
+    <!-- BARRA LATERAL (SIDEBAR): Navegación de Módulos -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h1 id="sidebar-logo">Passly</h1>
-          <button id="toggleSidebar" class="btn-icon" title="Colapsar menú">☰</button>
+          <h1 id="sidebar-logo">PASSLY</h1>
+          <button id="toggleSidebar" class="btn-icon" title="Control de Menú">☰</button>
         </div>
       </div>
-      <nav class="nav-menu">
-        <div class="nav-item"><i>📊</i> <span class="nav-text">Inicio</span></div>
-        <div class="nav-item"><i>👥</i> <span class="nav-text">Usuarios</span></div>
-        <div class="nav-item"><i>📱</i> <span class="nav-text">Dispositivos</span></div>
-        <div class="nav-item"><i>🚗</i> <span class="nav-text">Vehículos</span></div>
-        <div class="nav-item"><i>🚪</i> <span class="nav-text">Accesos</span></div>
-        <div id="navAudit" class="nav-item"><i>📋</i> <span class="nav-text">Auditoría</span></div>
-        <div id="navSecurity" class="nav-item"><i>🛡️</i> <span class="nav-text">Seguridad</span></div>
-        <div id="navAnalytics" class="nav-item"><i>📈</i> <span class="nav-text">Analíticas</span></div>
-        <div id="navConfig" class="nav-item"><i>⚙️</i> <span class="nav-text">Configuración</span></div>
-        <div id="navHelp" class="nav-item"><i>📖</i> <span class="nav-text">Manuales</span></div>
+      
+      <!-- Menú dinámico: Se rellena en dashboard.js dependiendo de los permisos del usuario -->
+      <nav class="nav-menu" id="nav-menu">
+        <!-- Renderizado dinámicamente en dashboard.js -->
       </nav>
+
       <div class="sidebar-footer">
-        <div class="theme-toggle" id="themeToggle"
-          style="margin-bottom:10px; position:relative; top:0; right:0; width:100%; border-radius:12px;">
+        <!-- Control de Brillo (Modo Oscuro/Claro) -->
+        <div class="theme-toggle" id="themeToggle">
           <span class="theme-toggle-icon" id="themeIcon">🌙</span>
-          <span class="theme-toggle-text" id="themeText">Modo Claro</span>
+          <span class="theme-toggle-text" id="themeText">MODO NOCHE</span>
         </div>
-        <div id="btnSidebarLogout" class="nav-item" style="color:var(--error-color)"><i>🚪</i> <span
-            class="nav-text">Salir</span></div>
+        <!-- Botón de salida del ecosistema -->
+        <div class="nav-item logout-btn" style="margin-top:20px; color:var(--error)">
+          <i>🚪</i> <span class="nav-text">Cerrar Sesión</span>
+        </div>
       </div>
     </aside>
 
+    <!-- ÁREA DE VISTA PRINCIPAL -->
     <main class="main-view">
-      <div class="top-bar">
-        <h2 id="view-title">Resumen</h2>
-        <div style="display:flex; align-items:center; gap:25px;">
-          <!-- Centro de Notificaciones -->
-          <div class="notification-center" id="notifCenter">
-            <div class="notif-icon" id="notifIcon">
-              <i>🔔</i>
-              <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
-            </div>
-            <div class="notif-dropdown" id="notifDropdown">
-              <div class="notif-header">
-                <span>Notificaciones</span>
-                <button id="btnMarkAllRead"
-                  style="padding:4px 8px; font-size:10px; width:auto; border-radius:6px; background:var(--bg-secondary); margin:0;">Leído
-                  todo</button>
-              </div>
-              <div class="notif-list" id="notifList">
-                <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">Sin
-                  notificaciones nuevas</div>
-              </div>
+      
+      <!-- CABECERA SUPERIOR: Información de la vista y Notificaciones -->
+      <header class="top-bar">
+        <div class="header-left">
+          <h2 id="view-title">Vista General del Panel</h2>
+        </div>
+
+        <div class="header-right" style="display:flex; align-items:center; gap:24px;">
+          
+          <!-- CONTENEDOR DE ALERTAS: Recibe avisos vía Socket.io de forma instantánea -->
+          <div class="notification-container" style="position:relative; cursor:pointer;" onclick="toggleNotifications(event)">
+            <div class="btn-icon">🔔</div>
+            <div id="notifBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--error); color:white; font-size:10px; font-weight:bold; border-radius:10px; padding:2px 6px; border:2px solid var(--bg-primary);">0</div>
+            
+            <!-- Desplegable de notificaciones -->
+            <div id="notifDropdown" class="glass-glow hidden" style="position:absolute; top:54px; right:0; width:320px; z-index:100; padding:0;">
+                <div style="padding:20px; border-bottom:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background:hsla(0,0%,0%,0.2);">
+                    <h4 style="margin:0; font-size:14px;">Actualizaciones</h4>
+                    <span id="btnClearNotifs" style="font-size:12px; color:var(--text-muted); cursor:pointer;">Limpiar todo</span>
+                </div>
+                <div id="notifList" style="max-height:360px; overflow-y:auto; padding:12px;">
+                    <div class="empty-state" style="padding:24px 0; font-size:13px;">Sistemas operativos. Sin alertas.</div>
+                </div>
             </div>
           </div>
 
-          <!-- Perfil de Usuario -->
-          <div class="user-profile" id="userProfileMenu" style="cursor:pointer;" title="Ver mi perfil">
+          <!-- PERFIL DE USUARIO: Muestra quién está operando el terminal -->
+          <div class="user-profile">
             <div class="user-avatar" id="userInitial">-</div>
-            <div style="text-align:left;">
-              <div id="userName" style="font-size:14px; font-weight:600; color:var(--text-primary);">Cargando...</div>
-              <div id="userRole" style="font-size:11px; color:var(--text-muted);">...</div>
+            <div class="user-info" style="text-align:left; line-height:1.2;">
+              <div id="userName" style="font-size:14px; font-weight:700; color:var(--text-primary);">Analizando...</div>
+              <div id="userRole" style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">-</div>
             </div>
           </div>
         </div>
-      </div>
-      <div id="view-content"></div>
+      </header>
+
+      <!-- ÁMBITO DINÁMICO (Main Content Area): 
+           Aquí es donde se inyecta el HTML de cada módulo (MFA, Usuarios, Logs, etc.) 
+           mediante la función loadView de JS. -->
+      <div id="view-content" style="animation: contentReveal 0.6s ease-out;"></div>
     </main>
   </div>
 
-  <!-- Modal -->
+  <!-- SISTEMA DE VENTANAS MODALES (OVERLAYS) -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-content">
-      <h2 id="modalTitle" style="margin-bottom:20px;">Acción</h2>
+      <div class="modal-header" style="margin-bottom:32px;">
+        <h2 id="modalTitle" style="font-size:24px; letter-spacing:-0.03em;">Acción</h2>
+      </div>
       <div id="modalBody"></div>
-      <div id="modalFooter" style="display:flex; gap:10px; margin-top:20px;">
-        <button id="btnCancelGlobal" class="btn-table" style="flex:1">Cancelar</button>
-        <button id="btnSave" style="flex:1; margin-top:0">Guardar</button>
+      <div class="modal-footer" style="display:flex; gap:16px; margin-top:40px;">
+        <button type="button" class="btn-primary" style="flex:1; background:hsla(0,0%,100%,0.05); color:var(--text-primary); box-shadow:none; border: 1px solid var(--glass-border-light);" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btnSave" style="flex:1;">Confirmar Cambios</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Detector de errores global para el dashboard
+    /**
+     * MANEJADOR DE ERRORES GLOBAL
+     * Si una función de JS falla, este bloque atrapa el error y muestra una
+     * pantalla técnica (Crash Screen) al usuario en lugar de dejar la pantalla en blanco.
+     */
     window.onerror = function (msg, url, line, col, error) {
       const content = document.getElementById('view-content');
       if (content) {
         content.innerHTML = `
-          <div class="card" style="max-width: 600px; margin: 40px auto; border-left: 5px solid var(--error-color); text-align: left;">
-            <h3 style="color: var(--error-color); margin-bottom: 10px;">🛑 Error de Inicialización</h3>
-            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 15px;">
-              El panel no pudo cargar correctamente debido a un error técnico.
+          <div class="card" style="max-width: 600px; margin: 80px auto; border-top: 4px solid var(--error); text-align: left;">
+            <h3 style="color: var(--error); margin-bottom: 16px; display:flex; align-items:center; gap:10px;">
+              <span>⚠️</span> Fallo de Carga del Módulo
+            </h3>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">
+              Ocurrió una excepción técnica al inicializar la interfaz del panel.
             </p>
-            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; overflow-x: auto;">
-              <strong>Error:</strong> ${msg}<br>
-              <strong>Archivo:</strong> ${url.split('/').pop()}<br>
-              <strong>Línea:</strong> ${line}:${col}
+            <div style="background: hsla(0,0%,0%,0.3); padding: 20px; border-radius: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; border: 1px solid var(--glass-border);">
+              <div style="color:var(--text-muted); margin-bottom:8px;">TRAZA DE SISTEMA:</div>
+              ${msg}<br>
+              <span style="color:var(--accent-secondary)">ORIGEN: ${url.split('/').pop()} @ Línea ${line}</span>
             </div>
-            <button onclick="location.reload()" style="margin-top: 20px; background: var(--accent-blue);">Reintentar Carga</button>
+            <button onclick="location.reload()" style="margin-top: 32px;">REINICIAR INTERFAZ</button>
           </div>
         `;
       }

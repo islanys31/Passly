@@ -60,6 +60,8 @@ const helmetConfig = helmet({
             imgSrc: ["'self'", "data:", "https:"],
             workerSrc: ["'self'", "blob:"],
             childSrc: ["'self'", "blob:"],
+            connectSrc: ["'self'"],
+            upgradeInsecureRequests: null,
         },
     },
     // SEGURIDAD: Solo activar HSTS si HTTPS está habilitado explícitamente (evita fallos en localhost)
@@ -98,8 +100,8 @@ const validateRegister = [
     body('password')
         .isLength({ min: 8, max: 12 })
         .withMessage('La contraseña debe tener entre 8 y 12 caracteres')
-        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^*/_.])[A-Za-z\d!@#$%^*/_.]+$/)
-        .withMessage('La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial (!@#$%^*/_.)'),
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^*/_.]).+$/)
+        .withMessage('La clave requiere Mayúscula, Minúscula, Número y Carácter Especial (!@#_)'),
 
     body('rol_id')
         .notEmpty()

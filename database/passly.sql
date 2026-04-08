@@ -1,55 +1,58 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
+-- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
 --
--- Servidor: 127.0.0.1
--- Tiempo de generación: 25-11-2025 a las 17:23:36
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-
+-- Host: localhost    Database: passly
+-- ------------------------------------------------------
+-- Server version	10.4.32-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Base de datos: `passly`
+-- Table structure for table `accesos`
 --
 
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `estados`
---
-
-CREATE TABLE `estados` (
+DROP TABLE IF EXISTS `accesos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `accesos` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nombre` varchar(50) NOT NULL,
-  `descripcion` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `usuario_id` int(11) NOT NULL,
+  `dispositivo_id` int(11) DEFAULT NULL,
+  `tipo` enum('Entrada','Salida') NOT NULL,
+  `observaciones` varchar(255) DEFAULT NULL,
+  `fecha_hora` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`),
+  KEY `dispositivo_id` (`dispositivo_id`),
+  CONSTRAINT `accesos_fk_dispositivo` FOREIGN KEY (`dispositivo_id`) REFERENCES `dispositivos` (`id`),
+  CONSTRAINT `accesos_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Volcado de datos para la tabla `estados`
+-- Dumping data for table `accesos`
 --
 
-INSERT INTO `estados` (`id`, `nombre`, `descripcion`) VALUES
-(1, 'Activo', 'Entidad activa en el sistema'),
-(2, 'Inactivo', 'Entidad inactiva o deshabilitada'),
-(3, 'Mantenimiento', 'En proceso de mantenimiento'),
-(4, 'Bloqueado', 'Acceso restringido temporal o permanentemente');
-
--- --------------------------------------------------------
+LOCK TABLES `accesos` WRITE;
+/*!40000 ALTER TABLE `accesos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `accesos` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
--- Estructura de tabla para la tabla `clientes`
+-- Table structure for table `clientes`
 --
 
+DROP TABLE IF EXISTS `clientes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `clientes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre_cliente` varchar(100) NOT NULL,
@@ -58,44 +61,256 @@ CREATE TABLE `clientes` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `estado_id` (`estado_id`)
+  KEY `estado_id` (`estado_id`),
+  CONSTRAINT `clientes_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `clientes`
+--
+
+LOCK TABLES `clientes` WRITE;
+/*!40000 ALTER TABLE `clientes` DISABLE KEYS */;
+INSERT INTO `clientes` VALUES (1,'DemoTech S.A.','contacto@demo.com',1,'2026-04-07 16:36:56','2026-04-07 16:36:56');
+/*!40000 ALTER TABLE `clientes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `dispositivos`
+--
+
+DROP TABLE IF EXISTS `dispositivos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dispositivos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) NOT NULL,
+  `medio_transporte_id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `identificador_unico` varchar(100) NOT NULL,
+  `estado_id` int(11) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`),
+  KEY `medio_transporte_id` (`medio_transporte_id`),
+  KEY `estado_id` (`estado_id`),
+  CONSTRAINT `dispositivos_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`),
+  CONSTRAINT `dispositivos_fk_medio` FOREIGN KEY (`medio_transporte_id`) REFERENCES `medios_transporte` (`id`),
+  CONSTRAINT `dispositivos_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Volcado de datos para la tabla `clientes`
+-- Dumping data for table `dispositivos`
 --
 
-INSERT INTO `clientes` (`id`, `nombre_cliente`, `contacto_email`) VALUES
-(1, 'DemoTech S.A.', 'contacto@demo.com');
-
--- --------------------------------------------------------
+LOCK TABLES `dispositivos` WRITE;
+/*!40000 ALTER TABLE `dispositivos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `dispositivos` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
--- Estructura de tabla para la tabla `roles`
+-- Table structure for table `equipos`
 --
 
+DROP TABLE IF EXISTS `equipos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `equipos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `tipo` varchar(50) DEFAULT 'General',
+  `serial` varchar(100) DEFAULT NULL,
+  `estado_id` int(11) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`),
+  KEY `estado_id` (`estado_id`),
+  CONSTRAINT `equipos_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`),
+  CONSTRAINT `equipos_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `equipos`
+--
+
+LOCK TABLES `equipos` WRITE;
+/*!40000 ALTER TABLE `equipos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `equipos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `estados`
+--
+
+DROP TABLE IF EXISTS `estados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `estados` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `estados`
+--
+
+LOCK TABLES `estados` WRITE;
+/*!40000 ALTER TABLE `estados` DISABLE KEYS */;
+INSERT INTO `estados` VALUES (1,'Activo','Entidad activa en el sistema'),(2,'Inactivo','Entidad inactiva o deshabilitada'),(3,'Mantenimiento','En proceso de mantenimiento'),(4,'Bloqueado','Acceso restringido temporal o permanentemente');
+/*!40000 ALTER TABLE `estados` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `login_attempts`
+--
+
+DROP TABLE IF EXISTS `login_attempts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `login_attempts` (
+  `ip_address` varchar(45) NOT NULL,
+  `attempts` int(11) DEFAULT 0,
+  `last_attempt` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`ip_address`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `login_attempts`
+--
+
+LOCK TABLES `login_attempts` WRITE;
+/*!40000 ALTER TABLE `login_attempts` DISABLE KEYS */;
+/*!40000 ALTER TABLE `login_attempts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `logs_sistema`
+--
+
+DROP TABLE IF EXISTS `logs_sistema`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `logs_sistema` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) DEFAULT NULL,
+  `accion` varchar(255) NOT NULL,
+  `modulo` varchar(100) NOT NULL,
+  `detalles` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `fecha_hora` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`),
+  CONSTRAINT `logs_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `logs_sistema`
+--
+
+LOCK TABLES `logs_sistema` WRITE;
+/*!40000 ALTER TABLE `logs_sistema` DISABLE KEYS */;
+/*!40000 ALTER TABLE `logs_sistema` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `medios_transporte`
+--
+
+DROP TABLE IF EXISTS `medios_transporte`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `medios_transporte` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `estado_id` int(11) DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `estado_id` (`estado_id`),
+  CONSTRAINT `medios_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `medios_transporte`
+--
+
+LOCK TABLES `medios_transporte` WRITE;
+/*!40000 ALTER TABLE `medios_transporte` DISABLE KEYS */;
+INSERT INTO `medios_transporte` VALUES (1,'Vehiculo Particular','Automóvil de uso particular',1),(2,'Motocicleta','Vehículo de dos ruedas',1),(3,'Bicicleta','Bicicleta o similar',1),(4,'Peatonal','Ingreso a pie',1);
+/*!40000 ALTER TABLE `medios_transporte` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `recovery_codes`
+--
+
+DROP TABLE IF EXISTS `recovery_codes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `recovery_codes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) NOT NULL,
+  `code` varchar(6) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `recovery_codes`
+--
+
+LOCK TABLES `recovery_codes` WRITE;
+/*!40000 ALTER TABLE `recovery_codes` DISABLE KEYS */;
+/*!40000 ALTER TABLE `recovery_codes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `roles`
+--
+
+DROP TABLE IF EXISTS `roles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `roles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre_rol` varchar(50) NOT NULL,
   `descripcion` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Volcado de datos para la tabla `roles`
+-- Dumping data for table `roles`
 --
 
-INSERT INTO `roles` (`id`, `nombre_rol`, `descripcion`) VALUES
-(1, 'Admin', 'Administrador total del sistema'),
-(2, 'Usuario', 'Usuario regular del sistema'),
-(3, 'Seguridad', 'Personal de seguridad o vigilancia');
-
--- --------------------------------------------------------
+LOCK TABLES `roles` WRITE;
+/*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES (1,'Admin','Administrador total del sistema'),(2,'Usuario','Usuario regular del sistema'),(3,'Seguridad','Personal de seguridad o vigilancia');
+/*!40000 ALTER TABLE `roles` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
--- Estructura de tabla para la tabla `usuarios`
+-- Table structure for table `usuarios`
 --
 
+DROP TABLE IF EXISTS `usuarios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `usuarios` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(50) NOT NULL,
@@ -114,180 +329,30 @@ CREATE TABLE `usuarios` (
   UNIQUE KEY `email` (`email`),
   KEY `cliente_id` (`cliente_id`),
   KEY `rol_id` (`rol_id`),
-  KEY `estado_id` (`estado_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  KEY `estado_id` (`estado_id`),
+  CONSTRAINT `usuarios_fk_cliente` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`),
+  CONSTRAINT `usuarios_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`),
+  CONSTRAINT `usuarios_fk_rol` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Volcado de datos para la tabla `usuarios`
+-- Dumping data for table `usuarios`
 --
 
-INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `email`, `password`, `cliente_id`, `rol_id`, `estado_id`) VALUES
-(1, 'Administrador', 'Sistema', 'admin@gmail.com', '$2b$10$xlioDBSwN9.WIRBJlGhiqe1r5mXkvZnAzMXKen08m2.Wwm65IdOc.', 1, 1, 1);
+LOCK TABLES `usuarios` WRITE;
+/*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
+INSERT INTO `usuarios` VALUES (1,'Administrador','Sistema','admin@gmail.com','$2b$10$xlioDBSwN9.WIRBJlGhiqe1r5mXkvZnAzMXKen08m2.Wwm65IdOc.',1,1,1,0,NULL,NULL,'2026-04-07 16:36:56','2026-04-07 16:36:56');
+/*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `medios_transporte`
---
-
-CREATE TABLE `medios_transporte` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nombre` varchar(50) NOT NULL,
-  `descripcion` varchar(255) DEFAULT NULL,
-  `estado_id` int(11) DEFAULT 1,
-  PRIMARY KEY (`id`),
-  KEY `estado_id` (`estado_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `medios_transporte`
---
-
-INSERT INTO `medios_transporte` (`id`, `nombre`, `descripcion`) VALUES
-(1, 'Vehiculo Particular', 'Automóvil de uso particular'),
-(2, 'Motocicleta', 'Vehículo de dos ruedas'),
-(3, 'Bicicleta', 'Bicicleta o similar'),
-(4, 'Peatonal', 'Ingreso a pie');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `dispositivos`
---
-
-CREATE TABLE `dispositivos` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `usuario_id` int(11) NOT NULL,
-  `medio_transporte_id` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `identificador_unico` varchar(100) NOT NULL,
-  `estado_id` int(11) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `usuario_id` (`usuario_id`),
-  KEY `medio_transporte_id` (`medio_transporte_id`),
-  KEY `estado_id` (`estado_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `accesos`
---
-
-CREATE TABLE `accesos` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `usuario_id` int(11) NOT NULL,
-  `dispositivo_id` int(11) DEFAULT NULL,
-  `tipo` enum('Entrada','Salida') NOT NULL,
-  `observaciones` varchar(255) DEFAULT NULL,
-  `fecha_hora` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `usuario_id` (`usuario_id`),
-  KEY `dispositivo_id` (`dispositivo_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `logs_sistema`
---
-
-CREATE TABLE `logs_sistema` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `usuario_id` int(11) DEFAULT NULL,
-  `accion` varchar(255) NOT NULL,
-  `modulo` varchar(100) NOT NULL,
-  `detalles` text DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT NULL,
-  `fecha_hora` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `usuario_id` (`usuario_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `recovery_codes`
---
-
-CREATE TABLE `recovery_codes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `email` varchar(100) NOT NULL,
-  `code` varchar(6) NOT NULL,
-  `expires_at` datetime NOT NULL,
-  `used` tinyint(1) DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `login_attempts`
---
-
-CREATE TABLE `login_attempts` (
-  `ip_address` varchar(45) NOT NULL,
-  `attempts` int(11) DEFAULT 0,
-  `last_attempt` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`ip_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Restricciones para tablas volcadas
---
-
---
--- Filtros para la tabla `clientes`
---
-ALTER TABLE `clientes`
-  ADD CONSTRAINT `clientes_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`);
-
---
--- Filtros para la tabla `roles`
---
--- (No external FKs for roles currently, but could link to clientes if multi-tenant strict)
-
---
--- Filtros para la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  ADD CONSTRAINT `usuarios_fk_cliente` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`),
-  ADD CONSTRAINT `usuarios_fk_rol` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`),
-  ADD CONSTRAINT `usuarios_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`);
-
---
--- Filtros para la tabla `medios_transporte`
---
-ALTER TABLE `medios_transporte`
-  ADD CONSTRAINT `medios_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`);
-
---
--- Filtros para la tabla `dispositivos`
---
-ALTER TABLE `dispositivos`
-  ADD CONSTRAINT `dispositivos_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
-  ADD CONSTRAINT `dispositivos_fk_medio` FOREIGN KEY (`medio_transporte_id`) REFERENCES `medios_transporte` (`id`),
-  ADD CONSTRAINT `dispositivos_fk_estado` FOREIGN KEY (`estado_id`) REFERENCES `estados` (`id`);
-
---
--- Filtros para la tabla `accesos`
---
-ALTER TABLE `accesos`
-  ADD CONSTRAINT `accesos_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
-  ADD CONSTRAINT `accesos_fk_dispositivo` FOREIGN KEY (`dispositivo_id`) REFERENCES `dispositivos` (`id`);
-
---
--- Filtros para la tabla `logs_sistema`
---
-ALTER TABLE `logs_sistema`
-  ADD CONSTRAINT `logs_fk_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
-
-COMMIT;
-
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-04-07 12:40:18

@@ -1,3 +1,14 @@
+<!-- 
+    ESTRUCTURA DE ESTUDIO: FORGOT.HTML
+    Este archivo maneja el primer paso de la recuperación de cuenta:
+    "La solicitud de auxilio".
+    
+    [CONCEPTO CLAVE: RECUPERACIÓN SEGURA]
+    1. El usuario ingresa su correo.
+    2. El sistema genera un código OTP (One-Time Password) en el backend.
+    3. Se envía el código por email (Servicio externo).
+    4. El usuario es redirigido a 'reset.html' para usar ese código.
+-->
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 
@@ -5,26 +16,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recuperar Contraseña - Passly</title>
+  
+  <!-- Estilos compartidos del sistema -->
   <link rel="stylesheet" href="/css/index.css">
+  
+  <!-- Lógica específica para la petición de recuperación -->
   <script type="module" src="/js/forgot.js"></script>
 </head>
 
 <body>
+  <!-- Selector de tema visual -->
   <div class="theme-toggle" id="themeToggle">
     <span class="theme-toggle-icon" id="themeIcon">🌙</span>
     <span class="theme-toggle-text" id="themeText">Modo Claro</span>
   </div>
 
-  <div class="card">
+  <!-- TARJETA DE ACCIÓN: Formularios con estética Glassmorphism -->
+  <div class="card animate-fade-in" style="padding: 40px; text-align: center;">
     <h1>¿Olvidaste tu contraseña?</h1>
-    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
-      Ingresa tu correo y te enviaremos instrucciones de recuperación.
+    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">
+      Ingresa tu correo institucional y te enviaremos un código de autorización temporal.
     </p>
 
-    <input id="email" type="email" placeholder="Correo electrónico">
-    <button id="btnEnviar"><span>Enviar instrucciones</span></button>
+    <!-- Entrada de datos vinculada a forgot.js -->
+    <input id="email" type="email" placeholder="Correo electrónico de trabajo" style="margin-bottom: 24px;">
+    
+    <button id="btnEnviar" class="btn-primary" style="width: 100%;">
+      <span>ENVIAR CÓDIGO DE RECUPERACIÓN</span>
+    </button>
 
-    <a href="index.html" class="toggle">Volver al inicio de sesión</a>
+    <footer style="margin-top:32px;">
+      <a href="index.html" class="toggle link-text">Volver al terminal de inicio</a>
+    </footer>
   </div>
 </body>
 
