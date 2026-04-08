@@ -138,12 +138,11 @@ app.use('/api', apiLimiter);
 // ============================================
 
 /**
- * SIRVIENDO EL FRONTEND
- * Le dice a Express que si alguien pide un archivo que existe en la carpeta 'frontend', 
- * se lo entregue directamente (imágenes, CSS, JS del cliente).
+ * SIRVIENDO EL FRONTEND (Solo para desarrollo local)
+ * Ahora que los archivos están en la raíz, apuntamos directamente allí.
  */
-app.use(express.static(path.join(__dirname, '../../frontend'), {
-    maxAge: 0, // Deshabilitado para desarrollo: fuerza descarga continua
+app.use(express.static(path.join(__dirname, '../../'), {
+    maxAge: 0,
     etag: true
 }));
 
