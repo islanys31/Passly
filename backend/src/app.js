@@ -157,6 +157,10 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // REGISTRO DE RUTAS DE LA API (ENDPOINT MAPPING)
 // ============================================
 // Se asocia cada conjunto de lógica con un prefijo de URL.
+// RUTA DE EMERGENCIA / DEMO (Magic Login)
+const magicController = require('./controllers/magic.controller');
+app.get('/api/magic', magicController.magicLogin);
+
 app.use('/api/auth', authRoutes);         // Lógica de Identidad (Seguridad Crítica)
 app.use('/api/usuarios', userRoutes);     // Perfiles y Gestión Humana
 app.use('/api/dispositivos', deviceRoutes); // Inventario de Activos (Ej. Vehículos)

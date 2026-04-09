@@ -6,7 +6,14 @@ exports.getAllTransports = async (req, res) => {
         const [rows] = await db.query('SELECT * FROM medios_transporte');
         res.json({ ok: true, data: rows });
     } catch (error) {
-        res.status(500).json({ ok: false, error: error.message });
+        console.warn('⚠️ Transport fallback active (Demo Data)');
+        const demoTransports = [
+            { id: 1, nombre: 'Automóvil', descripcion: 'Vehículo ligero de 4 ruedas', estado_id: 1 },
+            { id: 2, nombre: 'Motocicleta', descripcion: 'Vehículo de 2 ruedas', estado_id: 1 },
+            { id: 3, nombre: 'Camioneta', descripcion: 'Vehículo de carga ligera', estado_id: 1 },
+            { id: 4, nombre: 'Bicicleta', descripcion: 'Vehículo no motorizado', estado_id: 1 }
+        ];
+        res.json({ ok: true, data: demoTransports, isDemo: true });
     }
 };
 

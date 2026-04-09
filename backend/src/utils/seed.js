@@ -12,7 +12,7 @@
  * 3. Demostración: Permite mostrar una aplicación con gráficas y registros reales
  *    desde el primer segundo.
  */
-
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 const { pool: db } = require('../config/db');
 const bcrypt = require('bcrypt');
 
@@ -55,7 +55,7 @@ async function seed() {
 
         if (userIds.length === 0) {
             console.log('❌ Fallo crítico: No hay usuarios base para vincular datos.');
-            process.exit(0);
+            return;
         }
 
         // 2. ACTIVOS DE HARDWARE Y FLOTA
@@ -100,12 +100,19 @@ async function seed() {
         }
 
         console.log('✅ PROTOCOLO DE SIEMBRA COMPLETADO EXITOSAMENTE.');
-        process.exit(0);
+        return true;
     } catch (error) {
         console.error('❌ ERROR DURANTE EL SEEDING:', error);
-        process.exit(1);
+        throw error;
     }
 }
 
-// Ejecutar función principal
-seed();
+// Exportar función principal para uso programático (Magic Login)
+module.exports = { seed };
+
+// Permitir ejecución directa desde CLI
+if (require.main === module) {
+    seed()
+        .then(() => process.exit(0))
+        .catch(() => process.exit(1));
+}

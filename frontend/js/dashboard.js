@@ -73,6 +73,41 @@ document.addEventListener('click', (e) => {
  * Es el "Punto de Arranque" (Bootstrap) de la aplicación.
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    // [MODO MAGIC] Capturar token de la URL si viene de un acceso rápido
+    const urlParams = new URLSearchParams(window.location.search);
+    const magicToken = urlParams.get('token');
+    
+    if (magicToken && urlParams.get('magic') === 'true') {
+        localStorage.setItem('auth_token', magicToken);
+        
+        // [RESILIENCIA] Pre-cargar identidad mock para evitar redirecciones si la DB está lenta
+        const roleParam = urlParams.get('role');
+        const mockUser = roleParam === '2' 
+            ? { id: 888, nombre: 'Juan', apellido: 'Perez', email: 'juan.perez@passly.com', rol_id: 2 }
+            : (roleParam === '3' 
+                ? { id: 777, nombre: 'Guardia', apellido: 'Nocturno', email: 'guardia1@passly.com', rol_id: 3 }
+                : { id: 999, nombre: 'Admin', apellido: 'Demo', email: 'admin@passly.com', rol_id: 1 });
+        
+        localStorage.setItem('usuario_activo', JSON.stringify(mockUser));
+        
+        // Limpiar URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Intentar actualizar con datos reales si es posible
+        apiRequest('/usuarios/me').then(res => {
+            if (res.ok) {
+                localStorage.setItem('usuario_activo', JSON.stringify(res.data.user));
+                // Refrescar UI si ya se había cargado
+                if (userData) {
+                    userData = res.data.user;
+                    setupUI();
+                }
+            }
+        });
+
+        showToast(`Modo Demo Activo: ${mockUser.nombre}`, 'info');
+    }
+
     // 1. CONTROL DE ACCESO: ¿Tiene permiso para estar aquí?
     userData = checkAuth();
     if (!userData) return; // Si no hay token, checkAuth redirige al index.html
@@ -143,7 +178,7 @@ function setupUI() {
             ]},
             { section: 'AJUSTES', views: [
                 { id: 'logs', icon: 'clipboard-list', text: 'Auditoría' },
-                { id: 'perfil', icon: 'user-cog', text: 'Mi Cuenta' },
+                { id: 'perfil', icon: 'user-cog', text: 'Mi Perfil' },
                 { id: 'security', icon: 'shield-check', text: 'Escudo 2FA' }
             ]}
         ],
@@ -164,14 +199,14 @@ function setupUI() {
             ]}
         ],
         2: [ // PERFIL RESIDENTE: Gestión de su propia información
-            { section: 'MIS PERMISOS', views: [
-                { id: 'overview', icon: 'layout-dashboard', text: 'Mis Datos' },
-                { id: 'dispositivos', icon: 'monitor', text: 'Mis Equipos' },
-                { id: 'vehiculos', icon: 'truck', text: 'Mis Autos' },
-                { id: 'accesos', icon: 'lock', text: 'Mis Entradas' }
+            { section: 'MI PANEL', views: [
+                { id: 'overview', icon: 'layout-dashboard', text: 'Resumen Personal' },
+                { id: 'dispositivos', icon: 'monitor', text: 'Mis Equipos Tech' },
+                { id: 'vehiculos', icon: 'truck', text: 'Mis Vehículos' },
+                { id: 'accesos', icon: 'lock', text: 'Mi Historial' }
             ]},
             { section: 'IDENTIDAD', views: [
-                { id: 'perfil', icon: 'user-cog', text: 'Ajustes' },
+                { id: 'perfil', icon: 'user-cog', text: 'Mi Perfil' },
                 { id: 'security', icon: 'shield-check', text: 'Seguridad' }
             ]}
         ]
@@ -293,28 +328,9 @@ async function loadView(view, force = false) {
                 await renderAuditLogs(content);
                 break;
             case 'perfil':
-                title.textContent = "Mi Perfil";
-                await renderMiPerfil(content);
-                break;
-            case 'security':
-                title.textContent = "Seguridad de la Cuenta";
-                await renderSecurity(content);
-                break;
-            case 'analytics':
-                title.textContent = "Analíticas Avanzadas";
-                await renderAnalytics(content);
-                break;
-            case 'config':
-                title.textContent = "Configuración del Sistema";
-                await renderSettings(content);
-                break;
-            case 'help':
-                title.textContent = "Guía y Manuales";
-                await renderHelp(content);
-                break;
             case 'profile':
-                title.textContent = "Mi Perfil";
-                await renderProfile(content);
+                title.textContent = "Mi Perfil Personal";
+                await renderMiPerfil(content);
                 break;
             case 'scanner':
                 title.textContent = "Escáner de Acceso";
@@ -373,7 +389,7 @@ async function renderOverview(container) {
     const isUser = role === 2;
 
     const grid = [
-        { label: isUser ? 'ESTADO DE CUENTA' : 'USUARIOS ACTIVOS', val: isUser ? 'VERIFICADO' : stats.users, icon: 'users', color: 'hsla(220, 90%, 65%, 1)' },
+        { label: isUser ? 'ESTADO IDENTIDAD' : 'USUARIOS ACTIVOS', val: isUser ? 'VERIFICADO' : stats.users, icon: 'users', color: 'hsla(220, 90%, 65%, 1)' },
         { label: isUser ? 'MIS LOGS HOY' : 'ENTRADAS HOY', val: stats.accessToday, icon: 'door-open', color: 'hsla(150, 70%, 45%, 1)' },
         { label: isUser ? 'MIS ACTIVOS' : 'ACTIVOS DE HARDWARE', val: stats.tech, icon: 'monitor', color: 'hsla(280, 50%, 60%, 1)' },
         { label: isUser ? 'MIS VEHÍCULOS' : 'UNIDADES DE FLOTA', val: stats.vehicles, icon: 'truck', color: 'hsla(170, 60%, 50%, 1)' }
@@ -1235,86 +1251,6 @@ async function markNotifRead(id) {
     fetchNotifications();
 }
 
-/**
- * MODULO: MI PERFIL
- */
-async function renderProfile(container) {
-    const res = await apiRequest('/usuarios/me');
-    if (!res.ok) return;
-    const user = res.data.user;
-
-    container.innerHTML = `
-        <div class="card glass-glow profile-card" style="padding:40px;">
-            <div style="text-align:center; border-right:1px solid var(--border-color); padding-right:30px;">
-                <div class="user-avatar" style="width:120px; height:120px; font-size:40px; margin:0 auto 20px;">
-                    ${user.foto_url ? `<img src="${user.foto_url}" id="profilePreview" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : `<span id="profilePreview">${user.nombre.charAt(0)}</span>`}
-                </div>
-                <input type="file" id="photoInput" style="display:none;" accept="image/*">
-                <button class="btn-table" id="btnChangeAvatar" style="margin-top:10px;">Cambiar Foto</button>
-                <div style="margin-top:30px;">
-                    <div class="badge badge-success">${user.rol_id === 1 ? 'ADMINISTRADOR' : 'USUARIO'}</div>
-                    <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">Miembro desde: ${new Date(user.created_at || Date.now()).toLocaleDateString()}</p>
-                </div>
-            </div>
-            <div>
-                <h3>Datos Personales</h3>
-                <div class="settings-grid" style="grid-template-columns:1fr; margin-top:20px;">
-                    <div class="setting-item">
-                        <label>Nombre</label>
-                        <input type="text" id="profNombre" value="${user.nombre}">
-                    </div>
-                    <div class="setting-item">
-                        <label>Apellido</label>
-                        <input type="text" id="profApellido" value="${user.apellido}">
-                    </div>
-                    <div class="setting-item">
-                        <label>Email</label>
-                        <input type="email" id="profEmail" value="${user.email}">
-                    </div>
-                </div>
-                <button id="btnSaveProfile" style="margin-top:30px; background:var(--accent-blue);">Actualizar Datos</button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('btnSaveProfile').onclick = async () => {
-        const data = {
-            nombre: document.getElementById('profNombre').value,
-            apellido: document.getElementById('profApellido').value,
-            email: document.getElementById('profEmail').value
-        };
-        const update = await apiRequest('/usuarios/me', 'PUT', data);
-        if (update.ok) {
-            showToast("Perfil actualizado", "success");
-            userData.nombre = data.nombre;
-            setupUI();
-        }
-    };
-
-    document.getElementById('btnChangeAvatar').onclick = () => document.getElementById('photoInput').click();
-    document.getElementById('photoInput').onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append('photo', file);
-
-        const res = await fetch('/api/usuarios/me/photo', {
-            method: 'POST',
-            body: formData,
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('passly_token')}` }
-        });
-        const data = await res.json();
-        if (data.ok) {
-            showToast("Foto actualizada", "success");
-            loadView('profile', true);
-            setupUI();
-        }
-    };
-
-    // Link to profile view from top bar
-    document.getElementById('userProfileMenu').onclick = () => loadView('profile');
-}
 
 /**
  * MODULO: CONFIGURACIÓN GLOBAL
@@ -2093,7 +2029,7 @@ async function showUserDetail(userId) {
                         </div>
                         <button class="btn-table btn-edit" id="btnEditFromDetail" style="padding: 5px 10px;">✏️ Editar Perfil</button>
                     </div>
-                    <span class="badge badge-info" style="font-size:10px;">${user.rol_id === 1 ? 'Administrador' : 'Usuario Regular'}</span>
+                    <span class="badge badge-info" style="font-size:10px;">${user.rol_id === 1 ? 'Administrador' : (user.rol_id === 3 ? 'Seguridad' : 'Residente')}</span>
                 </div>
             </div>
 
@@ -2152,7 +2088,7 @@ async function showUserDetail(userId) {
                 </div>
             </div>
             
-            <button class="btn-table" onclick="window.closeModal()" style="width:100%; margin-top:20px; background:var(--bg-secondary); border:1px solid var(--border-color);">Cerrar Ficha Maestra</button>
+            <button class="btn-table" onclick="window.closeModal()" style="width:100%; margin-top:20px; background:var(--bg-secondary); border:1px solid var(--border-color);">${userData.rol_id === 2 ? 'Cerrar Mi Información' : 'Cerrar Ficha Maestra'}</button>
 `;
 
         // Vincular botón editar dentro del detalle

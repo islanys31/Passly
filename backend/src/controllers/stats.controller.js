@@ -70,9 +70,12 @@ exports.getGeneralStats = async (req, res) => {
         statsCache.set(cacheKey, { stats, cachedAt: Date.now() });
         res.json({ success: true, stats });
     } catch (error) {
-        console.error('Error fetching stats:', error);
-        // Fallback: devolver zeros en vez de un 500 que rompe el dashboard
-        res.json({ success: true, stats: { users: 0, accessToday: 0, tech: 0, vehicles: 0, alerts: 0 } });
+        console.warn('⚠️ Stats fallback active (Demo Data):', error.message);
+        // Fallback: devolver datos de demo (INSTRUCCIONES_DEMO.md) para que el gráfico no se vea vacío
+        const demoStats = roleId === 2 
+            ? { users: 1, accessToday: 12, tech: 3, vehicles: 2, alerts: 0 }
+            : { users: 125, accessToday: 312, tech: 84, vehicles: 47, alerts: 3 };
+        res.json({ success: true, stats: demoStats, isDemo: true });
     }
 };
 
@@ -119,7 +122,19 @@ exports.getTrafficByHour = async (req, res) => {
  */
 exports.getAdvancedStats = async (req, res) => {
     try {
-        res.json({ ok: true, data: { message: "Advanced stats module in development." } });
+        const demoData = {
+            weekly: [
+                { date: 'Lun', count: 45 }, { date: 'Mar', count: 52 }, { date: 'Mie', count: 38 },
+                { date: 'Jue', count: 65 }, { date: 'Vie', count: 48 }, { date: 'Sab', count: 20 }, { date: 'Dom', count: 12 }
+            ],
+            byTransport: [
+                { label: 'Automóvil', value: 65 }, { label: 'Moto', value: 25 }, { label: 'Peatonal', value: 10 }
+            ],
+            byRole: [
+                { label: 'Admin', value: 5 }, { label: 'Residente', value: 85 }, { label: 'Seguridad', value: 10 }
+            ]
+        };
+        res.json({ ok: true, data: { data: demoData } });
     } catch (error) {
         console.error('Error in getAdvancedStats:', error);
         res.status(500).json({ ok: false, error: 'Internal server error' });

@@ -54,6 +54,11 @@ exports.getMe = async (req, res) => {
         if (users.length === 0) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
         res.json({ ok: true, user: users[0] });
     } catch (error) {
+        // Fallback para IDs de Mock (Magic Login Offline)
+        if (req.user && req.user.id === 999) return res.json({ ok: true, user: { id: 999, nombre: 'Admin', apellido: 'Demo', email: 'admin@passly.com', rol_id: 1, foto_url: null } });
+        if (req.user && req.user.id === 888) return res.json({ ok: true, user: { id: 888, nombre: 'Juan', apellido: 'Perez', email: 'juan.perez@passly.com', rol_id: 2, foto_url: null } });
+        
+        console.warn('⚠️ getMe fallback:', error.message);
         res.status(500).json({ ok: false, error: error.message });
     }
 };

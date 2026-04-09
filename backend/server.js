@@ -6,6 +6,15 @@
  */
 
 require('dotenv').config(); // Carga las variables de entorno desde el archivo .env
+
+// [ROBUSTEZ] Captura de errores no controlados para evitar que el servidor muera
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 RECHAZO NO MANEJADO:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('💥 EXCEPCIÓN NO CAPTURADA:', err);
+});
+
 const http = require('http');
 const app = require('./src/app'); // Importa la aplicación Express configurada
 const fs = require('fs');

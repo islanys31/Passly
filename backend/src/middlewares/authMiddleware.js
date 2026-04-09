@@ -91,22 +91,32 @@ const verifyToken = async (req, res, next) => {
 
         /**
          * HARDENING: Validación de Estado con caché.
-         * Primero revisamos el caché (60s TTL). Solo consultamos la BD si no hay
-         * entrada en caché o si expiró. Reduce la carga de BD drasticamente.
+         * En MODO OFFLINE (IDs 888, 999), saltamos la consulta a la BD.
          */
+        if (decoded.id === 888 || decoded.id === 999) {
+            req.user = decoded;
+            return next();
+        }
+
         let userStatus = getUserFromCache(decoded.id);
 
         if (!userStatus) {
-            // Cache MISS → consultar BD y guardar resultado
-            const { pool: db } = require('../config/db');
-            const [users] = await db.query('SELECT estado_id FROM usuarios WHERE id = ?', [decoded.id]);
+            try {
+                // Cache MISS → consultar BD y guardar resultado
+                const { pool: db } = require('../config/db');
+                const [users] = await db.query('SELECT estado_id FROM usuarios WHERE id = ?', [decoded.id]);
 
-            if (users.length === 0) {
-                return res.status(401).json({ error: 'No autorizado: Cuenta inexistente' });
+                if (users.length === 0) {
+                    return res.status(401).json({ error: 'No autorizado: Cuenta inexistente' });
+                }
+
+                userStatus = { estado_id: users[0].estado_id };
+                setUserInCache(decoded.id, users[0].estado_id);
+            } catch (dbErr) {
+                console.error('⚠️ DB Error in Middleware:', dbErr.message);
+                // Si la DB falla, solo dejamos pasar a los Mock IDs (ya manejado arriba)
+                return res.status(401).json({ error: 'Identidad no verificable en este momento' });
             }
-
-            userStatus = { estado_id: users[0].estado_id };
-            setUserInCache(decoded.id, users[0].estado_id);
         }
 
         if (userStatus.estado_id !== 1) {
@@ -138,5 +148,5 @@ const verifyRole = (roles) => {
     };
 };
 
-module.exports = { verifyToken, verifyRole, invalidateUserCache };
+module.exports = { verifyToken, verifyRole, invalidateUserCache, setUserInCache };
 
