@@ -41,6 +41,16 @@ async function updateDatabase() {
             console.log('✅ Columna mfa_secret añadida.');
         }
 
+        if (!columnNames.includes('email_verified')) {
+            await db.query('ALTER TABLE usuarios ADD COLUMN email_verified TINYINT(1) DEFAULT 0');
+            console.log('✅ Columna email_verified añadida.');
+        }
+
+        if (!columnNames.includes('verification_token')) {
+            await db.query('ALTER TABLE usuarios ADD COLUMN verification_token VARCHAR(255) DEFAULT NULL');
+            console.log('✅ Columna verification_token añadida.');
+        }
+
         console.log('✨ Base de datos actualizada con éxito.');
         process.exit(0);
     } catch (error) {

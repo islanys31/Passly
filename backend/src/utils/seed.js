@@ -50,7 +50,7 @@ async function seed() {
         }
 
         // Recuperar IDs generados para vincular activos y accesos
-        const [users] = await db.query('SELECT id FROM usuarios WHERE cliente_id = 1 AND email != "admin@gmail.com"');
+        const [users] = await db.query("SELECT id FROM usuarios WHERE cliente_id = 1 AND email != 'admin@gmail.com'");
         const userIds = users.map(u => u.id);
 
         if (userIds.length === 0) {

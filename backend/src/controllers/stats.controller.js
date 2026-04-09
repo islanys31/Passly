@@ -112,3 +112,16 @@ exports.getTrafficByHour = async (req, res) => {
 };
 
 
+
+/**
+ * Endpoint for advanced analytics (currently a placeholder for stability).
+ * @route GET /api/stats/advanced
+ */
+exports.getAdvancedStats = async (req, res) => {
+    try {
+        res.json({ ok: true, data: { message: "Advanced stats module in development." } });
+    } catch (error) {
+        console.error('Error in getAdvancedStats:', error);
+        res.status(500).json({ ok: false, error: 'Internal server error' });
+    }
+};
