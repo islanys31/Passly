@@ -10,10 +10,14 @@
  * 3. Mantenimiento: Si la URL del servidor cambia, solo la editamos aquí.
  */
 
-// Prefijo para las llamadas al servidor. En local usa relativo, en nube usa la URL de Render.
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? "/api" 
-    : "https://passly-69ah.onrender.com/api"; 
+// [CONFIGURACIÓN DE ARQUITECTURA DISTRIBUIDA (Vercel <-> Render)]
+// Detecta automáticamente si estás probando en tu PC o si está en Vercel
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// Si estás en local usa la misma IP. Si estás en Vercel, DEBE apuntar a tu backend en Render
+const RENDER_BACKEND_URL = "https://TU_BACKEND.onrender.com"; // <--- ⚠️ CAMBIA ESTO por tu link de Render
+
+const API_BASE = isLocalhost ? "/api" : `${RENDER_BACKEND_URL}/api`;
 
 /**
  * [ESTUDIO: COMUNICACIÓN ASÍNCRONA]
