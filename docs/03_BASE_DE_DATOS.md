@@ -75,6 +75,8 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 | mfa_enabled | BOOLEAN | DEFAULT FALSE |
 | mfa_secret | VARCHAR(255) | DEFAULT NULL |
 | foto_url | VARCHAR(255) | DEFAULT NULL |
+| email_verified | TINYINT(1) | DEFAULT 0 |
+| verification_token | VARCHAR(255) | DEFAULT NULL |
 | created_at | TIMESTAMP | AUTO |
 | updated_at | TIMESTAMP | AUTO ON UPDATE |
 

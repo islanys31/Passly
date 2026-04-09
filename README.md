@@ -1,12 +1,20 @@
 # 🔐 Passly - Sistema de Control de Accesos Inteligente
 
-![Version](https://img.shields.io/badge/version-2.1.1-green.svg)
+![Version](https://img.shields.io/badge/version-3.0-green.svg)
 ![Node](https://img.shields.io/badge/node-18.x-blue.svg)
 ![MySQL](https://img.shields.io/badge/mysql-8.0-orange.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 **Passly** es un sistema de control de accesos moderno y seguro diseñado para unidades residenciales, edificios corporativos y espacios que requieren gestión de entradas y salidas con tecnología QR, validación en tiempo real y reportes profesionales.
+
+### 🌐 URLs de Producción
+| Servicio | URL |
+|----------|-----|
+| **Frontend (Vercel)** | https://passly3106.vercel.app |
+| **API Backend (Render)** | https://passly-69ah.onrender.com |
+| **Base de Datos (Aiven)** | MySQL Cloud (Aiven) |
+| **Swagger Docs** | https://passly-69ah.onrender.com/api-docs |
 
 ---
 
@@ -92,13 +100,13 @@ docker-compose up -d --build
 
 Accede a: **`http://localhost`**
 
-### Credenciales de Prueba
+### Credenciales de Prueba (Producción)
 
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
-| `juan.perez@gmail.com` | `Demo123!` | Administrador |
-| `ana.mtz@gmail.com`    | `Demo123!` | Usuario |
-| `guardia1@gmail.com`   | `Demo123!` | Seguridad |
+| `admin@gmail.com` | `Passly@2025*` | Administrador |
+| `juan.perez@passly.com` | `Passly@2025*` | Usuario |
+| `carlos.rod@passly.com` | `Passly@2025*` | Seguridad |
 
 ---
 
@@ -371,5 +379,6 @@ FRONTEND_URL=http://localhost:3000
 
 ---
 
-**🔐 Passly v2.0.0 - Sistema de Control de Accesos Inteligente**  
-*Desarrollado con Node.js, Express, MySQL, Socket.IO y Docker*
+**🔐 Passly v3.0.0 (Cloud Edition) - Sistema de Control de Accesos Inteligente**  
+*Desarrollado con Node.js, Express, MySQL, Socket.IO y Docker*  
+*Desplegado en Render (API) + Vercel (Frontend) + Aiven (MySQL Cloud)*
