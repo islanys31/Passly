@@ -121,11 +121,11 @@ exports.verifyEmail = async (req, res) => {
  * Elimina la cookie del navegador para que el usuario no pueda seguir accediendo.
  */
 exports.logout = (req, res) => {
-    const isSecure = process.env.HTTPS_ENABLED === 'true';
+    const isSecure = process.env.NODE_ENV === 'production' || process.env.HTTPS_ENABLED === 'true';
     res.clearCookie('auth_token', {
         httpOnly: true,
         secure: isSecure,
-        sameSite: isSecure ? 'Strict' : 'Lax'
+        sameSite: isSecure ? 'None' : 'Lax'
     });
     res.json({ success: true, message: 'La sesión se ha cerrado de forma segura' });
 };
@@ -251,7 +251,7 @@ exports.login = async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
         );
 
-        const isSecure = process.env.NODE_ENV === 'production' && process.env.HTTPS_ENABLED === 'true';
+        const isSecure = process.env.NODE_ENV === 'production' || process.env.HTTPS_ENABLED === 'true';
         res.cookie('auth_token', token, {
             httpOnly: true,
             secure: isSecure,
@@ -483,11 +483,11 @@ exports.mfaLogin = async (req, res) => {
 
             await logAction(user.id, 'Login MFA Exitoso', 'Seguridad', 'Identidad confirmada mediante segundo factor', req.ip);
 
-            const isSecure = process.env.HTTPS_ENABLED === 'true';
+            const isSecure = process.env.NODE_ENV === 'production' || process.env.HTTPS_ENABLED === 'true';
             res.cookie('auth_token', token, {
                 httpOnly: true,
                 secure: isSecure,
-                sameSite: isSecure ? 'Strict' : 'Lax',
+                sameSite: isSecure ? 'None' : 'Lax',
                 maxAge: 24 * 60 * 60 * 1000
             });
 
