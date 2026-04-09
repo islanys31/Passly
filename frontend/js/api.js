@@ -15,7 +15,7 @@
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Si estás en local usa la misma IP. Si estás en Vercel, DEBE apuntar a tu backend en Render
-const RENDER_BACKEND_URL = "https://TU_BACKEND.onrender.com"; // <--- ⚠️ CAMBIA ESTO por tu link de Render
+const RENDER_BACKEND_URL = "https://passly-api.onrender.com";
 
 const API_BASE = isLocalhost ? "/api" : `${RENDER_BACKEND_URL}/api`;
 
