@@ -15,28 +15,36 @@
  */
 
 const mysql = require('mysql2/promise'); // Versión compatible con 'async/await' para código limpio
-require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }); // Carga las variables de entorno del archivo .env
+// NOTA: dotenv se carga SOLO en server.js. En producción (Render, Vercel, etc.)
+// las variables ya están inyectadas en process.env por la plataforma.
 
 /**
  * CONFIGURACIÓN DEL POOL
  * Los datos se extraen de variables de entorno por SEGURIDAD.
  * Nunca guardes contraseñas directamente en el código (hardcoded).
  */
+// Log de diagnóstico para verificar variables en producción (sin exponer contraseñas)
+console.log(`[DB Config] HOST=${process.env.DB_HOST} | PORT=${process.env.DB_PORT} | DB=${process.env.DB_NAME} | USER=${process.env.DB_USER} | SSL=${process.env.DB_SSL}`);
+
+if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_NAME) {
+    console.error('❌ CRÍTICO: Faltan variables de entorno de base de datos (DB_HOST, DB_USER o DB_NAME)');
+}
+
 const pool = mysql.createPool({
     host: process.env.DB_HOST,         // Dirección del servidor (ej. localhost)
     user: process.env.DB_USER,         // Usuario de la BD (ej. root)
     password: process.env.DB_PASSWORD, // Contraseña secreta
     database: process.env.DB_NAME,     // Nombre de la base de datos de Passly
-    port: process.env.DB_PORT || 3306, // Puerto estándar de MySQL
+    port: parseInt(process.env.DB_PORT) || 3306, // Puerto - parseInt evita problemas de tipo string
     
     // Configuración de SSL (Requerido por Aiven y otros proveedores de nube)
     ssl: process.env.DB_SSL === 'true' ? {
         rejectUnauthorized: false // Permite certificados auto-firmados comunes en niveles gratuitos
-    } : null,
+    } : false,
     
     // Configuración avanzada de gestión:
     waitForConnections: true, // Si todas las conexiones están en uso, espera en lugar de dar error
-    connectionLimit: 100,     // Aumentado a 100 para soportar picos de inicio de sesión matutinos
+    connectionLimit: 10,      // Reducido para respetar el límite de conexiones de Aiven (plan gratuito)
     queueLimit: 0             // Sin límite de peticiones en espera (cola infinita)
 });
 
