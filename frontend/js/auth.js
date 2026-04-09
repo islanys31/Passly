@@ -377,7 +377,7 @@ async function handleLogin() {
     } else {
         // ERROR: Ya no se refresca la página gracias al cambio en api.js
         setLoading("btnLogin", false);
-        const errorMsg = data?.message || "Credenciales no válidas para el nivel de acceso seleccionado.";
+        const errorMsg = data?.error || data?.message || "Credenciales no válidas para el nivel de acceso seleccionado.";
         showToast(errorMsg, "error");
         
         if (errorEl) {
