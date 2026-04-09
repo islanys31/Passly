@@ -1890,7 +1890,6 @@ async function handleModalSave(type, id) {
     if (id) url += `/${id}`;
 
     // 🛡️ VALIDACIÓN LADO CLIENTE
-    let payload = {};
     if (type === 'usuarios') {
         payload = {
             nombre: document.getElementById('m_nombre').value.trim(),
