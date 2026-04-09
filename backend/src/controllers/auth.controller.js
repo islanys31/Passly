@@ -212,18 +212,24 @@ exports.login = async (req, res) => {
          * pero el navegador lo envía automáticamente al servidor en cada petición. 
          * ¡Es la forma más segura!
          */
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            console.error('CRITICAL: JWT_SECRET is not defined in environment variables');
+            return res.status(500).json({ error: 'Error de configuración del servidor (Missing Secret)' });
+        }
+
         const token = jwt.sign(
             { id: user.id, email: user.email, rol_id: user.rol_id, cliente_id: user.cliente_id },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN }
+            jwtSecret,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
         );
 
-        const isSecure = process.env.HTTPS_ENABLED === 'true';
+        const isProd = process.env.NODE_ENV === 'production';
         res.cookie('auth_token', token, {
-            httpOnly: true, // Invisible para scripts del cliente
-            secure: isSecure, // Solo por HTTPS en producción
-            sameSite: isSecure ? 'Strict' : 'Lax',
-            maxAge: 24 * 60 * 60 * 1000 // Sesión válida por 24 horas
+            httpOnly: true,
+            secure: true, // Siempre true en Render/Vercel (HTTPS)
+            sameSite: 'None', // Requerido para cross-domain (Vercel -> Render)
+            maxAge: 24 * 60 * 60 * 1000
         });
 
         res.json({
