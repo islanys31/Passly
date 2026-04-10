@@ -340,6 +340,10 @@ async function loadView(view, force = false) {
                 title.textContent = "Escáner de Acceso";
                 await renderScanner(content);
                 break;
+            case 'help':
+                title.textContent = "Centro de Ayuda";
+                renderHelpCenter(content);
+                break;
         }
 
         // Aparecer suavemente con un pequeño delay para forzar el reflow del navegador
@@ -2219,3 +2223,435 @@ window.loadView = loadView;
 window.handleLogout = handleLogout;
 window.showModal = showModal;
 
+/**
+ * renderHelpCenter: Centro de Ayuda Interactivo.
+ * 
+ * Muestra guías por rol, información sobre la app, y preguntas frecuentes.
+ * Se adapta al rol del usuario activo.
+ */
+function renderHelpCenter(container) {
+    const role = userData?.rol_id || 2;
+    const roleName = role === 1 ? 'Administrador' : (role === 3 ? 'Seguridad' : 'Residente');
+
+    container.innerHTML = `
+        <div class="help-center">
+            <!-- Hero -->
+            <div class="help-hero">
+                <div class="help-hero-icon">📖</div>
+                <h2>Centro de Ayuda Passly</h2>
+                <p>Encuentra guías, tutoriales y respuestas a todas tus preguntas sobre el sistema de control de acceso.</p>
+                <div class="help-quick-actions">
+                    <div class="help-pill" data-scroll="help-about">🏠 ¿Qué es Passly?</div>
+                    <div class="help-pill" data-scroll="help-role-guide">🎯 Guía para mi Rol</div>
+                    <div class="help-pill" data-scroll="help-features">⚡ Funciones Clave</div>
+                    <div class="help-pill" data-scroll="help-faq">❓ Preguntas Frecuentes</div>
+                </div>
+            </div>
+
+            <!-- Sección 1: ¿Qué es Passly? -->
+            <div class="help-section open" id="help-about">
+                <div class="help-section-header">
+                    <div class="help-section-icon" style="background: hsla(150, 70%, 45%, 0.12); color: hsla(150, 70%, 45%, 1);">🛡️</div>
+                    <div>
+                        <h3>¿Qué es Passly?</h3>
+                        <div class="help-section-desc">Conoce la plataforma de control de acceso inteligente</div>
+                    </div>
+                    <span class="help-section-chevron">▼</span>
+                </div>
+                <div class="help-section-body">
+                    <div class="help-section-content">
+                        <p><strong>Passly</strong> es un sistema de control de acceso inteligente diseñado para copropiedades, conjuntos residenciales y empresas. Digitaliza completamente la gestión de entradas y salidas, eliminando los registros en papel y los procesos manuales lentos.</p>
+                        <p>Con Passly puedes:</p>
+                        <ul>
+                            <li><span class="step-num">✓</span> Controlar accesos en tiempo real con notificaciones instantáneas</li>
+                            <li><span class="step-num">✓</span> Generar códigos QR dinámicos para residentes e invitados temporales</li>
+                            <li><span class="step-num">✓</span> Proteger cuentas con Autenticación de Dos Factores (MFA/2FA)</li>
+                            <li><span class="step-num">✓</span> Visualizar estadísticas y analíticas de tráfico en tiempo real</li>
+                            <li><span class="step-num">✓</span> Gestionar usuarios, dispositivos y vehículos desde un solo panel</li>
+                            <li><span class="step-num">✓</span> Exportar reportes profesionales en CSV y PDF</li>
+                        </ul>
+                        <div class="help-tip-box">
+                            <span>💡</span>
+                            <span>Passly funciona como una <strong>Progressive Web App (PWA)</strong>, lo que significa que puedes instalarla en tu celular como una app nativa desde el navegador.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 2: Guía por Rol -->
+            <div class="help-section" id="help-role-guide">
+                <div class="help-section-header">
+                    <div class="help-section-icon" style="background: hsla(220, 90%, 65%, 0.12); color: hsla(220, 90%, 65%, 1);">🎯</div>
+                    <div>
+                        <h3>Guía según tu Rol</h3>
+                        <div class="help-section-desc">Actualmente estás como: <strong style="color:var(--accent-primary)">${roleName}</strong></div>
+                    </div>
+                    <span class="help-section-chevron">▼</span>
+                </div>
+                <div class="help-section-body">
+                    <div class="help-section-content">
+                        <p>Selecciona un rol para ver la guía específica de sus funciones y permisos:</p>
+                        <div class="help-role-grid">
+                            <div class="help-role-card ${role === 1 ? 'selected' : ''}" data-role="admin">
+                                <span class="help-role-emoji">👨‍💼</span>
+                                <h4>Administrador</h4>
+                                <p>Control total del sistema, usuarios, configuración y auditoría</p>
+                            </div>
+                            <div class="help-role-card ${role === 2 ? 'selected' : ''}" data-role="residente">
+                                <span class="help-role-emoji">🏠</span>
+                                <h4>Residente</h4>
+                                <p>Gestión personal, QR propio, invitados y vehículos</p>
+                            </div>
+                            <div class="help-role-card ${role === 3 ? 'selected' : ''}" data-role="seguridad">
+                                <span class="help-role-emoji">🔒</span>
+                                <h4>Seguridad</h4>
+                                <p>Monitoreo en vivo, escaneo QR y registro de accesos</p>
+                            </div>
+                        </div>
+                        <div id="help-role-detail"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 3: Funciones Clave -->
+            <div class="help-section" id="help-features">
+                <div class="help-section-header">
+                    <div class="help-section-icon" style="background: hsla(280, 50%, 60%, 0.12); color: hsla(280, 50%, 60%, 1);">⚡</div>
+                    <div>
+                        <h3>Funciones y Módulos</h3>
+                        <div class="help-section-desc">Aprende a usar cada función del sistema paso a paso</div>
+                    </div>
+                    <span class="help-section-chevron">▼</span>
+                </div>
+                <div class="help-section-body">
+                    <div class="help-section-content">
+                        <h4 style="margin-bottom:16px; font-size:15px; color:var(--text-primary);">📲 Inicio de Sesión</h4>
+                        <ul>
+                            <li><span class="step-num">1</span> Ingresa tu correo electrónico y contraseña en la pantalla de login</li>
+                            <li><span class="step-num">2</span> Selecciona tu nivel de autorización (Administrador, Residente o Seguridad)</li>
+                            <li><span class="step-num">3</span> Si tienes MFA activado, ingresa el código de 6 dígitos de tu app autenticadora</li>
+                        </ul>
+
+                        <h4 style="margin-bottom:16px; margin-top:24px; font-size:15px; color:var(--text-primary);">🔑 Recuperación de Contraseña</h4>
+                        <ul>
+                            <li><span class="step-num">1</span> Haz clic en "¿Olvidaste tu contraseña?" en la pantalla de login</li>
+                            <li><span class="step-num">2</span> Ingresa el correo registrado y recibirás un código de 6 dígitos (válido por 15 minutos)</li>
+                            <li><span class="step-num">3</span> Ingresa el código y tu nueva contraseña para restablecer el acceso</li>
+                        </ul>
+
+                        <h4 style="margin-bottom:16px; margin-top:24px; font-size:15px; color:var(--text-primary);">📊 Dashboard (Resumen)</h4>
+                        <ul>
+                            <li><span class="step-num">→</span> El panel superior muestra estadísticas en tiempo real: usuarios activos, accesos del día, dispositivos y alertas</li>
+                            <li><span class="step-num">→</span> La tabla "Actividad en Tiempo Real" se actualiza automáticamente vía WebSockets</li>
+                            <li><span class="step-num">→</span> La gráfica de tendencias muestra las horas con más tráfico del día</li>
+                        </ul>
+
+                        <h4 style="margin-bottom:16px; margin-top:24px; font-size:15px; color:var(--text-primary);">📷 Sistema QR</h4>
+                        <ul>
+                            <li><span class="step-num">→</span> <strong>QR Personal:</strong> Genera tu llave digital desde el dashboard → "Generar Llave Segura" → Descárgala</li>
+                            <li><span class="step-num">→</span> <strong>Invitación QR:</strong> En "Accesos" → "+ Manual" → Ingresa nombre y email del invitado → Selecciona duración</li>
+                            <li><span class="step-num">→</span> <strong>Escáner QR:</strong> Ve al Terminal QR → Permite acceso a la cámara → Apunta al código QR</li>
+                        </ul>
+
+                        <h4 style="margin-bottom:16px; margin-top:24px; font-size:15px; color:var(--text-primary);">🔐 Autenticación MFA (2FA)</h4>
+                        <ul>
+                            <li><span class="step-num">1</span> Ve a "Escudo 2FA" en el menú lateral</li>
+                            <li><span class="step-num">2</span> Haz clic en "CONFIGURAR" para generar un código QR de vinculación</li>
+                            <li><span class="step-num">3</span> Escanea el QR con tu app autenticadora (Google Authenticator, Authy)</li>
+                            <li><span class="step-num">4</span> Ingresa el código de verificación de 6 dígitos para activar la protección</li>
+                        </ul>
+
+                        <h4 style="margin-bottom:16px; margin-top:24px; font-size:15px; color:var(--text-primary);">📄 Exportación de Reportes</h4>
+                        <ul>
+                            <li><span class="step-num">CSV</span> En "Historial de Accesos" → Haz clic en el ícono de hoja de cálculo → Se descarga un archivo .csv para Excel</li>
+                            <li><span class="step-num">PDF</span> En "Historial de Accesos" → Haz clic en el ícono de documento → Se genera un PDF profesional con el logo de Passly</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 4: Preguntas Frecuentes -->
+            <div class="help-section" id="help-faq">
+                <div class="help-section-header">
+                    <div class="help-section-icon" style="background: hsla(40, 90%, 55%, 0.12); color: hsla(40, 90%, 55%, 1);">❓</div>
+                    <div>
+                        <h3>Preguntas Frecuentes</h3>
+                        <div class="help-section-desc">Respuestas rápidas a las dudas más comunes</div>
+                    </div>
+                    <span class="help-section-chevron">▼</span>
+                </div>
+                <div class="help-section-body">
+                    <div class="help-section-content">
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Cómo cambio mi contraseña?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">Puedes cambiar tu contraseña desde la pantalla de login haciendo clic en "¿Olvidaste tu contraseña?". Recibirás un código de 6 dígitos en tu correo electrónico (válido por 15 minutos) para restablecer tu clave.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Cómo activo la autenticación de dos factores (MFA)?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">Ve al menú lateral → "Escudo 2FA" → Haz clic en "CONFIGURAR" → Escanea el código QR con Google Authenticator o Authy → Ingresa el código de 6 dígitos que genera la app para verificar y activar la protección.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Cómo genero mi código QR personal?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">En el Dashboard (Resumen), localiza la sección "LLAVE DIGITAL (MFA)" y haz clic en "GENERAR LLAVE SEGURA". Tu QR aparecerá instantáneamente y podrás descargarlo como imagen haciendo clic en el botón de descarga.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Cómo invito a un visitante temporal?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">Ve a "Historial de Accesos" → Haz clic en "+ Manual" → Selecciona la pestaña "Nuevo Invitado (QR)" → Ingresa el nombre y email del invitado → Selecciona la duración (desde 4 horas hasta 1 semana) → El invitado recibirá un correo automático con su QR de acceso temporal.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Qué hago si el escáner QR no reconoce mi código?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">Asegúrate de que: 1) La cámara tiene permiso de acceso al navegador, 2) El código QR no está borroso o dañado, 3) Tu QR no ha expirado (los QR de invitados tienen fecha de vencimiento), 4) Hay suficiente iluminación. Si el problema persiste, genera un nuevo QR desde el dashboard.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Cómo registro un vehículo nuevo?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">Ve al menú lateral → "Gestión de Vehículos" (o "Flota") → Haz clic en "+ Vehículo" → Completa los datos: tipo (Auto, Moto, Bicicleta), placa o identificador, y asigna al propietario.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Puedo exportar los reportes de acceso?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">¡Sí! Ve a "Historial de Accesos" y encontrarás dos botones de exportación: el ícono de hoja de cálculo verde genera un archivo <strong>CSV</strong> que puedes abrir en Excel. El ícono de documento rojo genera un <strong>PDF profesional</strong> con el logo de Passly y formato corporativo.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Qué significan los roles del sistema?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer"><strong>Administrador:</strong> Control total del sistema, puede gestionar usuarios, ver auditorías, configurar la sede y todos los módulos. <strong>Residente:</strong> Gestión personal (su perfil, vehículos, dispositivos, QR e historial propio). <strong>Seguridad:</strong> Monitoreo en vivo, escaneo de QR, búsqueda de usuarios y dispositivos, registro de accesos.</div>
+                        </div>
+
+                        <div class="help-faq-item">
+                            <div class="help-faq-question">
+                                <span>¿Cómo cambio entre modo oscuro y claro?</span>
+                                <span class="help-faq-chevron">▼</span>
+                            </div>
+                            <div class="help-faq-answer">Puedes cambiar el tema visual haciendo clic en el botón "MODO NOCHE/DÍA" que se encuentra en la parte inferior del menú lateral. Tu preferencia se guardará automáticamente para futuras sesiones.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer info -->
+            <div style="text-align:center; padding:24px 0 48px; color:var(--text-muted); font-size:13px;">
+                <p>¿No encontraste lo que buscabas? Contacta al administrador del sistema.</p>
+                <p style="margin-top:8px; font-size:11px; opacity:0.6;">Passly v2.0 · Centro de Ayuda</p>
+            </div>
+        </div>
+    `;
+
+    // Initialize help center interactivity
+    initHelpCenterEvents(container);
+
+    // Auto-show role detail for current user's role
+    const roleMap = { 1: 'admin', 2: 'residente', 3: 'seguridad' };
+    showRoleDetail(roleMap[role] || 'residente');
+}
+
+/**
+ * Initializes all interactive events for the Help Center:
+ * - Accordion sections
+ * - Quick-action pills
+ * - Role cards
+ * - FAQ expand/collapse
+ */
+function initHelpCenterEvents(container) {
+    // Accordion sections
+    container.querySelectorAll('.help-section-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            section.classList.toggle('open');
+        });
+    });
+
+    // Quick pills scroll
+    container.querySelectorAll('.help-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            const targetId = pill.getAttribute('data-scroll');
+            const target = document.getElementById(targetId);
+            if (target) {
+                // Open the section
+                if (!target.classList.contains('open')) {
+                    target.classList.add('open');
+                }
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // Active state on pill
+                container.querySelectorAll('.help-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+            }
+        });
+    });
+
+    // Role cards
+    container.querySelectorAll('.help-role-card').forEach(card => {
+        card.addEventListener('click', () => {
+            container.querySelectorAll('.help-role-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            showRoleDetail(card.getAttribute('data-role'));
+        });
+    });
+
+    // FAQ accordion
+    container.querySelectorAll('.help-faq-item').forEach(item => {
+        item.addEventListener('click', () => {
+            item.classList.toggle('open');
+        });
+    });
+}
+
+/**
+ * Shows the detailed guide for a specific role.
+ */
+function showRoleDetail(role) {
+    const detailContainer = document.getElementById('help-role-detail');
+    if (!detailContainer) return;
+
+    const guides = {
+        admin: {
+            emoji: '👨‍💼',
+            title: 'Guía del Administrador',
+            intro: 'Como Administrador, tienes control total del sistema Passly. Puedes gestionar todos los usuarios, dispositivos, vehículos, configuraciones y acceder a los registros de auditoría.',
+            sections: [
+                {
+                    subtitle: '📋 Panel de Control',
+                    items: [
+                        'Visualiza estadísticas en tiempo real: usuarios activos, accesos del día, alertas del sistema',
+                        'Monitorea la gráfica de tráfico por horas para identificar picos de actividad',
+                        'Accede rápidamente a cualquier módulo desde las tarjetas de estadísticas'
+                    ]
+                },
+                {
+                    subtitle: '👥 Gestión de Identidades',
+                    items: [
+                        'Crea nuevos usuarios con el botón "+ Usuario" asignando nombre, email, rol y contraseña',
+                        'Edita datos de cualquier usuario con el ícono de lápiz (✏️)',
+                        'Inspecciona fichas detalladas con el ícono de lupa (🔍)',
+                        'Desactiva usuarios (soft delete) sin perder su historial'
+                    ]
+                },
+                {
+                    subtitle: '📊 Auditoría y Reportes',
+                    items: [
+                        'Revisa el registro completo de auditoría en "Auditoría" (logs del sistema)',
+                        'Exporta historial de accesos en formato CSV para análisis en Excel',
+                        'Genera reportes PDF profesionales con logo y formato corporativo'
+                    ]
+                }
+            ],
+            tip: 'Como administrador, te recomendamos activar el MFA (2FA) en tu cuenta para máxima seguridad. También revisa periódicamente los logs de auditoría para detectar actividad sospechosa.'
+        },
+        residente: {
+            emoji: '🏠',
+            title: 'Guía del Residente',
+            intro: 'Como Residente, puedes gestionar tu información personal, tus vehículos, dispositivos tecnológicos y generar tu código QR de acceso.',
+            sections: [
+                {
+                    subtitle: '🏠 Tu Panel Personal',
+                    items: [
+                        'Visualiza tu estado de identidad verificada y tus estadísticas del día',
+                        'Revisa tus dispositivos y vehículos registrados desde las tarjetas resumen',
+                        'Genera y descarga tu Llave Digital (QR) para acceso rápido'
+                    ]
+                },
+                {
+                    subtitle: '🚗 Mis Vehículos y Equipos',
+                    items: [
+                        'Registra tus vehículos (auto, moto, bicicleta) con placa e identificador',
+                        'Añade tus dispositivos tecnológicos (portátiles, tablets, etc.)',
+                        'Edita o elimina tus registros cuando sea necesario'
+                    ]
+                },
+                {
+                    subtitle: '📱 Acceso QR e Invitados',
+                    items: [
+                        'Genera tu QR personal desde el dashboard y descárgalo para usarlo',
+                        'Crea invitaciones QR temporales para visitantes con fecha de expiración',
+                        'El invitado recibirá automáticamente un correo con su QR de acceso'
+                    ]
+                }
+            ],
+            tip: 'Mantén tu QR personal actualizado y descárgalo en tu celular para un acceso más rápido. Si cambias de dispositivo, genera un nuevo QR desde el dashboard.'
+        },
+        seguridad: {
+            emoji: '🔒',
+            title: 'Guía del Personal de Seguridad',
+            intro: 'Como Personal de Seguridad, tu rol principal es monitorear accesos en tiempo real, escanear códigos QR y garantizar que solo personas autorizadas ingresen a las instalaciones.',
+            sections: [
+                {
+                    subtitle: '📡 Monitoreo en Vivo',
+                    items: [
+                        'El dashboard muestra accesos en tiempo real actualizados vía WebSockets',
+                        'Las alertas del sistema te notifican eventos importantes instantáneamente',
+                        'La gráfica de tráfico te ayuda a anticipar horarios de mayor afluencia'
+                    ]
+                },
+                {
+                    subtitle: '📷 Terminal de Escaneo QR',
+                    items: [
+                        'Abre "Cámara Escáner" desde el menú lateral para iniciar el escaneo',
+                        'Permite el acceso a la cámara cuando el navegador lo solicite',
+                        'Apunta la cámara al código QR del visitante o residente',
+                        'El sistema validará automáticamente si el QR es válido y registrará el acceso'
+                    ]
+                },
+                {
+                    subtitle: '🔍 Búsqueda Rápida',
+                    items: [
+                        'Busca usuarios por nombre o email en "Identidades"',
+                        'Consulta dispositivos y vehículos registrados en modo solo lectura',
+                        'Revisa el historial de accesos recientes para verificar entradas'
+                    ]
+                }
+            ],
+            tip: 'Si un QR no es reconocido, pide al visitante que regenere su código o contacta al administrador. Recuerda que los QR de invitados tienen fecha de expiración automática.'
+        }
+    };
+
+    const guide = guides[role];
+    if (!guide) return;
+
+    detailContainer.innerHTML = `
+        <div class="help-role-detail">
+            <h4>${guide.emoji} ${guide.title}</h4>
+            <p style="font-size:14px; color:var(--text-secondary); line-height:1.7; margin-bottom:20px;">${guide.intro}</p>
+            ${guide.sections.map(sec => `
+                <h5 style="font-size:14px; font-weight:700; margin:20px 0 12px; color:var(--text-primary);">${sec.subtitle}</h5>
+                <ul>
+                    ${sec.items.map((item, i) => `
+                        <li><span class="step-num">${i + 1}</span> ${item}</li>
+                    `).join('')}
+                </ul>
+            `).join('')}
+            <div class="help-tip-box">
+                <span>💡</span>
+                <span>${guide.tip}</span>
+            </div>
+        </div>
+    `;
+}
