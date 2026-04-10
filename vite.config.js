@@ -8,8 +8,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        dashboard: resolve(__dirname, 'dashboard.html'),
-        scanner: resolve(__dirname, 'scanner.html')
+        dashboard: resolve(__dirname, 'dashboard.html')
       }
     },
     outDir: 'dist'

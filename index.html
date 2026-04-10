@@ -1,17 +1,145 @@
+<!-- 
+    ESTRUCTURA DE ESTUDIO: INDEX.HTML
+    Esta es la puerta de entrada (Landing Page) de Passly. 
+    Aquí se gestiona el acceso inicial y la identidad de los usuarios.
+    Modificado para despliegue en Vercel (Raíz).
+-->
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=/frontend/index.html" />
-    <title>Redirigiendo a Passly...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passly - Control de Acceso Seguro</title>
+    
+    <!-- Estilos base y variables de diseño del sistema -->
+    <link rel="stylesheet" href="frontend/css/index.css?v=11">
+    
+    <!-- El 'manifest' permite que la web se comporte como una App en móviles (PWA) -->
+    <link rel="manifest" href="frontend/manifest.json">
+    
+    <!-- Lucide Icons: Librería ligera de iconos vectoriales -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Lógica de autenticación vinculada al sistema modular -->
+    <script type="module" src="frontend/js/auth.js?v=8"></script>
 </head>
-<body style="background-color: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh;">
-    <script>
-        window.location.href = "/frontend/index.html";
-    </script>
-    <div style="text-align: center;">
-        <p>Iniciando entorno seguro...</p>
-        <p style="font-size: 12px; opacity: 0.5;">Si no es redirigido automáticamente, haga clic <a href="/frontend/index.html" style="color: #60a5fa;">aquí</a>.</p>
+
+<body class="auth-page">
+    <div class="ambient-bg">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        <div class="glow-3"></div>
     </div>
+    <div class="noise-overlay"></div>
+
+    <!-- Navegación de la Landing -->
+    <nav class="landing-navbar">
+        <div class="logo">
+            <i data-lucide="shield-check" style="color:var(--accent-green)"></i>
+            <span>Passly<span>.</span></span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#inicio">Inicio</a></li>
+            <li><a href="#funciones">Funciones</a></li>
+            <li><a href="#nosotros">Nosotros</a></li>
+            <li><a href="#contacto">Contacto</a></li>
+        </ul>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <button class="theme-toggle glass" id="themeToggle" style="position:static; width:40px; height:40px;">
+                <i data-lucide="moon" id="themeIcon"></i>
+            </button>
+            <button class="btn-primary" id="btnNavLogin" style="padding:10px 25px;">Ingresar</button>
+        </div>
+    </nav>
+
+    <!-- Sección HERO -->
+    <header class="hero-section" id="inicio">
+        <div class="hero-content animate-fade-in">
+            <div class="premium-badge">Seguridad de Siguiente Nivel</div>
+            <h1>Gestión de Acceso <span>Inteligente</span> y Segura</h1>
+            <p>Passly transforma la seguridad de tu empresa con tecnología de vanguardia, QR dinámicos y control en tiempo real.</p>
+            <div style="display:flex; gap:20px; justify-content:center;">
+                <button class="btn-primary" id="btnHeroRegister" style="padding:18px 40px; font-size:18px;">Comenzar Ahora</button>
+                <button class="glass" id="btnHeroLearnMore" style="padding:18px 40px; font-size:18px; border:1px solid var(--glass-border);">Saber Más</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sección FUNCIONES -->
+    <section class="landing-section" id="funciones">
+        <div class="section-header">
+            <h2>¿Por qué elegir Passly?</h2>
+            <p style="color:var(--text-muted)">Diseñado para la eficiencia y la seguridad máxima.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="qr-code"></i></div>
+                <h3>QR Dinámicos</h3>
+                <p>Invitaciones temporales seguras que expiras automáticamente para evitar accesos no autorizados.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="zap"></i></div>
+                <h3>Tiempo Real</h3>
+                <p>Monitoreo instantáneo de cada entrada y salida con notificaciones directas a tu dispositivo.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="shield-check"></i></div>
+                <h3>Blindaje MFA</h3>
+                <p>Autenticación de dos factores para asegurar que solo las personas correctas tengan el control.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL DE AUTENTICACIÓN (LOGIN/REGISTRO) -->
+    <div class="modal-overlay" id="authOverlay" style="z-index:2000;">
+        <div class="auth-container" id="authContainer" style="position:relative;">
+            <button id="btnCloseAuth" style="position:absolute; top:-50px; right:0; background:transparent; border:none; color:white; font-size:30px; cursor:pointer;">&times;</button>
+            
+            <header class="auth-header animate-fade-in" style="margin-bottom:30px;">
+                <div class="logo-icon glass">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h1>Passly<span>.</span></h1>
+            </header>
+
+            <!-- Login Card -->
+            <div class="card glass-glow" id="loginCard">
+                <h2 style="margin-bottom: 24px;">Iniciar Sesión</h2>
+                
+                <div class="input-group">
+                    <i data-lucide="mail"></i>
+                    <input id="emailLogin" type="email" placeholder="Correo Corporativo">
+                </div>
+                <p id="emailLoginError" class="error-message" style="display:none;"></p>
+                
+                <div class="input-group">
+                    <i data-lucide="lock"></i>
+                    <input id="passLogin" type="password" placeholder="Contraseña">
+                    <button class="btn-icon" id="togglePassLogin" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); opacity:0.7;">
+                        <i data-lucide="eye"></i>
+                    </button>
+                </div>
+                <p id="passLoginError" class="error-message" style="display:none;"></p>
+
+                <div class="input-group">
+                    <i data-lucide="briefcase"></i>
+                    <select id="rolLogin">
+                        <option value="" disabled selected>Nivel de Autorización</option>
+                        <option value="4">Super Admin (Global)</option>
+                        <option value="1">Administrador</option>
+                        <option value="2">Residente</option>
+                        <option value="3">Seguridad</option>
+                    </select>
+                </div>
+                <p id="resetLink" class="link-text" style="margin:15px 0; font-size:12px; text-align:right;">¿Olvidó su contraseña?</p>
+                <p id="loginError" class="error-message" style="display:none;"></p>
+                <button id="btnLogin" class="btn-primary" style="width:100%;">ENTRAR AL SISTEMA</button>
+                <p style="margin-top:20px; font-size:13px; opacity:0.8;">¿No tienes cuenta? <span class="link-text" id="toRegister">Regístrate aquí</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts se cargan desde el head con type="module" -->
 </body>
 </html>
