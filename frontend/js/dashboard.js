@@ -121,11 +121,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadView('overview');
 
     // 4. TIEMPO REAL: Abrir canal de comunicación bidireccional
-    setupSocket();
+    try {
+        setupSocket();
+    } catch (err) {
+        console.warn("⚠️ No se pudo inicializar WebSockets (Tiempo Real). Continuando en modo estándar.", err);
+    }
 
     // 5. Configurar Botón Flotante de Soporte (Creative Feature)
-    const fab = document.getElementById('supportFAB');
-    if (fab) fab.onclick = () => loadView('help', true);
+    try {
+        const fab = document.getElementById('supportFAB');
+        if (fab) fab.onclick = () => loadView('help', true);
+    } catch (err) {
+        console.error("❌ Falló al inicializar el botón de soporte:", err);
+    }
 
     // 6. Inicializar Centro de Notificaciones
     initNotifications();
@@ -1864,11 +1872,12 @@ async function handleModalSave(type, id) {
         const expirationHours = document.getElementById('guest_expires').value;
         if (!guestName) return showToast("Nombre del invitado requerido", "warning");
 
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = `< span class="loading-spinner" ></span > Generando...`;
-
         const btnSave = document.getElementById('btnSave');
-        if (btnSave) btnSave.classList.add('btn-loading');
+        if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.innerHTML = `<span class="loading-spinner"></span> Generando...`;
+            btnSave.classList.add('btn-loading');
+        }
 
         try {
             const res = await apiRequest('/accesos/invitation', 'POST', { guestName, guestEmail, expirationHours });
@@ -1920,6 +1929,9 @@ async function handleModalSave(type, id) {
  * y refresca la tabla de accesos automáticamente sin que nadie toque nada.
  */
 function setupSocket() {
+    if (typeof io === 'undefined') {
+        throw new Error("Librería socket.io no cargada.");
+    }
     const socket = io(); // Conexión persistente con el servidor
 
     // Escucha eventos globales de actualización
