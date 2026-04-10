@@ -158,13 +158,27 @@ function initEventListeners() {
     const rolLoginField = document.getElementById('rolLogin');
     if (rolLoginField) rolLoginField.oninput = clearLoginError;
 
-    // Entradas del Registro
     const regInputs = [
         { id: 'nombreRegistro', type: 'text' },
         { id: 'apellidoRegistro', type: 'text' },
         { id: 'emailRegistro', type: 'email' },
         { id: 'rolRegistro', type: 'select' }
     ];
+
+    const rolRegistroField = document.getElementById('rolRegistro');
+    if (rolRegistroField) {
+        rolRegistroField.onchange = (e) => {
+            const val = e.target.value;
+            const secretGroup = document.getElementById('secretCodeGroup');
+            if (val === '1' || val === '3') {
+                secretGroup.style.display = 'flex';
+            } else {
+                secretGroup.style.display = 'none';
+                document.getElementById('secretCodeRegistro').value = '';
+            }
+            clearFormError(e.target);
+        };
+    }
 
     regInputs.forEach(input => {
         const el = document.getElementById(input.id);
@@ -399,12 +413,18 @@ async function handleRegister() {
     const password = document.getElementById("passRegistro")?.value;
     const confirm = document.getElementById("passConfirm")?.value;
     const rol_id = document.getElementById("rolRegistro")?.value;
+    const secret_code = document.getElementById("secretCodeRegistro")?.value.trim();
     const aceptoCheckbox = document.getElementById("aceptoTerminos");
     const acepto = aceptoCheckbox ? aceptoCheckbox.checked : false;
 
     // Validación Final
     if (!nombre || !apellido || !email || !password || !rol_id) {
         showToast("Por favor, completa todos los campos requeridos.", "error");
+        return;
+    }
+
+    if ((rol_id === '1' || rol_id === '3') && !secret_code) {
+        showToast("Se requiere código de autorización para este rol.", "error");
         return;
     }
 
@@ -431,7 +451,7 @@ async function handleRegister() {
 
     setLoading("btnRegistrar", true);
     const { ok, data, error } = await apiRequest("/auth/register", "POST", {
-        nombre, apellido, email, password, rol_id
+        nombre, apellido, email, password, rol_id, secret_code
     });
     setLoading("btnRegistrar", false);
 

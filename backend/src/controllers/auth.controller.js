@@ -25,7 +25,7 @@ const emailService = require('../services/email.service'); // Notificaciones al 
  */
 exports.register = async (req, res) => {
     try {
-        const { nombre, apellido, email, password, cliente_id, rol_id } = req.body;
+        const { nombre, apellido, email, password, cliente_id, rol_id, secret_code } = req.body;
 
         console.log(`📝 INTENTO DE REGISTRO: ${email} (Rol ID: ${rol_id})`);
 
@@ -33,6 +33,15 @@ exports.register = async (req, res) => {
         if (!nombre || !apellido || !email || !password || !rol_id) {
             console.error('❌ REGISTRO FALLIDO: Faltan campos obligatorios');
             return res.status(400).json({ error: 'Todos los campos son obligatorios para el registro' });
+        }
+
+        // Blindaje de seguridad para la creación de Administradores (1) o Seguridad (3)
+        const SECRET_AUTH_CODE = process.env.SECRET_AUTH_CODE || 'DOCENTES_2026';
+        if (rol_id == 1 || rol_id == 3) {
+            if (secret_code !== SECRET_AUTH_CODE) {
+                console.error(`❌ REGISTRO RECHAZADO: Intentaron crear Rol ${rol_id} con código inválido`);
+                return res.status(403).json({ error: 'Código especial de autorización inválido' });
+            }
         }
 
         // 2. ¿El correo ya existe?

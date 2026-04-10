@@ -138,9 +138,9 @@ exports.sendVerificationEmail = async (to, userName, token) => {
     const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/verify?token=${token}`;
     
     const mailOptions = {
-        from: `"Passly Security" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
+        from: `"Proyecto Passly" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
         to: to,
-        subject: '🚀 ¡Bienvenido a Passly! Verifica tu cuenta',
+        subject: '🚀 ¡Bienvenido al Proyecto Passly! Verifica tu cuenta',
         html: `
             <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 16px;">
                 <div style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); padding: 50px 20px; text-align: center; border-radius: 12px 12px 0 0;">
@@ -148,7 +148,7 @@ exports.sendVerificationEmail = async (to, userName, token) => {
                 </div>
                 <div style="background: white; padding: 40px; border-radius: 0 0 12px 12px; border: 1px solid #eee; border-top: none; text-align: center;">
                     <p style="color: #444; line-height: 1.6; font-size: 16px; margin-bottom: 30px;">
-                        Para asegurar tu identidad y activar tu acceso, por favor verifica tu correo:
+                        Para asegurar tu identidad en el proyecto y activar tu acceso, por favor verifica tu correo:
                     </p>
                     <a href="${verificationLink}" 
                        style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); color: white; padding: 18px 36px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 18px; display: inline-block;">
@@ -176,9 +176,9 @@ exports.sendVerificationEmail = async (to, userName, token) => {
  */
 exports.sendWelcomeEmail = async (to, userName) => {
     const mailOptions = {
-        from: `"Passly Security" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
+        from: `"Proyecto Passly" <${process.env.EMAIL_USER || 'noreply.passly@gmail.com'}>`,
         to: to,
-        subject: '🚀 ¡Todo listo en Passly!',
+        subject: '🚀 ¡Todo listo en el Proyecto Passly!',
         html: `
             <div style="font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden;">
                 <div style="background: linear-gradient(135deg, ${APP_COLOR_PRIMARY}, ${APP_COLOR_ACCENT}); padding: 60px 20px; text-align: center;">
@@ -188,9 +188,9 @@ exports.sendWelcomeEmail = async (to, userName) => {
                     <h1 style="color: white; margin: 0; font-size: 42px; font-weight: 900; letter-spacing: -1px;">¡Bienvenido ${userName}!</h1>
                 </div>
                 <div style="padding: 50px 40px; text-align: center;">
-                    <h2 style="color: #1e293b; font-size: 24px; margin-top: 0; font-weight: 800;">Tu cuenta está verificada</h2>
+                    <h2 style="color: #1e293b; font-size: 24px; margin-top: 0; font-weight: 800;">Tu cuenta de proyecto está verificada</h2>
                     <p style="color: #475569; line-height: 1.8; font-size: 16px; margin-bottom: 40px;">
-                        Descubre una nueva era de gestión y seguridad. Ya puedes acceder al panel de control de Passly y explorar todas las herramientas disponibles.
+                        Descubre una nueva era de gestión y seguridad en este proyecto. Ya puedes acceder al panel de control de Passly y explorar todas las herramientas disponibles.
                     </p>
                     <div style="margin: 40px 0 20px;">
                         <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}" 

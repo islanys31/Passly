@@ -332,6 +332,10 @@ async function loadView(view, force = false) {
                 title.textContent = "Mi Perfil Personal";
                 await renderMiPerfil(content);
                 break;
+            case 'security':
+                title.textContent = "Escudo 2FA";
+                await renderSecurity(content);
+                break;
             case 'scanner':
                 title.textContent = "Escáner de Acceso";
                 await renderScanner(content);
