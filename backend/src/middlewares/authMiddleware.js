@@ -133,16 +133,20 @@ const verifyToken = async (req, res, next) => {
 
 /**
  * Middleware para restringir el acceso basado en el Rol del usuario.
- * @param {Array<number>} roles - Lista de IDs de roles permitidos (ej: [1] para Admin)
+ * @param {Array<number>} roles - Lista de IDs de roles permitidos (ej: [1] para Admin, [4] para Super Admin)
  */
 const verifyRole = (roles) => {
     return (req, res, next) => {
         /**
-         * Si el rol del usuario (extraído del JWT) no está en la lista permitida, 
-         * bloqueamos el acceso con un error 403 (Forbidden).
+         * SEGURIDAD PASSLY PRO: El Super Admin (ID 4) tiene bypass automático 
+         * en la mayoría de verificaciones de rol administrativas.
          */
+        if (req.user && req.user.rol_id === 4) {
+            return next();
+        }
+
         if (!req.user || !roles.includes(req.user.rol_id)) {
-            return res.status(403).json({ error: 'Acceso denegado: Permisos insuficientes para realizar esta acción' });
+            return res.status(403).json({ error: 'Acceso denegado: Permisos insuficientes' });
         }
         next();
     };

@@ -57,7 +57,48 @@ server.on('error', (e) => {
     }
 });
 
+/**
+ * AUTO-MIGRACIÓN PASSLY PRO
+ * Este bloque asegura que la base de datos tenga las columnas y roles necesarios
+ * para las funciones avanzadas de marca blanca y super-administración.
+ */
+async function runProMigration() {
+    try {
+        console.log("🕵️ Chequeando esquema Passly Pro...");
+        
+        // 1. Columna logo_url en clientes
+        const [columns] = await pool.query("SHOW COLUMNS FROM clientes LIKE 'logo_url'");
+        if (columns.length === 0) {
+            await pool.query("ALTER TABLE clientes ADD COLUMN logo_url VARCHAR(255) DEFAULT NULL;");
+            console.log("✅ Sistema: Esquema de Clientes actualizado (logo_url).");
+        }
+
+        // 2. Rol Super Admin (ID 4)
+        const [roles] = await pool.query("SELECT * FROM roles WHERE id = 4");
+        if (roles.length === 0) {
+            await pool.query("INSERT INTO roles (id, nombre_rol, descripcion) VALUES (4, 'Super Admin', 'Control maestro global');");
+            console.log("✅ Sistema: Rol Super Admin habilitado.");
+        }
+
+        // 3. Crear Usuario Super Admin Maestro
+        const [superAdmin] = await pool.query("SELECT * FROM usuarios WHERE email = 'superadmin@passly.com'");
+        if (superAdmin.length === 0) {
+            const bcrypt = require('bcrypt');
+            const salt = await bcrypt.genSalt(10);
+            const hashed = await bcrypt.hash('SuperPass2026!', salt);
+            await pool.query(
+                "INSERT INTO usuarios (nombre, apellido, email, password, rol_id, cliente_id, estado_id) VALUES (?, ?, ?, ?, 4, 1, 1)",
+                ['Super', 'Admin', 'superadmin@passly.com', hashed]
+            );
+            console.log("🔑 Sistema: Usuario Super Admin creado (superadmin@passly.com / SuperPass2026!)");
+        }
+    } catch (err) {
+        console.warn("⚠️ Advertencia en migración Pro:", err.message);
+    }
+}
+
 server.listen(PORT, '0.0.0.0', async () => {
+    await runProMigration();
     try {
         // Prueba de conexión a la base de datos
         await pool.query('SELECT 1');

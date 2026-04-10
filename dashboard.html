@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passly Pro - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <style>
+        /* Estilos específicos del layout Pro */
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen flex overflow-hidden">
+
+    <!-- Sidebar Lateral -->
+    <aside id="sidebar" class="w-72 glass-sidebar flex flex-col transition-all duration-300">
+        <div class="p-8 flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+                <i data-lucide="shield-check" class="text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-xl text-white tracking-tighter">Passly<span class="text-blue-500">.</span></h1>
+                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Version Pro</span>
+            </div>
+        </div>
+
+        <!-- Menú Dinámico -->
+        <div id="sidebar-menu" class="flex-grow px-4 overflow-y-auto custom-scrollbar">
+            <!-- Cargado por dashboard_main.js -->
+        </div>
+
+        <!-- Perfil y Logout -->
+        <div class="p-4 border-t border-slate-800/50">
+            <button id="profile-trigger" class="flex items-center w-full p-3 hover:bg-slate-800/50 rounded-xl transition-all group">
+                <div id="side-avatar" class="w-10 h-10 rounded-lg avatar-p flex items-center justify-center mr-3">P</div>
+                <div class="text-left flex-grow">
+                    <p class="text-sm font-bold text-white group-hover:text-blue-400">Usuario Passly</p>
+                    <p class="text-[10px] text-slate-500 font-mono">Ver Perfil</p>
+                </div>
+            </button>
+            <button id="logout-btn" class="mt-2 flex items-center w-full px-4 py-3 text-slate-500 hover:text-red-400 text-xs font-bold transition-colors">
+                <i data-lucide="log-out" class="w-4 h-4 mr-3"></i> CERRAR SESIÓN
+            </button>
+        </div>
+    </aside>
+
+    <!-- Área Principal de Contenido -->
+    <main class="flex-grow flex flex-col relative overflow-hidden">
+        <!-- Barra Superior -->
+        <header class="h-16 flex items-center justify-end px-8 border-b border-slate-800/50 bg-slate-900/20 backdrop-blur-md z-10">
+            <div class="flex items-center gap-6">
+                <div class="relative">
+                    <i data-lucide="bell" class="w-5 h-5 text-slate-400 hover:text-white cursor-pointer transition-colors"></i>
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </div>
+                <div class="h-6 w-[1px] bg-slate-800"></div>
+                <span id="header-date" class="text-[10px] font-bold text-slate-500 font-mono uppercase">Viernes, 10 de Abril</span>
+            </div>
+        </header>
+
+        <!-- Contenedor de Vistas -->
+        <div id="main-content" class="flex-grow overflow-y-auto custom-scrollbar">
+            <!-- Cargado dinámicamente por router.js -->
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script type="module" src="src/js/dashboard_main.js"></script>
+</body>
+</html>
