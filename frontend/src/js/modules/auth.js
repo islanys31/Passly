@@ -22,9 +22,9 @@ export async function checkSession() {
 export async function handleLogout() {
     try {
         await fetchAPI('/auth/logout', { method: 'POST' });
-        window.location.href = '/login.html';
+        window.location.href = '/';
     } catch (error) {
         console.error("Error al cerrar sesión:", error);
-        window.location.href = '/login.html';
+        window.location.href = '/';
     }
 }
