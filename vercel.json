@@ -1,8 +1,4 @@
 {
   "version": 2,
-  "framework": "vite",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://passly-api.onrender.com/api/$1" }
-  ],
-  "cleanUrls": true
+  "framework": "vite"
 }
