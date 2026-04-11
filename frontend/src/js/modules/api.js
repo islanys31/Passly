@@ -44,9 +44,9 @@ export async function fetchAPI(endpoint, options = {}) {
         
         // Manejo automático de expiración de sesión
         if (response.status === 401 && !endpoint.includes('/auth/login')) {
-            console.warn("Sesión expirada. Redirigiendo...");
+            console.warn("Sesión expirada. Limpiando credenciales...");
             localStorage.removeItem('auth_token');
-            window.location.href = '/';
+            localStorage.removeItem('usuario_activo');
         }
 
         return response;

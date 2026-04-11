@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Verificar Sesión
     const user = await checkSession();
     if (!user) {
-        window.location.href = '/';
+        window.location.href = '/?session_failed=true';
         return;
     }
 

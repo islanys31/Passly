@@ -34,9 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * [ESTUDIO: PERSISTENCIA DE SESIÓN]
      * Si ya tenemos un token, redirigimos al Dashboard. 
-     * Esto evita que un usuario ya logueado vea de nuevo la pantalla de Login.
+     * Agregamos un chequeo para evitar bucles si venimos de un fallo.
      */
-    if (localStorage.getItem('auth_token') && localStorage.getItem('usuario_activo')) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionFailed = urlParams.has('session_failed') || !localStorage.getItem('auth_token');
+
+    if (!sessionFailed && localStorage.getItem('auth_token') && localStorage.getItem('usuario_activo')) {
+        console.log("✨ Sesión detectada, entrando al Dashboard...");
         window.location.href = "dashboard.html";
     }
 

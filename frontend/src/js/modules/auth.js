@@ -12,9 +12,13 @@ export async function checkSession() {
             const data = await response.json();
             return data.user;
         }
+        // Si no es OK, limpiamos para evitar bucles
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('usuario_activo');
         return null;
     } catch (error) {
         console.error("Error verificando sesión:", error);
+        localStorage.removeItem('auth_token');
         return null;
     }
 }
@@ -22,9 +26,10 @@ export async function checkSession() {
 export async function handleLogout() {
     try {
         await fetchAPI('/auth/logout', { method: 'POST' });
-        window.location.href = '/';
     } catch (error) {
-        console.error("Error al cerrar sesión:", error);
+        console.error("Error al cerrar sesión en servidor:", error);
+    } finally {
+        localStorage.clear();
         window.location.href = '/';
     }
 }
