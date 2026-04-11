@@ -12,7 +12,8 @@ window.onerror = function(msg, url, line) {
     alert("⚠️ FALLO CRÍTICO PASSLY:\n" + msg + "\nEn: " + url + " L:" + line);
 };
 
-import { apiRequest, checkAuth } from './api.js';
+import { fetchAPI as apiRequest } from '@pro/api_service.js';
+import { checkSession as checkAuth, handleLogout } from '@pro/auth.js';
 import { initTheme } from './theme.js';
 import {
     validarEmail,
