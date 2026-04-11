@@ -3,7 +3,7 @@
  * @description Vista de configuración de seguridad (2FA) para Passly Pro.
  */
 
-import { fetchAPI } from '../modules/api.js';
+import { fetchAPI } from '@pro/api_service.js';
 import { showToast } from '../modules/utils.js';
 
 export async function render(container) {

@@ -3,7 +3,7 @@
  * @description Vista general del Dashboard con estadísticas para Passly Pro.
  */
 
-import { fetchAPI } from '../modules/api.js';
+import { fetchAPI } from '@pro/api_service.js';
 
 export async function render(container) {
     container.innerHTML = `

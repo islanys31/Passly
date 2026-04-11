@@ -3,7 +3,7 @@
  * @description Vista de gestión de perfil de usuario con soporte para Avatar 'P'.
  */
 
-import { fetchAPI } from '../modules/api.js';
+import { fetchAPI } from '@pro/api_service.js';
 import { showToast, getInitialsAvatar } from '../modules/utils.js';
 
 export async function render(container) {

@@ -3,7 +3,7 @@
  * @description Vista de gestión de usuarios/identidades en Passly Pro.
  */
 
-import { fetchAPI } from '../modules/api.js';
+import { fetchAPI } from '@pro/api_service.js';
 import { showToast, escapeHTML } from '../modules/utils.js';
 import { exportToPDF } from '../modules/branding.js';
 
