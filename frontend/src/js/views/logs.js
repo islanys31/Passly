@@ -3,7 +3,7 @@
  * @description Vista de Auditoría Maestra para Passly Pro.
  */
 
-import { fetchAPI } from '@pro/api_service.js';
+import { fetchAPI } from '../modules/api_service.js';
 
 export async function render(container) {
     container.innerHTML = `

@@ -6,12 +6,12 @@
 const contentArea = document.getElementById('view-content');
 
 const routes = {
-    'overview': () => import('@/frontend/src/js/views/overview.js'),
-    'usuarios': () => import('@/frontend/src/js/views/identities.js'),
-    'sedes': () => import('@/frontend/src/js/views/sedes.js'),
-    'perfil': () => import('@/frontend/src/js/views/perfil.js'),
-    'logs': () => import('@/frontend/src/js/views/logs.js'),
-    'security': () => import('@/frontend/src/js/views/security.js')
+    'overview': () => import('./views/overview.js'),
+    'usuarios': () => import('./views/identities.js'),
+    'sedes': () => import('./views/sedes.js'),
+    'perfil': () => import('./views/perfil.js'),
+    'logs': () => import('./views/logs.js'),
+    'security': () => import('./views/security.js')
 };
 
 export async function navigateTo(viewId) {
