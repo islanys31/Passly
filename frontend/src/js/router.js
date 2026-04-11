@@ -3,7 +3,7 @@
  * @description Maneja la carga dinámica de vistas sin recargar la página.
  */
 
-const contentArea = document.getElementById('main-content');
+const contentArea = document.getElementById('view-content');
 
 const routes = {
     'overview': () => import('./views/overview.js'),

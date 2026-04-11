@@ -1,7 +1,6 @@
 <!-- 
-    ESTRUCTURA DE ESTUDIO: INDEX.HTML (Versión Pro Restaurada)
-    Esta es la puerta de entrada de Passly con soporte para Super Admin y Onboarding.
-    Optimizado para despliegue en Vercel (Raíz).
+    ESTRUCTURA DE ESTUDIO: INDEX.HTML (Versión Pro - Estética Restaurada)
+    Esta es la puerta de entrada original de Passly adaptada para el sistema Pro.
 -->
 <!DOCTYPE html>
 <html lang="es">
@@ -10,17 +9,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passly - Control de Acceso Seguro</title>
     
-    <!-- Estilos base y variables de diseño del sistema -->
-    <link rel="stylesheet" href="frontend/css/index.css?v=12">
+    <!-- Estilos originales (Wow Factor) -->
+    <link rel="stylesheet" href="/frontend/css/index.css?v=13">
+    <link rel="manifest" href="/frontend/manifest.json">
     
-    <!-- El 'manifest' permite que la web se comporte como una App en móviles (PWA) -->
-    <link rel="manifest" href="frontend/manifest.json">
-    
-    <!-- Lucide Icons: Librería ligera de iconos vectoriales -->
+    <!-- Librerías Externas -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Lógica de autenticación vinculada al sistema modular -->
-    <script type="module" src="frontend/js/auth.js?v=9"></script>
+    <!-- Lógica de autenticación Pro -->
+    <script type="module" src="/frontend/js/auth.js?v=10"></script>
 </head>
 
 <body class="auth-page">
@@ -64,37 +61,46 @@
         </div>
     </header>
 
-    <!-- MODAL DE AUTENTICACIÓN (LOGIN/REGISTRO) -->
+    <!-- Sección FUNCIONES -->
+    <section class="landing-section" id="funciones">
+        <div class="section-header">
+            <h2>¿Por qué elegir Passly?</h2>
+            <p style="color:var(--text-muted)">Diseñado para la eficiencia y la seguridad máxima.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card animate-slide-up">
+                <div class="feature-icon"><i data-lucide="qr-code"></i></div>
+                <h3>QR Dinámicos</h3>
+                <p>Invitaciones temporales seguras que expiran automáticamente.</p>
+            </div>
+            <div class="feature-card animate-slide-up" style="animation-delay:0.2s">
+                <div class="feature-icon"><i data-lucide="zap"></i></div>
+                <h3>Tiempo Real</h3>
+                <p>Monitoreo instantáneo de cada entrada y salida.</p>
+            </div>
+            <div class="feature-card animate-slide-up" style="animation-delay:0.4s">
+                <div class="feature-icon"><i data-lucide="shield-check"></i></div>
+                <h3>Blindaje MFA</h3>
+                <p>Autenticación de dos factores para control total.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL DE AUTENTICACIÓN -->
     <div class="modal-overlay" id="authOverlay" style="z-index:2000;">
         <div class="auth-container" id="authContainer" style="position:relative;">
             <button id="btnCloseAuth" style="position:absolute; top:-50px; right:0; background:transparent; border:none; color:white; font-size:30px; cursor:pointer;">&times;</button>
             
             <header class="auth-header animate-fade-in" style="margin-bottom:30px;">
-                <div class="logo-icon glass">
-                    <i data-lucide="shield-check"></i>
-                </div>
+                <div class="logo-icon glass"><i data-lucide="shield-check"></i></div>
                 <h1>Passly<span>.</span></h1>
             </header>
 
             <!-- Login Card -->
             <div class="card glass-glow" id="loginCard">
                 <h2 style="margin-bottom: 24px;">Iniciar Sesión</h2>
-                
-                <div class="input-group">
-                    <i data-lucide="mail"></i>
-                    <input id="emailLogin" type="email" placeholder="Correo Corporativo">
-                </div>
-                <p id="emailLoginError" class="error-message" style="display:none;"></p>
-                
-                <div class="input-group">
-                    <i data-lucide="lock"></i>
-                    <input id="passLogin" type="password" placeholder="Contraseña">
-                    <button class="btn-icon" id="togglePassLogin" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); opacity:0.7;">
-                        <i data-lucide="eye"></i>
-                    </button>
-                </div>
-                <p id="passLoginError" class="error-message" style="display:none;"></p>
-
+                <div class="input-group"><i data-lucide="mail"></i><input id="emailLogin" type="email" placeholder="Correo Corporativo"></div>
+                <div class="input-group"><i data-lucide="lock"></i><input id="passLogin" type="password" placeholder="Contraseña"></div>
                 <div class="input-group">
                     <i data-lucide="briefcase"></i>
                     <select id="rolLogin">
@@ -106,30 +112,22 @@
                     </select>
                 </div>
                 <p id="resetLink" class="link-text" style="margin:15px 0; font-size:12px; text-align:right;">¿Olvidó su contraseña?</p>
-                <p id="loginError" class="error-message" style="display:none;"></p>
                 <button id="btnLogin" class="btn-primary" style="width:100%;">ENTRAR AL SISTEMA</button>
                 <p style="margin-top:20px; font-size:13px; opacity:0.8;">¿No tienes cuenta? <span class="link-text" id="toRegister">Regístrate aquí</span></p>
             </div>
 
-            <!-- Registro Card (RESTAURADA) -->
+            <!-- Registro Card -->
             <div class="card glass-glow hidden" id="registroCard">
                 <h2 style="margin-bottom:24px;">Crear Cuenta</h2>
-                
                 <div class="auth-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-                    <div class="input-group"><input id="nombreRegistro" type="text" placeholder="Nombre"></div>
-                    <div class="input-group"><input id="apellidoRegistro" type="text" placeholder="Apellido"></div>
+                    <input id="nombreRegistro" type="text" placeholder="Nombre" class="glass">
+                    <input id="apellidoRegistro" type="text" placeholder="Apellido" class="glass">
                 </div>
-                
-                <div class="input-group">
-                    <i data-lucide="mail"></i>
-                    <input id="emailRegistro" type="email" placeholder="Email">
-                </div>
-
+                <div class="input-group"><i data-lucide="mail"></i><input id="emailRegistro" type="email" placeholder="Email"></div>
                 <div class="auth-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-                    <div class="input-group"><input id="passRegistro" type="password" placeholder="Contraseña"></div>
-                    <div class="input-group"><input id="passConfirm" type="password" placeholder="Confirmar"></div>
+                    <input id="passRegistro" type="password" placeholder="Contraseña" class="glass">
+                    <input id="passConfirm" type="password" placeholder="Confirmar" class="glass">
                 </div>
-
                 <div class="input-group">
                     <i data-lucide="briefcase"></i>
                     <select id="rolRegistro">
@@ -140,36 +138,10 @@
                         <option value="3">Seguridad</option>
                     </select>
                 </div>
-                <div class="input-group" id="secretCodeGroup" style="display:none; margin-top:16px;">
-                    <i data-lucide="key"></i>
-                    <input id="secretCodeRegistro" type="password" placeholder="Código de Autorización Interno">
-                </div>
-                
                 <button id="btnRegistrar" class="btn-primary" style="width:100%; margin-top:15px;">REGISTRARME</button>
                 <p style="margin-top:20px; font-size:13px; opacity:0.8;">¿Ya tienes cuenta? <span class="link-text" id="toLogin">Ingresa ahora</span></p>
             </div>
         </div>
     </div>
-
-    <!-- Recuperación Modal (RESTAURADO) -->
-    <div class="modal-overlay" id="recoveryModal">
-        <div class="modal-content glass-glow animate-slide-up" style="max-width:400px; text-align:center;">
-            <div class="stat-icon" style="margin-inline:auto; background:hsla(220, 90%, 65%, 0.1); color:hsla(220, 90%, 65%, 1); margin-bottom:20px;">
-                <i data-lucide="key-round"></i>
-            </div>
-            <h2 style="margin-bottom:8px;">Restablecer Acceso</h2>
-            <div id="recoveryStep1">
-                <div class="input-group" style="margin-bottom:16px;">
-                    <i data-lucide="mail"></i>
-                    <input id="recoveryEmail" type="email" placeholder="Correo Registrado">
-                </div>
-                <button id="btnSendRecovery" class="btn-primary" style="width:100%;">SOLICITAR TOKEN</button>
-            </div>
-            <button id="btnCancelRecovery" style="width:100%; margin-top:16px; background:transparent; border:1px solid var(--glass-border); font-size:13px; opacity:0.7;">
-                CANCELAR SOLICITUD
-            </button>
-        </div>
-    </div>
-
 </body>
 </html>

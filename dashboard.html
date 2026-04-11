@@ -1,76 +1,129 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passly Pro - Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Passly Pro - Panel de Control</title>
+    
+    <!-- Estilos Originales (Wow Factor) -->
+    <link rel="stylesheet" href="/frontend/css/index.css?v=13">
+    <link rel="manifest" href="/frontend/manifest.json">
+    
+    <!-- Chart.js: Para dibujar las gráficas de estadísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide: Iconos vectoriales -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="frontend/src/styles/main.css">
+    
+    <!-- Lógica del Panel de Control Pro -->
+    <script type="module" src="/frontend/src/js/dashboard_main.js?v=10"></script>
+    
     <style>
-        /* Estilos específicos del layout Pro */
-        .glass-sidebar {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        /* Ajuste para el logo interactivo solicitado por el usuario */
+        #sidebar-logo-container {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        #sidebar-logo-container:hover {
+            transform: scale(1.05);
+        }
+        #sidebar-logo-container:hover::after {
+            content: 'Cambiar Logo';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: var(--accent-secondary);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .client-logo-img {
+            max-width: 100%;
+            max-height: 40px;
+            object-fit: contain;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen flex overflow-hidden">
 
-    <!-- Sidebar Lateral -->
-    <aside id="sidebar" class="w-72 glass-sidebar flex flex-col transition-all duration-300">
-        <div class="p-8 flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-                <i data-lucide="shield-check" class="text-white"></i>
-            </div>
-            <div>
-                <h1 class="font-black text-xl text-white tracking-tighter">Passly<span class="text-blue-500">.</span></h1>
-                <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Version Pro</span>
-            </div>
+<body>
+  <div class="dashboard-container">
+    
+    <!-- BARRA LATERAL (SIDEBAR): Navegación de Módulos -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <!-- Área del Logo del Cliente (Interactivo) -->
+          <div id="sidebar-logo-container" title="Haz clic para subir tu logo">
+              <h1 id="sidebar-logo">PASSLY</h1>
+              <input type="file" id="client-logo-input" accept="image/*" style="display:none;">
+          </div>
+          <button id="toggleSidebar" class="btn-icon" title="Control de Menú">☰</button>
         </div>
+      </div>
+      
+      <!-- Menú dinámico -->
+      <nav class="nav-menu" id="nav-menu">
+        <!-- Renderizado dinámicamente en dashboard_main.js -->
+      </nav>
 
-        <!-- Menú Dinámico -->
-        <div id="sidebar-menu" class="flex-grow px-4 overflow-y-auto custom-scrollbar">
-            <!-- Cargado por dashboard_main.js -->
+      <div class="sidebar-footer">
+        <div class="theme-toggle" id="themeToggle">
+          <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+          <span class="theme-toggle-text" id="themeText">MODO NOCHE</span>
         </div>
-
-        <!-- Perfil y Logout -->
-        <div class="p-4 border-t border-slate-800/50">
-            <button id="profile-trigger" class="flex items-center w-full p-3 hover:bg-slate-800/50 rounded-xl transition-all group">
-                <div id="side-avatar" class="w-10 h-10 rounded-lg avatar-p flex items-center justify-center mr-3">P</div>
-                <div class="text-left flex-grow">
-                    <p class="text-sm font-bold text-white group-hover:text-blue-400">Usuario Passly</p>
-                    <p class="text-[10px] text-slate-500 font-mono">Ver Perfil</p>
-                </div>
-            </button>
-            <button id="logout-btn" class="mt-2 flex items-center w-full px-4 py-3 text-slate-500 hover:text-red-400 text-xs font-bold transition-colors">
-                <i data-lucide="log-out" class="w-4 h-4 mr-3"></i> CERRAR SESIÓN
-            </button>
+        <div class="nav-item logout-btn" id="logout-btn" style="margin-top:20px; color:var(--error)">
+          <i>🚪</i> <span class="nav-text">Cerrar Sesión</span>
         </div>
+      </div>
     </aside>
 
-    <!-- Área Principal de Contenido -->
-    <main class="flex-grow flex flex-col relative overflow-hidden">
-        <!-- Barra Superior -->
-        <header class="h-16 flex items-center justify-end px-8 border-b border-slate-800/50 bg-slate-900/20 backdrop-blur-md z-10">
-            <div class="flex items-center gap-6">
-                <div class="relative">
-                    <i data-lucide="bell" class="w-5 h-5 text-slate-400 hover:text-white cursor-pointer transition-colors"></i>
-                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </div>
-                <div class="h-6 w-[1px] bg-slate-800"></div>
-                <span id="header-date" class="text-[10px] font-bold text-slate-500 font-mono uppercase">Viernes, 10 de Abril</span>
-            </div>
-        </header>
-
-        <!-- Contenedor de Vistas -->
-        <div id="main-content" class="flex-grow overflow-y-auto custom-scrollbar">
-            <!-- Cargado dinámicamente por router.js -->
+    <!-- ÁREA DE VISTA PRINCIPAL -->
+    <main class="main-view">
+      <header class="top-bar">
+        <div class="header-left">
+          <h2 id="view-title">Vista General del Panel</h2>
         </div>
-    </main>
 
-    <!-- Scripts -->
-    <script type="module" src="frontend/src/js/dashboard_main.js"></script>
+        <div class="header-right" style="display:flex; align-items:center; gap:24px;">
+          <div class="notification-container" style="position:relative; cursor:pointer;">
+            <div class="btn-icon">🔔</div>
+            <div id="notifBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--error); color:white; font-size:10px; font-weight:bold; border-radius:10px; padding:2px 6px; border:2px solid var(--bg-primary);">0</div>
+          </div>
+
+          <div class="user-profile" id="profile-trigger">
+            <div class="user-avatar" id="userInitial">P</div>
+            <div class="user-info" style="text-align:left; line-height:1.2;">
+              <div id="userName" style="font-size:14px; font-weight:700; color:var(--text-primary);">Analizando...</div>
+              <div id="userRole" style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">-</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ÁMBER DINÁMICO RESTAURADO -->
+      <div id="view-content" style="animation: contentReveal 0.6s ease-out;">
+          <div style="display:flex; align-items:center; justify-content:center; height:100%;">
+              <div class="loading-spinner"></div>
+          </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- SISTEMA DE VENTANAS MODALES -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <div class="modal-header" style="margin-bottom:32px;">
+        <h2 id="modalTitle" style="font-size:24px; letter-spacing:-0.03em;">Acción</h2>
+      </div>
+      <div id="modalBody"></div>
+      <div class="modal-footer" style="display:flex; gap:16px; margin-top:40px;">
+        <button type="button" class="btn-primary" style="flex:1; background:hsla(0,0%,100%,0.05); color:var(--text-primary); box-shadow:none;" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btnSave" style="flex:1;">Confirmar</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

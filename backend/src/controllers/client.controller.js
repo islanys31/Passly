@@ -81,3 +81,25 @@ exports.deactivate = async (req, res) => {
         res.status(500).json({ error: 'Error al desactivar cliente' });
     }
 };
+
+exports.updateLogo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!req.file) return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+
+        const logoUrl = `/uploads/profiles/${req.file.filename}`; // Usando la misma carpeta por ahora
+
+        await db.query('UPDATE clientes SET logo_url = ? WHERE id = ?', [logoUrl, id]);
+        
+        await logAction(req.user.id, 'Actualización Logo', 'Administración', `Actualizado logo de Cliente ID ${id}`, req.ip);
+
+        res.json({ 
+            success: true, 
+            message: 'Logo actualizado correctamente',
+            logo_url: logoUrl 
+        });
+    } catch (error) {
+        console.error("Error al subir logo:", error);
+        res.status(500).json({ error: 'Error interno al procesar el logo' });
+    }
+};

@@ -58,3 +58,55 @@ export function exportToPDF(title, columns, rows, fileName, sedeConfig) {
     
     doc.save(`${fileName}_${Date.now()}.pdf`);
 }
+
+/**
+ * Carga el logo del cliente desde el servidor.
+ */
+export async function loadClientBranding(fetchAPI, clienteId) {
+    try {
+        // En una app real, clienteId vendría del usuario logueado.
+        const response = await fetchAPI(`/clientes`);
+        const data = await response.json();
+        
+        // Buscamos el logo del primer cliente (o el actual)
+        const cliente = data.data?.[0];
+        if (cliente && cliente.logo_url) {
+            applyBrandingToUI(cliente.logo_url);
+        }
+    } catch (error) {
+        console.error("Error cargando branding:", error);
+    }
+}
+
+/**
+ * Actualiza visualmente el logo en la interfaz.
+ */
+export function applyBrandingToUI(logoUrl) {
+    const logoContainer = document.getElementById('sidebar-logo-container');
+    if (logoContainer && logoUrl) {
+        logoContainer.innerHTML = `<img src="${logoUrl}" class="client-logo-img" alt="Logo Cliente"><input type="file" id="client-logo-input" accept="image/*" style="display:none;">`;
+        // Volver a vincular el input si es necesario (se maneja en dashboard_main)
+    }
+}
+
+/**
+ * Sube un nuevo logo al servidor.
+ */
+export async function uploadClientLogo(fetchAPI, clienteId, file) {
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const response = await fetchAPI(`/${clienteId}/logo`, { // Endpoint relativo a /api/clientes
+        method: 'POST',
+        headers: {
+            // No ponemos Content-Type para que el navegador use boundary de multipart
+        },
+        body: formData
+    });
+
+    if (!response.ok) throw new Error("Error al subir el logo");
+    
+    const data = await response.json();
+    applyBrandingToUI(data.logo_url);
+    return data;
+}
