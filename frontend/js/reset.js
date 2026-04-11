@@ -1,7 +1,7 @@
 /**
  * Passly - Restablecimiento de Contraseña
  */
-import { fetchAPI as apiRequest } from '@pro/api_service.js';
+import { fetchAPI as apiRequest } from '../src/js/modules/api_service.js';
 import { initTheme } from './theme.js';
 import { showToast, validarPassword, setInputBorder } from './utils.js';
 
