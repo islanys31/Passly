@@ -16,8 +16,22 @@
     <!-- Librerías Externas -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Lógica de autenticación Pro -->
-    <script type="module" src="./frontend/js/auth.js?v=16"></script>
+    <!-- Lógica de autenticación Pro (Escudo Anti-Bucle Integrado) -->
+    <script>
+        // Si venimos de un fallo, limpiamos rastro inmediatamente
+        if (window.location.search.includes('session_failed')) {
+            localStorage.clear();
+            console.warn("⚠️ Bucle detectado. Sesión limpiada.");
+        }
+        
+        // Redirección inteligente
+        const token = localStorage.getItem('auth_token');
+        const user = localStorage.getItem('usuario_activo');
+        if (token && user && !window.location.search.includes('session_failed')) {
+            window.location.href = "dashboard.html";
+        }
+    </script>
+    <script type="module" src="./frontend/js/auth.js?v=18"></script>
 </head>
 
 <body class="auth-page">

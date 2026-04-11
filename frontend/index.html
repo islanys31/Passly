@@ -10,10 +10,19 @@
     <title>Passly - Control de Acceso Seguro</title>
     
     <!-- Rutas relativas para funcionamiento dentro de subcarpeta frontend/ -->
-    <link rel="stylesheet" href="css/index.css?v=15">
+    <link rel="stylesheet" href="css/index.css?v=18">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module" src="js/auth.js?v=15"></script>
+    <script>
+        if (window.location.search.includes('session_failed')) {
+            localStorage.clear();
+        }
+        const token = localStorage.getItem('auth_token');
+        if (token && !window.location.search.includes('session_failed')) {
+            window.location.href = "dashboard.html";
+        }
+    </script>
+    <script type="module" src="js/auth.js?v=18"></script>
 </head>
 
 <body class="auth-page">

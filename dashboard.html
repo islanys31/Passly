@@ -17,7 +17,14 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <!-- Lógica del Panel de Control Pro -->
-    <script type="module" src="./frontend/src/js/dashboard_main.js?v=16"></script>
+    <script type="module" src="./frontend/src/js/dashboard_main.js?v=18"></script>
+    
+    <!-- Escudo Anti-Bucle Dashboard (Garantía de salida) -->
+    <script>
+        if (!localStorage.getItem('auth_token')) {
+            window.location.href = "/?session_failed=true";
+        }
+    </script>
     
     <style>
         /* Ajuste para el logo interactivo solicitado por el usuario */

@@ -7,11 +7,16 @@
     <title>Passly Pro - Panel de Control</title>
     
     <!-- Rutas relativas para funcionamiento dentro de subcarpeta frontend/ -->
-    <link rel="stylesheet" href="css/index.css?v=15">
+    <link rel="stylesheet" href="css/index.css?v=18">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module" src="src/js/dashboard_main.js?v=15"></script>
+    <script type="module" src="src/js/dashboard_main.js?v=18"></script>
+    <script>
+        if (!localStorage.getItem('auth_token')) {
+            window.location.href = "index.html?session_failed=true";
+        }
+    </script>
     
     <style>
         #sidebar-logo-container { cursor: pointer; transition: transform 0.3s ease; position: relative; }
