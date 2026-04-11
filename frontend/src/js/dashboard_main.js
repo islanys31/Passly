@@ -3,11 +3,11 @@
  * @description Punto de entrada principal del Dashboard en Passly Pro.
  */
 
-import { fetchAPI, initAPI } from './modules/api_service.js';
-import { checkSession, handleLogout } from './modules/auth.js';
-import { getMenuConfig } from './modules/menu.js';
-import { checkOnboarding } from './modules/onboarding.js';
-import { loadClientBranding, uploadClientLogo } from './modules/branding.js';
+import { fetchAPI, initAPI } from '@pro/api_service.js';
+import { checkSession, handleLogout } from '@pro/auth.js';
+import { getMenuConfig } from '@pro/menu.js';
+import { checkOnboarding } from '@pro/onboarding.js';
+import { loadClientBranding, uploadClientLogo } from '@pro/branding.js';
 import { navigateTo } from './router.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
