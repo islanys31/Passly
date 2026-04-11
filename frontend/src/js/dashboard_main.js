@@ -3,7 +3,7 @@
  * @description Punto de entrada principal del Dashboard en Passly Pro.
  */
 
-import { fetchAPI, initAPI } from './modules/api.js';
+import { fetchAPI, initAPI } from './modules/api_service.js';
 import { checkSession, handleLogout } from './modules/auth.js';
 import { getMenuConfig } from './modules/menu.js';
 import { checkOnboarding } from './modules/onboarding.js';

@@ -3,7 +3,7 @@
  * @description Gestión de autenticación y sesiones.
  */
 
-import { fetchAPI } from './api.js';
+import { fetchAPI } from './api_service.js';
 
 export async function checkSession() {
     try {
