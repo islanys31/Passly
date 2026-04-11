@@ -1,2 +1,3 @@
-Vercel Force Trigger v10 - 2026-04-10 11:32:00
-Fix: IO ReferenceError + Resilient Setup
+Force Rebuild: 2026-04-11T01:23:48Z
+Reason: Stabilize redirection loop and aesthetics.
+Vercel deployment trigger.
