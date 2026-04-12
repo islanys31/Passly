@@ -1,7 +1,3 @@
-<!-- 
-    ESTRUCTURA DE ESTUDIO: INDEX.HTML (Sincronización Fail-Safe para Vercel)
-    Esta copia asegura que la estética Pro cargue incluso si Vercel apunta a la subcarpeta.
--->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Passly - Control de Acceso Seguro</title>
     
-    <!-- Rutas relativas para funcionamiento dentro de subcarpeta frontend/ -->
-    <link rel="stylesheet" href="css/index.css?v=19">
+    <link rel="stylesheet" href="css/index.css?v=20">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -23,15 +18,15 @@
             localStorage.clear();
         }
         const token = localStorage.getItem('auth_token');
-        if (token && !window.location.search.includes('session_failed')) {
+        const user = localStorage.getItem('usuario_activo');
+        if (token && user && !window.location.search.includes('session_failed')) {
             window.location.href = "dashboard.html";
         }
     </script>
-    <script type="module" src="js/auth.js?v=19"></script>
+    <script type="module" src="js/auth.js?v=20"></script>
 </head>
 
 <body class="auth-page">
-
     <div class="ambient-bg">
         <div class="glow-1"></div>
         <div class="glow-2"></div>
@@ -70,13 +65,41 @@
         </div>
     </header>
 
+    <section class="landing-section" id="funciones">
+        <div class="section-header">
+            <h2>¿Por qué elegir Passly?</h2>
+            <p style="color:var(--text-muted)">Diseñado para la eficiencia y la seguridad máxima.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card animate-slide-up">
+                <div class="feature-icon"><i data-lucide="qr-code"></i></div>
+                <h3>QR Dinámicos</h3>
+                <p>Invitaciones temporales seguras que expiran automáticamente.</p>
+            </div>
+            <div class="feature-card animate-slide-up" style="animation-delay:0.2s">
+                <div class="feature-icon"><i data-lucide="zap"></i></div>
+                <h3>Tiempo Real</h3>
+                <p>Monitoreo instantáneo de cada entrada y salida.</p>
+            </div>
+            <div class="feature-card animate-slide-up" style="animation-delay:0.4s">
+                <div class="feature-icon"><i data-lucide="shield-check"></i></div>
+                <h3>Blindaje MFA</h3>
+                <p>Autenticación de dos factores para control total.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL DE AUTENTICACIÓN -->
     <div class="modal-overlay" id="authOverlay" style="z-index:2000;">
         <div class="auth-container" id="authContainer" style="position:relative;">
             <button id="btnCloseAuth" style="position:absolute; top:-50px; right:0; background:transparent; border:none; color:white; font-size:30px; cursor:pointer;">&times;</button>
+            
             <header class="auth-header animate-fade-in" style="margin-bottom:30px;">
                 <div class="logo-icon glass"><i data-lucide="shield-check"></i></div>
                 <h1>Passly<span>.</span></h1>
             </header>
+
+            <!-- Login Card -->
             <div class="card glass-glow" id="loginCard">
                 <h2 style="margin-bottom: 24px;">Iniciar Sesión</h2>
                 <div class="input-group"><i data-lucide="mail"></i><input id="emailLogin" type="email" placeholder="Correo Corporativo"></div>
@@ -91,7 +114,64 @@
                         <option value="3">Seguridad</option>
                     </select>
                 </div>
+                <p id="resetLink" class="link-text" style="margin:15px 0; font-size:12px; text-align:right;">¿Olvidó su contraseña?</p>
                 <button id="btnLogin" class="btn-primary" style="width:100%;">ENTRAR AL SISTEMA</button>
+                <p style="margin-top:20px; font-size:13px; opacity:0.8;">¿No tienes cuenta? <span class="link-text" id="toRegister">Regístrate aquí</span></p>
+            </div>
+
+            <!-- Registro Card -->
+            <div class="card glass-glow hidden" id="registroCard">
+                <h2 style="margin-bottom:24px;">Crear Cuenta</h2>
+                <div class="auth-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <input id="nombreRegistro" type="text" placeholder="Nombre" class="glass">
+                    <input id="apellidoRegistro" type="text" placeholder="Apellido" class="glass">
+                </div>
+                <div class="input-group"><i data-lucide="mail"></i><input id="emailRegistro" type="email" placeholder="Email"></div>
+                <div class="auth-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <input id="passRegistro" type="password" placeholder="Contraseña" class="glass">
+                    <input id="passConfirm" type="password" placeholder="Confirmar" class="glass">
+                </div>
+                <div class="input-group">
+                    <i data-lucide="briefcase"></i>
+                    <select id="rolRegistro">
+                        <option value="" disabled selected>Rol</option>
+                        <option value="4">Super Admin</option>
+                        <option value="1">Administrador</option>
+                        <option value="2">Residente</option>
+                        <option value="3">Seguridad</option>
+                    </select>
+                </div>
+                <button id="btnRegistrar" class="btn-primary" style="width:100%; margin-top:15px;">REGISTRARME</button>
+                <p style="margin-top:20px; font-size:13px; opacity:0.8;">¿Ya tienes cuenta? <span class="link-text" id="toLogin">Ingresa ahora</span></p>
+            </div>
+
+            <!-- MFA Card -->
+            <div class="card glass-glow hidden" id="mfaCard">
+                <h2 style="margin-bottom:24px;">Verificación 2FA</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Ingresa el código de tu aplicación autenticadora.</p>
+                <div class="input-group"><i data-lucide="key"></i><input id="mfaCode" type="text" placeholder="Código de 6 dígitos" maxlength="6"></div>
+                <button id="btnMFA" class="btn-primary" style="width:100%;">VERIFICAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Recuperación de Contraseña -->
+    <div class="modal-overlay" id="recoveryModal" style="display:none; z-index:3000;">
+        <div class="auth-container">
+            <div id="recoveryStep1">
+                <h2 style="margin-bottom:20px;">Recuperar Contraseña</h2>
+                <p style="color:var(--text-muted); margin-bottom:20px;">Introduce tu correo y te enviaremos un código.</p>
+                <div class="input-group"><i data-lucide="mail"></i><input id="recoveryEmail" type="email" placeholder="Tu correo electrónico"></div>
+                <div style="display:flex; gap:12px; margin-top:20px;">
+                    <button id="btnCancelRecovery" class="glass" style="flex:1; padding:12px;">Cancelar</button>
+                    <button id="btnSendRecovery" class="btn-primary" style="flex:1;">Enviar Código</button>
+                </div>
+            </div>
+            <div id="recoveryStep2" style="display:none;">
+                <h2 style="margin-bottom:20px;">Nueva Contraseña</h2>
+                <div class="input-group"><i data-lucide="key"></i><input id="recoveryCode" type="text" placeholder="Código recibido"></div>
+                <div class="input-group"><i data-lucide="lock"></i><input id="newPassword" type="password" placeholder="Nueva contraseña"></div>
+                <button id="btnResetPassword" class="btn-primary" style="width:100%; margin-top:16px;">CAMBIAR CONTRASEÑA</button>
             </div>
         </div>
     </div>
