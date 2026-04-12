@@ -10,7 +10,7 @@
     <title>Passly - Control de Acceso Seguro</title>
     
     <!-- Estilos originales (Wow Factor) -->
-    <link rel="stylesheet" href="./frontend/css/index.css?v=16">
+    <link rel="stylesheet" href="./frontend/css/index.css?v=19">
     <link rel="manifest" href="./frontend/manifest.json">
     
     <!-- Librerías Externas -->
@@ -18,6 +18,15 @@
     
     <!-- Lógica de autenticación Pro (Escudo Anti-Bucle Integrado) -->
     <script>
+        // Limpiar Service Workers Atascados
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+
         // Si venimos de un fallo, limpiamos rastro inmediatamente
         if (window.location.search.includes('session_failed')) {
             localStorage.clear();
@@ -31,7 +40,7 @@
             window.location.href = "dashboard.html";
         }
     </script>
-    <script type="module" src="./frontend/js/auth.js?v=18"></script>
+    <script type="module" src="./frontend/js/auth.js?v=19"></script>
 </head>
 
 <body class="auth-page">

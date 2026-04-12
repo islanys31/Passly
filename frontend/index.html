@@ -10,10 +10,15 @@
     <title>Passly - Control de Acceso Seguro</title>
     
     <!-- Rutas relativas para funcionamiento dentro de subcarpeta frontend/ -->
-    <link rel="stylesheet" href="css/index.css?v=18">
+    <link rel="stylesheet" href="css/index.css?v=19">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) { registration.unregister(); }
+            });
+        }
         if (window.location.search.includes('session_failed')) {
             localStorage.clear();
         }
@@ -22,7 +27,7 @@
             window.location.href = "dashboard.html";
         }
     </script>
-    <script type="module" src="js/auth.js?v=18"></script>
+    <script type="module" src="js/auth.js?v=19"></script>
 </head>
 
 <body class="auth-page">

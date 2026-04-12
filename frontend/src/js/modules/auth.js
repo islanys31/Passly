@@ -31,6 +31,6 @@ export async function handleLogout() {
         console.error("Error al cerrar sesión en servidor:", error);
     } finally {
         localStorage.clear();
-        window.location.href = '/';
+        window.location.href = 'index.html';
     }
 }

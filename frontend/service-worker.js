@@ -1,14 +1,12 @@
-const CACHE_NAME = 'passly-v3';
+const CACHE_NAME = 'passly-v5';
 const ASSETS = [
     '/',
     '/index.html',
     '/dashboard.html',
     '/css/index.css',
     '/js/auth.js',
-    '/js/dashboard.js',
-    '/js/api.js',
-    '/js/utils.js',
-    '/js/theme.js'
+    '/src/js/dashboard_main.js',
+    '/src/js/modules/api_service.js'
 ];
 
 self.addEventListener('install', (event) => {

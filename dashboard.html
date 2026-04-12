@@ -7,7 +7,7 @@
     <title>Passly Pro - Panel de Control</title>
     
     <!-- Estilos Originales (Wow Factor) -->
-    <link rel="stylesheet" href="./frontend/css/index.css?v=16">
+    <link rel="stylesheet" href="./frontend/css/index.css?v=19">
     <link rel="manifest" href="./frontend/manifest.json">
     
     <!-- Chart.js: Para dibujar las gráficas de estadísticas -->
@@ -17,12 +17,21 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <!-- Lógica del Panel de Control Pro -->
-    <script type="module" src="./frontend/src/js/dashboard_main.js?v=18"></script>
+    <script type="module" src="./frontend/src/js/dashboard_main.js?v=19"></script>
     
     <!-- Escudo Anti-Bucle Dashboard (Garantía de salida) -->
     <script>
+        // Limpiar Service Workers Atascados
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+
         if (!localStorage.getItem('auth_token')) {
-            window.location.href = "/?session_failed=true";
+            window.location.href = "index.html?session_failed=true";
         }
     </script>
     
