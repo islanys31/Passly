@@ -3,8 +3,6 @@
  * @description Maneja la carga dinámica de vistas sin recargar la página.
  */
 
-const contentArea = document.getElementById('view-content');
-
 const routes = {
     'overview': () => import('./views/overview.js'),
     'usuarios': () => import('./views/identities.js'),
@@ -15,6 +13,8 @@ const routes = {
 };
 
 export async function navigateTo(viewId) {
+    const contentArea = document.getElementById('view-content');
+    
     // 1. Marcar menú activo
     updateMenuSelection(viewId);
 
