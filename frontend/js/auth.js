@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
 
     // 📩 Detectar si el usuario viene de verificar su email exitosamente
-    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('verified')) {
         showToast("¡Cuenta verificada! Ya puedes iniciar sesión.", "success");
         // Limpiar URL para que no salga el mensaje al recargar
