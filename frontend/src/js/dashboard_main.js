@@ -10,7 +10,7 @@ import { checkOnboarding } from './modules/onboarding.js';
 import { loadClientBranding, uploadClientLogo } from './modules/branding.js';
 import { navigateTo } from './router.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initDashboard() {
     // 1. Inicializar API
     initAPI();
 
@@ -19,6 +19,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!user) {
         window.location.href = 'index.html?session_failed=true';
         return;
+    }
+
+    // Actualizar UI del usuario (Avatar y Nombre)
+    const nombre = user.nombre || 'Usuario';
+    const apellido = user.apellido || '';
+    const userNameEl = document.getElementById('userName');
+    const userRoleEl = document.getElementById('userRole');
+    const userAvatarEl = document.getElementById('userInitial');
+    
+    if (userNameEl) userNameEl.textContent = `${nombre} ${apellido}`;
+    if (userRoleEl) {
+        const roleLabel = user.rol_id === 1 ? 'ADMIN' : (user.rol_id === 3 ? 'SEGURIDAD' : 'RESIDENTE');
+        userRoleEl.textContent = roleLabel;
+    }
+    if (userAvatarEl) {
+        if (user.foto_url) {
+            userAvatarEl.innerHTML = `<img src="${user.foto_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        } else {
+            userAvatarEl.textContent = nombre.charAt(0).toUpperCase();
+        }
     }
 
     // 3. Cargar Branding (Logo Cliente)
@@ -36,7 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Eventos Globales
     setupGlobalListeners(user.cliente_id);
-});
+}
+
+// Inicializar inmediatamente ya que type="module" es defer
+initDashboard();
 
 function renderSidebar(roleId) {
     const sidebar = document.getElementById('nav-menu');
