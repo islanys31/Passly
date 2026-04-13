@@ -1941,15 +1941,22 @@ function renderModalFields(type, item) {
 }
 
 function renderDynamicForm(type, item, users, trans) {
+    const currentUser = JSON.parse(localStorage.getItem('usuario_activo') || '{}');
+    const isResident = currentUser.rol_id === 2;
+
     if (type === 'vehiculos') {
-        return `
-            <div class="form-group">
+        const ownerGroup = isResident ? 
+            `<input type="hidden" id="v_usuario" value="${currentUser.id}">` :
+            `<div class="form-group">
                 <label>Propietario</label>
                 <select id="v_usuario">
                     <option value="">Seleccione dueño...</option>
                     ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
                 </select>
-            </div>
+            </div>`;
+
+        return `
+            ${ownerGroup}
             <div class="form-group">
                 <label>Categoría</label>
                 <select id="v_tipo">
@@ -1962,14 +1969,18 @@ function renderDynamicForm(type, item, users, trans) {
         `;
     }
     if (type === 'dispositivos') {
-        return `
-            <div class="form-group">
+        const ownerGroup = isResident ?
+            `<input type="hidden" id="d_usuario" value="${currentUser.id}">` :
+            `<div class="form-group">
                 <label>Asignar a Usuario</label>
                 <select id="d_usuario">
                     <option value="">Seleccione usuario...</option>
                     ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
                 </select>
-            </div>
+            </div>`;
+
+        return `
+            ${ownerGroup}
             <div class="form-group"><label>Nombre del Equipo</label><input type="text" id="d_nombre" value="${item?.nombre || ''}" placeholder="Ej: Laptop Dell, iPad Admin"></div>
             <div class="form-group"><label>ID Único / Serial</label><input type="text" id="d_uid" value="${item?.identificador_unico || ''}" placeholder="Opcional"></div>
         `;
