@@ -29,11 +29,12 @@ export async function render(container) {
                         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-xl">
                             <div class="relative group mx-auto w-32 h-32 mb-4">
                                 ${renderAvatar(user)}
-                                <button class="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-500 transition-all border-4 border-slate-900">
+                                <button type="button" id="btn-upload-photo" class="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-500 transition-all border-4 border-slate-900">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                                 </button>
+                                <input type="file" id="photo-upload" accept="image/*" class="hidden">
                             </div>
-                            <h2 class="text-lg font-bold text-white">${user.nombre}</h2>
+                            <h2 class="text-lg font-bold text-white" id="display-name">${user.nombre} ${user.apellido || ''}</h2>
                             <p class="text-xs text-blue-400 font-mono mt-1 uppercase tracking-widest">${user.rol_nombre || 'Usuario'}</p>
                         </div>
                     </div>
@@ -48,13 +49,17 @@ export async function render(container) {
                                         <input type="email" value="${user.email}" disabled class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-500 cursor-not-allowed">
                                     </div>
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-slate-300">Nombre Completo</label>
+                                        <label class="text-sm font-semibold text-slate-300">Nombre</label>
                                         <input type="text" id="nombre-input" value="${user.nombre}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-semibold text-slate-300">Apellido</label>
+                                        <input type="text" id="apellido-input" value="${user.apellido || ''}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none">
                                     </div>
                                 </div>
                                 <div class="pt-4">
-                                    <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95">
-                                        Guardar Cambios
+                                    <button type="submit" id="btn-save" class="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 flex items-center justify-center gap-2">
+                                        <span>Guardar Cambios</span>
                                     </button>
                                 </div>
                             </form>
@@ -71,24 +76,110 @@ export async function render(container) {
 }
 
 function renderAvatar(user) {
-    if (user.avatar_url) {
-        return `<img src="${user.avatar_url}" class="w-full h-full rounded-2xl object-cover border-2 border-slate-700">`;
+    if (user.foto_url) {
+        return `<img src="${user.foto_url}" class="w-full h-full rounded-2xl object-cover border-2 border-slate-700" id="avatar-preview">`;
     }
     
     // El usuario pidió que salga "P" si no hay perfil. 
     // Usaremos "P" para el sistema Passly o las iniciales.
     // user.nombre.charAt(0) serviría, pero el usuario especificó "les salga P".
     return `
-        <div class="w-full h-full rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center border-2 border-slate-700 shadow-inner">
+        <div id="avatar-preview-container" class="w-full h-full rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center border-2 border-slate-700 shadow-inner overflow-hidden">
             <span class="text-4xl font-black text-white drop-shadow-md">P</span>
         </div>
     `;
 }
 
 function setupListeners() {
+    // Formulario de actualización de nombre/apellido
     document.getElementById('profile-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const nombre = document.getElementById('nombre-input').value;
-        showToast("Perfil actualizado correctamente (Modo Pro)");
+        
+        const btnSave = document.getElementById('btn-save');
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> Guardando...';
+
+        const nombre = document.getElementById('nombre-input').value.trim();
+        const apellido = document.getElementById('apellido-input').value.trim();
+        
+        try {
+            const res = await fetchAPI('/usuarios/me', {
+                method: 'PUT',
+                body: JSON.stringify({ nombre, apellido })
+            });
+
+            if (res.ok) {
+                showToast("Perfil actualizado correctamente");
+                document.getElementById('display-name').textContent = `${nombre} ${apellido}`;
+            } else {
+                const data = await res.json();
+                showToast(data.error || "Error al actualizar perfil", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showToast("Error de conexión", "error");
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<span>Guardar Cambios</span>';
+        }
+    });
+
+    // Subida de foto
+    const btnUpload = document.getElementById('btn-upload-photo');
+    const inputPhoto = document.getElementById('photo-upload');
+
+    btnUpload?.addEventListener('click', () => {
+        inputPhoto.click();
+    });
+
+    inputPhoto?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Preview temporal base64
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewContainer = document.querySelector('.group');
+            let img = document.getElementById('avatar-preview');
+            if (!img) {
+                const placeholder = document.getElementById('avatar-preview-container');
+                if (placeholder) placeholder.remove();
+                
+                img = document.createElement('img');
+                img.id = 'avatar-preview';
+                img.className = 'w-full h-full rounded-2xl object-cover border-2 border-slate-700';
+                // Insertar al inicio
+                previewContainer.insertBefore(img, previewContainer.firstChild);
+            }
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        // Subir al backend
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        try {
+            showToast("Subiendo foto...", "info");
+            const res = await fetchAPI('/usuarios/me/photo', {
+                method: 'POST',
+                body: formData
+            }, false); // Omitimos los defaults JSON para FormData
+
+            if (res.ok) {
+                const data = await res.json();
+                showToast("Foto actualizada correctamente");
+                // La URL real podría aplicarse aquí si se desea
+                if (data.photoUrl && document.getElementById('avatar-preview')) {
+                     document.getElementById('avatar-preview').src = data.photoUrl;
+                }
+            } else {
+                const data = await res.json();
+                showToast(data.error || "Error al subir foto", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showToast("Error de conexión al subir", "error");
+        }
     });
 }

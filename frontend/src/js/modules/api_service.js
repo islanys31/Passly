@@ -31,6 +31,10 @@ export async function fetchAPI(endpoint, options = {}) {
 
     if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
         config.body = JSON.stringify(config.body);
+    } else if (options.body instanceof FormData || config.body instanceof FormData) {
+        // Al enviar FormData, fetch calcula automáticamente el Content-Type (multipart/form-data) 
+        // y el boundary. Por eso, debemos eliminar el predeterminado.
+        delete config.headers['Content-Type'];
     }
 
     try {
