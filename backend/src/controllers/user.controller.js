@@ -61,7 +61,7 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getMe = async (req, res) => {
     try {
-        const [users] = await db.query('SELECT id, nombre, apellido, email, rol_id, estado_id, cliente_id, foto_url, mfa_enabled FROM usuarios WHERE id = ?', [req.user.id]);
+        const [users] = await db.query('SELECT id, nombre, apellido, email, rol_id, estado_id, cliente_id, foto_url, mfa_enabled, tutorial_visto FROM usuarios WHERE id = ?', [req.user.id]);
         if (users.length === 0) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
         res.json({ ok: true, user: users[0] });
     } catch (error) {
@@ -350,5 +350,30 @@ exports.changePassword = async (req, res) => {
         res.json({ ok: true });
     } catch(e) {
         res.status(500).json({ ok: false, error: e.message });
+    }
+};
+
+/**
+ * Actualiza el estado del tutorial del usuario (visto/no visto)
+ */
+exports.updateTutorialStatus = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { visto } = req.body; // true o false
+
+        await db.query('UPDATE usuarios SET tutorial_visto = ? WHERE id = ?', [visto, userId]);
+        
+        await logAction(
+            userId, 
+            visto ? 'Tutorial Completado' : 'Tutorial Reiniciado', 
+            'UX', 
+            visto ? 'El usuario finalizó el recorrido inicial' : 'El usuario solicitó ver el tutorial de nuevo', 
+            req.ip
+        );
+
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Tutorial Error:', error);
+        res.status(500).json({ ok: false, error: 'Error al actualizar estado del tutorial' });
     }
 };

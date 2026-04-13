@@ -143,8 +143,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("❌ Falló al inicializar el botón de soporte:", err);
     }
 
-    // 6. Inicializar Centro de Notificaciones
-    initNotifications();
+    // 7. Sistema de Onboarding (Tutorial de Primera Vez)
+    setTimeout(() => {
+        if (!userData.tutorial_visto) initOnboarding();
+    }, 1500); 
 });
 
 /**
@@ -1511,9 +1513,11 @@ async function renderAnalytics(container) {
 async function renderHelp(container) {
     container.innerHTML = `
         <div style="max-width:800px; margin:0 auto;">
-            <div class="card glass-glow" style="margin-bottom:30px; text-align:left;">
+            <div class="card glass-glow" style="margin-bottom:30px; text-align:left; position:relative; overflow:hidden;">
+                <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:var(--accent-primary);"></div>
                 <h3>Centro de Soporte Passly</h3>
                 <p style="margin-top:10px; color:var(--text-secondary);">Accede a la documentación oficial del sistema para resolver dudas operativas.</p>
+                
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:30px;">
                     <div class="setting-item" style="cursor:pointer;" onclick="window.open('/docs/04_MANUALES.md', '_blank')">
                         <i style="font-size:30px;">📄</i>
@@ -1525,6 +1529,14 @@ async function renderHelp(container) {
                         <h4 style="margin-top:10px;">Manual Técnico</h4>
                         <p style="font-size:11px;">Configuración avanzada para administradores.</p>
                     </div>
+                </div>
+
+                <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h4 style="margin:0;">¿Necesitas el recorrido inicial?</h4>
+                        <p style="font-size:12px; color:var(--text-muted); margin:4px 0 0;">Puedes volver a ver el tutorial guiado en cualquier momento.</p>
+                    </div>
+                    <button class="btn-table" id="btnRestartTutorial" style="background:var(--accent-primary-alpha); color:var(--accent-primary); border:1px solid var(--accent-primary);">Reiniciar Tutorial</button>
                 </div>
             </div>
             
@@ -1555,17 +1567,23 @@ async function renderHelp(container) {
                         <i>✉️</i> Email Directo
                     </button>
                 </div>
-                
-                <div style="margin-top:20px; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; font-size:11px; display:flex; align-items:center; gap:10px; border:1px solid var(--border-color);">
-                    <span style="font-size:20px;">🤖</span>
-                    <div>
-                        <span style="font-weight:600; display:block;">PasslyBot</span>
-                        <span style="opacity:0.7;">Para reportar errores técnicos críticos.</span>
-                    </div>
-                </div>
             </div>
         </div>
     `;
+
+    const btnRestart = container.querySelector('#btnRestartTutorial');
+    if (btnRestart) {
+        btnRestart.onclick = async () => {
+            if (!confirm("¿Deseas reiniciar el tutorial de bienvenida?")) return;
+            const res = await apiRequest('/usuarios/me/tutorial', 'PATCH', { visto: false });
+            if (res.ok) {
+                userData.tutorial_visto = 0;
+                localStorage.setItem('usuario_activo', JSON.stringify(userData));
+                showToast("Tutorial reiniciado. Cargando...", "success");
+                setTimeout(() => window.location.reload(), 1000);
+            }
+        };
+    }
 }
 
 function generateAuditTable(data) {
@@ -2916,4 +2934,170 @@ function showRoleDetail(role) {
             </div>
         </div>
     `;
+}
+
+/**
+ * SISTEMA DE ONBOARDING HÍBRIDO PREMIUM
+ */
+let onboardingStep = 0;
+let tutorialSteps = [];
+
+function initOnboarding() {
+    const roleId = userData.rol_id;
+    
+    // Configurar pasos según el ROL
+    tutorialSteps = [
+        { 
+            title: "¡Bienvenida!", 
+            text: "Te presentamos Passly, tu nuevo ecosistema de seguridad inteligente. Vamos a dar un breve recorrido.", 
+            isModal: true 
+        },
+        { 
+            selector: ".sidebar", 
+            text: "Este es tu centro de mando. Aquí encontrarás todos los módulos habilitados para tu nivel de acceso.", 
+            pos: "right" 
+        }
+    ];
+
+    if (roleId === 1) { // Admin
+        tutorialSteps.push(
+            { selector: '[data-view="usuarios"]', text: "Aquí gestionas todas las identidades digitales de tu sede.", pos: "right" },
+            { selector: ".stats-grid", text: "Este tablero te da visibilidad total de lo que ocurre en tiempo real.", pos: "bottom" }
+        );
+    } else if (roleId === 2) { // Residente
+        tutorialSteps.push(
+            { selector: '[data-view="vehiculos"]', text: "Desde aquí puedes registrar tus vehículos para ingresos rápidos.", pos: "right" },
+            { selector: ".notification-container", text: "Revisa tus alertas y notificaciones de seguridad aquí.", pos: "bottom" }
+        );
+    } else if (roleId === 3) { // Seguridad
+        tutorialSteps.push(
+            { selector: '[data-view="scanner"]', text: "Tu herramienta principal: El escáner de códigos QR para el control de acceso fìsico.", pos: "right" },
+            { selector: '[data-view="accesos"]', text: "Monitorea quién entra y sale en tiempo real.", pos: "right" }
+        );
+    }
+
+    tutorialSteps.push({ 
+        title: "¡Listo para empezar!", 
+        text: "Passly está configurado para brindarte la mejor experiencia. ¿Tienes dudas? El Centro de Ayuda está siempre disponible.", 
+        isModal: true 
+    });
+
+    onboardingStep = 0;
+    renderOnboardingWelcome();
+}
+
+function renderOnboardingWelcome() {
+    const step = tutorialSteps[onboardingStep];
+    const overlay = document.createElement('div');
+    overlay.className = 'onboarding-overlay';
+    document.body.appendChild(overlay);
+
+    const modal = document.createElement('div');
+    modal.className = 'onboarding-welcome-modal active';
+    modal.innerHTML = `
+        <div style="font-size: 56px; margin-bottom: 20px;">🚀</div>
+        <h2 style="font-size: 28px; margin-bottom: 16px;">${step.title}</h2>
+        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 30px;">${step.text}</p>
+        <div class="onboarding-btn-group" style="justify-content: center;">
+            <button class="btn-table" id="btnOnboardingSkip" style="background: transparent; color: var(--text-muted);">Quizás luego</button>
+            <button class="btn-primary" id="btnOnboardingNext" style="padding: 0 32px;">Empezar Recorrido</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('btnOnboardingSkip').onclick = finishOnboarding;
+    document.getElementById('btnOnboardingNext').onclick = () => {
+        modal.remove();
+        onboardingStep++;
+        nextOnboardingStep();
+    };
+}
+
+function nextOnboardingStep() {
+    const step = tutorialSteps[onboardingStep];
+    if (!step) return finishOnboarding();
+
+    if (step.isModal) {
+        // Mostrar modal de cierre o hito intermedio
+        const modal = document.createElement('div');
+        modal.className = 'onboarding-welcome-modal active';
+        modal.innerHTML = `
+            <div style="font-size: 56px; margin-bottom: 20px;">🛡️</div>
+            <h2 style="font-size: 28px; margin-bottom: 16px;">${step.title}</h2>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 30px;">${step.text}</p>
+            <button class="btn-primary" id="btnOnboardingFinish" style="width:100%; height:52px;">¡ENTENDIDO, VAMOS!</button>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('btnOnboardingFinish').onclick = finishOnboarding;
+        return;
+    }
+
+    const target = document.querySelector(step.selector);
+    if (!target) {
+        // Si el elemento no existe en esta vista, saltar al siguiente
+        onboardingStep++;
+        return nextOnboardingStep();
+    }
+
+    // Crear Spotlight
+    let hole = document.querySelector('.onboarding-spotlight-hole');
+    if (!hole) {
+        hole = document.createElement('div');
+        hole.className = 'onboarding-spotlight-hole';
+        document.body.appendChild(hole);
+    }
+
+    const rect = target.getBoundingClientRect();
+    const padding = 8;
+    hole.style.width = `${rect.width + (padding * 2)}px`;
+    hole.style.height = `${rect.height + (padding * 2)}px`;
+    hole.style.top = `${rect.top - padding}px`;
+    hole.style.left = `${rect.left - padding}px`;
+
+    // Crear Tooltip
+    let tooltip = document.querySelector('.onboarding-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'onboarding-tooltip active';
+        document.body.appendChild(tooltip);
+    }
+    
+    tooltip.className = `onboarding-tooltip active ${step.pos}`;
+    tooltip.innerHTML = `
+        <p style="margin:0; font-size:14px; line-height:1.5;">${step.text}</p>
+        <div class="onboarding-btn-group">
+            <button id="btnTourPrev" class="btn-icon" style="height:32px; width:32px; font-size:12px; border:1px solid var(--glass-border);"><</button>
+            <button id="btnTourNext" class="btn-primary" style="padding:0 16px; height:32px; font-size:12px;">Siguiente</button>
+        </div>
+    `;
+
+    // Posicionar Tooltip
+    if (step.pos === 'right') {
+        tooltip.style.left = `${rect.right + 25}px`;
+        tooltip.style.top = `${rect.top}px`;
+    } else if (step.pos === 'bottom') {
+        tooltip.style.left = `${rect.left}px`;
+        tooltip.style.top = `${rect.bottom + 25}px`;
+    }
+
+    document.getElementById('btnTourNext').onclick = () => {
+        onboardingStep++;
+        nextOnboardingStep();
+    };
+    
+    document.getElementById('btnTourPrev').onclick = () => {
+        if (onboardingStep > 0) {
+            onboardingStep--;
+            nextOnboardingStep();
+        }
+    };
+}
+
+async function finishOnboarding() {
+    document.querySelectorAll('.onboarding-overlay, .onboarding-welcome-modal, .onboarding-tooltip, .onboarding-spotlight-hole')
+        .forEach(el => el.remove());
+
+    userData.tutorial_visto = 1;
+    localStorage.setItem('usuario_activo', JSON.stringify(userData));
+    await apiRequest('/usuarios/me/tutorial', 'PATCH', { visto: true });
 }

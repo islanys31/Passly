@@ -31,6 +31,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 
 router.get('/me', authMiddleware.verifyToken, userController.getMe);
 router.put('/me', authMiddleware.verifyToken, userController.updateMe);
+router.patch('/me/tutorial', authMiddleware.verifyToken, userController.updateTutorialStatus);
 router.post('/me/photo', authMiddleware.verifyToken, require('../middlewares/upload.middleware').single('photo'), userController.uploadMyPhoto);
 router.delete('/me/photo', authMiddleware.verifyToken, userController.deleteMyPhoto);
 router.get('/', authMiddleware.verifyToken, userController.getAllUsers);

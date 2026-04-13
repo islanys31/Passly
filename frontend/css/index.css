@@ -2034,3 +2034,97 @@ tr:hover td {
     cursor: not-allowed;
     opacity: 0.8;
 }
+/* ============================================
+   ONBOARDING SYSTEM (TUTORIAL)
+   ============================================ */
+
+.onboarding-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9998;
+  pointer-events: auto;
+  transition: opacity 0.5s ease;
+  backdrop-filter: blur(2px);
+  /* Spotlight effect will be managed via JS clip-path */
+}
+
+.onboarding-welcome-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 90%;
+  max-width: 500px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  text-align: center;
+  z-index: 10000;
+  box-shadow: var(--glass-shadow);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.onboarding-welcome-modal.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.onboarding-tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  width: 280px;
+  box-shadow: var(--glass-shadow);
+  color: var(--text-primary);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.4s ease;
+  pointer-events: auto;
+}
+
+.onboarding-tooltip.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.onboarding-tooltip::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--accent-primary);
+  border-top: 1px solid var(--accent-primary);
+  transform: rotate(45deg);
+}
+
+/* Positioning helpers for tooltips */
+.onboarding-tooltip.top::after { bottom: -7px; left: 20px; transform: rotate(225deg); }
+.onboarding-tooltip.bottom::after { top: -7px; left: 20px; }
+.onboarding-tooltip.left::after { right: -7px; top: 20px; transform: rotate(135deg); }
+.onboarding-tooltip.right::after { left: -7px; top: 20px; transform: rotate(-45deg); }
+
+.onboarding-btn-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.onboarding-spotlight-hole {
+  position: fixed;
+  z-index: 9999;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
