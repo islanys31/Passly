@@ -97,9 +97,10 @@ exports.getTrafficByHour = async (req, res) => {
             query = 'SELECT fecha_hora FROM accesos WHERE usuario_id = ? ORDER BY fecha_hora DESC LIMIT 200';
             params = [userId];
         } else {
-            // Simplificado: sin JOIN para evitar bloqueos
-            query = 'SELECT fecha_hora FROM accesos ORDER BY fecha_hora DESC LIMIT 200';
-            params = [];
+            // Admin/Seguridad: Todos los tráficos de su sede (cliente_id)
+            query = 'SELECT a.fecha_hora FROM accesos a JOIN usuarios u ON a.usuario_id = u.id WHERE u.cliente_id = ? ORDER BY a.fecha_hora DESC LIMIT 200';
+            const tenantId = req.user.cliente_id;
+            params = [tenantId];
         }
 
         const [rows] = await Promise.race([
