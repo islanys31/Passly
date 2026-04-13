@@ -51,6 +51,7 @@ const apiLimiter = rateLimit({
 
 
 const helmetConfig = helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
