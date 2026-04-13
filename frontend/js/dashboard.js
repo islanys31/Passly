@@ -835,9 +835,14 @@ async function renderMiPerfil(container) {
                     <div id="profileAvatarPreview" style="width:120px; height:120px; border-radius:32px; background:var(--bg-secondary); border:1px solid var(--glass-border); overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:48px; box-shadow:0 12px 24px rgba(0,0,0,0.2);">
                         ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; height:100%; object-fit:cover;">` : u.nombre.charAt(0)}
                     </div>
-                    <button id="btnUploadPhoto" class="btn-icon" style="position:absolute; bottom:-10px; right:-10px; background:var(--accent-primary); color:white; border-radius:12px; width:40px; height:40px; box-shadow:0 4px 12px var(--accent-primary-alpha);">
+                    <button id="btnUploadPhoto" class="btn-icon" style="position:absolute; bottom:-10px; right:-10px; background:var(--accent-primary); color:white; border-radius:12px; width:40px; height:40px; box-shadow:0 4px 12px var(--accent-primary-alpha);" title="Subir foto">
                         <i data-lucide="camera" style="width:18px;"></i>
                     </button>
+                    ${u.foto_url ? `
+                    <button id="btnDeletePhoto" class="btn-icon" style="position:absolute; top:-10px; right:-10px; background:var(--error); color:white; border-radius:12px; width:32px; height:32px; box-shadow:0 4px 12px rgba(239, 68, 68, 0.4);" title="Eliminar foto">
+                        <i data-lucide="trash-2" style="width:16px;"></i>
+                    </button>
+                    ` : '<button id="btnDeletePhoto" class="btn-icon hidden" style="position:absolute; top:-10px; right:-10px; background:var(--error); color:white; border-radius:12px; width:32px; height:32px; box-shadow:0 4px 12px rgba(239, 68, 68, 0.4);" title="Eliminar foto"><i data-lucide="trash-2" style="width:16px;"></i></button>'}
                     <input type="file" id="profileImageInput" accept="image/png, image/jpeg" style="display:none;">
                 </div>
                 <div>
@@ -921,7 +926,10 @@ async function renderMiPerfil(container) {
 
         try {
             const token = localStorage.getItem('auth_token');
-            const res = await fetch(`/api/usuarios/${u.id}/photo`, {
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const apiBase = isLocalhost ? "/api" : "https://passly-api.onrender.com/api";
+            
+            const res = await fetch(`${apiBase}/usuarios/${u.id}/photo`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
@@ -932,17 +940,72 @@ async function renderMiPerfil(container) {
                 showToast("Foto de perfil actualizada", "success");
                 userData.foto_url = result.photoUrl;
                 localStorage.setItem('usuario_activo', JSON.stringify(userData));
-                setupUI(); 
+                
+                // Mostrar botón de eliminar
+                const btnDelete = document.getElementById('btnDeletePhoto');
+                if (btnDelete) btnDelete.classList.remove('hidden');
+
+                // En lugar de setupUI() que recarga todo, solo actualizamos los avatares visualmente en el menú por si acaso.
+                document.querySelectorAll('.user-avatar-img').forEach(img => {
+                    img.src = result.photoUrl;
+                });
             } else {
                 showToast(result.error || "Error al subir foto", "error");
             }
         } catch(error) {
             showToast("Error de conexión al subir la imagen", "error");
         } finally {
-            btnUpload.textContent = "Subir Nueva Foto";
+            btnUpload.innerHTML = `<i data-lucide="camera" style="width:18px;"></i>`;
             btnUpload.disabled = false;
         }
     };
+
+    const btnDelete = container.querySelector('#btnDeletePhoto');
+    if (btnDelete) {
+        btnDelete.onclick = async () => {
+            if (!confirm("¿Estás seguro de que deseas eliminar tu foto de perfil?")) return;
+
+            btnDelete.disabled = true;
+            btnDelete.style.opacity = '0.5';
+
+            try {
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const apiBase = isLocalhost ? "/api" : "https://passly-api.onrender.com/api";
+                const token = localStorage.getItem('auth_token');
+
+                const res = await fetch(`${apiBase}/usuarios/me/photo`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await res.json();
+
+                if (res.ok) {
+                    showToast("Foto eliminada correctamente", "success");
+                    userData.foto_url = null;
+                    localStorage.setItem('usuario_activo', JSON.stringify(userData));
+                    
+                    // Actualizar UI
+                    avatarPreview.innerHTML = u.nombre.charAt(0);
+                    btnDelete.classList.add('hidden');
+                    
+                    // Actualizar avatares en el menú principal si los hay
+                    document.querySelectorAll('.user-avatar-img').forEach(img => {
+                        const parent = img.parentElement;
+                        img.remove();
+                        parent.innerText = u.nombre.charAt(0);
+                    });
+                } else {
+                    showToast(result.error || "Error al eliminar la foto", "error");
+                }
+            } catch (error) {
+                showToast("Error de conexión al eliminar foto", "error");
+            } finally {
+                btnDelete.disabled = false;
+                btnDelete.style.opacity = '1';
+            }
+        };
+    }
 
     container.querySelector('#btnSaveProfile').onclick = async () => {
         const nombre = container.querySelector('#profileNombre').value.trim();
@@ -1257,7 +1320,7 @@ async function initNotifications() {
 async function fetchNotifications() {
     const res = await apiRequest('/notificaciones');
     if (res.ok) {
-        const notifs = res.data;
+        const notifs = Array.isArray(res.data) ? res.data : (res.data?.data || []);
         const unreadCount = notifs.filter(n => !n.leido).length;
         const badge = document.getElementById('notifBadge');
         const list = document.getElementById('notifList');

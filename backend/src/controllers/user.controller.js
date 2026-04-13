@@ -129,6 +129,23 @@ exports.uploadMyPhoto = async (req, res) => {
     }
 };
 
+exports.deleteMyPhoto = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const [user] = await db.query('SELECT foto_url FROM usuarios WHERE id = ?', [userId]);
+        
+        if (user[0]?.foto_url && user[0].foto_url.startsWith('/uploads/')) {
+            const oldPath = path.join(__dirname, '../../', user[0].foto_url);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+
+        await db.query('UPDATE usuarios SET foto_url = NULL WHERE id = ?', [userId]);
+        res.json({ ok: true, message: 'Foto eliminada correctamente' });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};
+
 exports.createUser = async (req, res) => {
     try {
         const { nombre, apellido, email, password, rol_id } = req.body;
@@ -261,6 +278,35 @@ exports.uploadPhoto = async (req, res) => {
         await logAction(req.user.id, 'Subir Foto', 'Usuarios', { target_id: id, photoUrl }, req.ip);
 
         res.json({ ok: true, photoUrl });
+    } catch (error) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+};
+
+exports.deletePhoto = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tenantId = req.user.cliente_id;
+
+        // Verificar pertenencia
+        const [target] = await db.query('SELECT cliente_id, foto_url FROM usuarios WHERE id = ?', [id]);
+        if (target.length === 0 || target[0].cliente_id !== tenantId) {
+            return res.status(403).json({ ok: false, error: 'No autorizado' });
+        }
+
+        if (target[0].foto_url && target[0].foto_url.startsWith('/uploads/')) {
+            const oldPath = path.join(__dirname, '../../', target[0].foto_url);
+            if (fs.existsSync(oldPath)) {
+                fs.unlink(oldPath, (err) => { if (err) console.error('Error al borrar foto:', err); });
+            }
+        }
+
+        await db.query('UPDATE usuarios SET foto_url = NULL WHERE id = ?', [id]);
+
+        // Audit Log
+        await logAction(req.user.id, 'Eliminar Foto', 'Usuarios', { target_id: id }, req.ip);
+
+        res.json({ ok: true });
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }

@@ -29,8 +29,11 @@ export async function render(container) {
                         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-xl">
                             <div class="relative group mx-auto w-32 h-32 mb-4">
                                 ${renderAvatar(user)}
-                                <button type="button" id="btn-upload-photo" class="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-500 transition-all border-4 border-slate-900">
+                                <button type="button" id="btn-upload-photo" class="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-500 transition-all border-4 border-slate-900" title="Subir foto">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                </button>
+                                <button type="button" id="btn-delete-photo" class="absolute top-0 right-0 p-1.5 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-500 transition-all border-4 border-slate-900 ${user.foto_url ? '' : 'hidden'}" title="Eliminar foto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                 </button>
                                 <input type="file" id="photo-upload" accept="image/*" class="hidden">
                             </div>
@@ -169,7 +172,9 @@ function setupListeners() {
             if (res.ok) {
                 const data = await res.json();
                 showToast("Foto actualizada correctamente");
-                // La URL real podría aplicarse aquí si se desea
+                if (document.getElementById('btn-delete-photo')) {
+                    document.getElementById('btn-delete-photo').classList.remove('hidden');
+                }
                 if (data.photoUrl && document.getElementById('avatar-preview')) {
                      document.getElementById('avatar-preview').src = data.photoUrl;
                 }
@@ -180,6 +185,36 @@ function setupListeners() {
         } catch (error) {
             console.error(error);
             showToast("Error de conexión al subir", "error");
+        }
+    });
+
+    const btnDelete = document.getElementById('btn-delete-photo');
+    btnDelete?.addEventListener('click', async () => {
+        if (!confirm('¿Seguro que deseas eliminar tu foto de perfil?')) return;
+        
+        try {
+            const res = await fetchAPI('/usuarios/me/photo', { method: 'DELETE' });
+            if (res.ok) {
+                showToast("Foto eliminada correctamente");
+                btnDelete.classList.add('hidden');
+                
+                // Restaurar placeholder 'P'
+                const previewContainer = document.querySelector('.group');
+                const img = document.getElementById('avatar-preview');
+                if (img) img.remove();
+                
+                const placeholderHtml = `
+                    <div id="avatar-preview-container" class="w-full h-full rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center border-2 border-slate-700 shadow-inner overflow-hidden">
+                        <span class="text-4xl font-black text-white drop-shadow-md">P</span>
+                    </div>
+                `;
+                previewContainer.insertAdjacentHTML('afterbegin', placeholderHtml);
+            } else {
+                showToast("Error al eliminar la foto", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showToast("Error de conexión al eliminar foto", "error");
         }
     });
 }

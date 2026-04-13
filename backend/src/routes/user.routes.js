@@ -32,12 +32,14 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.get('/me', authMiddleware.verifyToken, userController.getMe);
 router.put('/me', authMiddleware.verifyToken, userController.updateMe);
 router.post('/me/photo', authMiddleware.verifyToken, require('../middlewares/upload.middleware').single('photo'), userController.uploadMyPhoto);
+router.delete('/me/photo', authMiddleware.verifyToken, userController.deleteMyPhoto);
 router.get('/', authMiddleware.verifyToken, userController.getAllUsers);
 router.post('/', authMiddleware.verifyToken, userController.createUser);
 router.get('/:id', authMiddleware.verifyToken, userController.getUserById);
 router.put('/:id', authMiddleware.verifyToken, userController.updateUser);
 router.put('/:id/password', authMiddleware.verifyToken, userController.changePassword);
 router.post('/:id/photo', authMiddleware.verifyToken, require('../middlewares/upload.middleware').single('photo'), userController.uploadPhoto);
+router.delete('/:id/photo', authMiddleware.verifyToken, userController.deletePhoto);
 router.delete('/:id', authMiddleware.verifyToken, userController.deleteUser);
 
 module.exports = router;
