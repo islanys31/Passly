@@ -125,6 +125,21 @@ const verifyToken = async (req, res, next) => {
         }
 
         req.user = decoded;
+
+        // [TENANT RECOVERY] Si el token no trae cliente_id (token viejo o incompleto) y es admin, lo recuperamos
+        if (req.user.rol_id === 1 && !req.user.cliente_id) {
+            try {
+                const { pool: db } = require('../config/db');
+                const [userData] = await db.query('SELECT cliente_id FROM usuarios WHERE id = ?', [req.user.id]);
+                if (userData.length > 0) {
+                    req.user.cliente_id = userData[0].cliente_id || 1; // Fallback seguro a Medellín
+                }
+            } catch (err) {
+                console.error('⚠️ Tenant Recovery Error:', err.message);
+                req.user.cliente_id = 1; // Fallback crítico a Medellín para no romper la sesión
+            }
+        }
+
         next();
     } catch (err) {
         return res.status(401).json({ error: 'No autorizado: Token inválido o expirado' });

@@ -105,9 +105,20 @@ server.listen(PORT, '0.0.0.0', async () => {
     await seedDatabase();
 
     try {
-        // Prueba de conexión a la base de datos
+        // Prueba de conexión y [AUTO-REPAIR] de Tenants
         await pool.query('SELECT 1');
         console.log(`✅ CONEXIÓN A BASE DE DATOS: EXITOSA`);
+
+        // REPARACIÓN: Vincular al admin y a todos los usuarios sin sede a Medellín (ID 1)
+        const [repairResult] = await pool.query(`
+            UPDATE usuarios 
+            SET cliente_id = 1 
+            WHERE email = 'michellmg775@gmail.com' 
+               OR (cliente_id IS NULL AND email NOT LIKE '%@passly.com')
+        `);
+        if (repairResult.affectedRows > 0) {
+            console.log(`🧹 AUTO-REPAIR: Se han vinculado ${repairResult.affectedRows} registros a Medellín.`);
+        }
     } catch (err) {
         console.error(`❌ ERROR DE CONEXIÓN A DB: ${err.message}`);
         console.log(`👉 Revisa tu archivo .env (DB_HOST, DB_USER, DB_PASSWORD)`);

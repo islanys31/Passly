@@ -132,7 +132,13 @@ exports.uploadMyPhoto = async (req, res) => {
 exports.createUser = async (req, res) => {
     try {
         const { nombre, apellido, email, password, rol_id } = req.body;
-        const tenantId = req.user.cliente_id;
+        let tenantId = req.user.cliente_id;
+
+        // [HARDENING] Si no hay tenantId en req.user, lo buscamos para asegurar la organización
+        if (!tenantId) {
+            const [me] = await db.query('SELECT cliente_id FROM usuarios WHERE id = ?', [req.user.id]);
+            tenantId = me[0]?.cliente_id || 1; 
+        }
 
         // 🛡️ VALIDACIÓN: Email y Password requeridos (Bug 3)
         if (!email || !password) {
