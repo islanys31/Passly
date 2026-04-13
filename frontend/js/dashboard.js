@@ -783,12 +783,20 @@ async function renderSecurity(container) {
             </div>
 
             <div id="mfaSetupPanel" style="display:none; margin-top:32px; padding-top:32px; border-top:1px solid var(--glass-border); text-align:center;">
-                <p style="font-size:14px; color:var(--text-secondary); margin-bottom:24px;">Escanea este código QR con tu aplicación de autenticador (Google, Authy, etc.)</p>
+                <div style="background:rgba(59, 130, 246, 0.05); padding:16px; border-radius:12px; margin-bottom:24px; text-align:left; border:1px solid rgba(59, 130, 246, 0.1);">
+                    <p style="font-size:13px; color:var(--text-primary); font-weight:600; margin-bottom:8px;">¿Cómo activar?</p>
+                    <ol style="font-size:12px; color:var(--text-secondary); padding-left:16px; line-height:1.6;">
+                        <li>Descarga <strong>Google Authenticator</strong> o <strong>Authy</strong> en tu celular.</li>
+                        <li>Abre la app y selecciona "Escanear código QR".</li>
+                        <li>Escanea la imagen de abajo e ingresa el código de 6 dígitos que aparezca en tu celular.</li>
+                    </ol>
+                </div>
+                
                 <div id="mfaQRCode" style="background:white; padding:16px; width:180px; height:180px; margin:0 auto; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.2);"></div>
                 
                 <div style="margin-top:32px; max-width:280px; margin-inline:auto;">
                     <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-align:left; margin-bottom:8px;">CÓDIGO DE VERIFICACIÓN</label>
-                    <input type="text" id="mfaConfirmCode" placeholder="000 000" style="text-align:center; font-size:24px; letter-spacing:0.2em; height:64px;">
+                    <input type="text" id="mfaConfirmCode" maxlength="7" placeholder="000 000" style="text-align:center; font-size:24px; letter-spacing:0.2em; height:64px; font-family:monospace;">
                     <button id="btnVerifyMFA" class="btn-primary" style="width:100%; margin-top:16px; height:52px;">ACTIVAR PROTECCIÓN</button>
                 </div>
             </div>
@@ -819,12 +827,38 @@ async function updateMFAStatus(container) {
             }
         };
 
-        container.querySelector('#btnVerifyMFA').onclick = async () => {
-            const token = container.querySelector('#mfaConfirmCode').value;
-            const ver = await apiRequest('/auth/mfa/verify', 'POST', { token });
-            if (ver.ok) { 
-                showToast("MFA Activado", "success"); 
-                loadView('security'); 
+        const inputCode = container.querySelector('#mfaConfirmCode');
+        if (inputCode) {
+            inputCode.oninput = (e) => {
+                let value = e.target.value.replace(/\D/g, ''); // Solo números
+                if (value.length > 3) {
+                    value = value.substring(0, 3) + ' ' + value.substring(3, 6);
+                }
+                e.target.value = value;
+            };
+        }
+
+        const btnVerify = container.querySelector('#btnVerifyMFA');
+        btnVerify.onclick = async () => {
+            const token = inputCode.value.replace(/\s/g, ''); // Quitar espacios para el servidor
+            if (token.length !== 6) return showToast("El código debe tener 6 dígitos", "warning");
+
+            btnVerify.disabled = true;
+            btnVerify.innerHTML = '<span class="loading-spinner"></span> VERIFICANDO...';
+
+            try {
+                const ver = await apiRequest('/auth/mfa/verify', 'POST', { token });
+                if (ver.ok) { 
+                    showToast("¡Escudo 2FA Activado con éxito!", "success"); 
+                    loadView('security', true); 
+                } else {
+                    showToast(ver.data?.error || "Código incorrecto o caducado", "error");
+                }
+            } catch (err) {
+                showToast("Error de conexión", "error");
+            } finally {
+                btnVerify.disabled = false;
+                btnVerify.innerHTML = 'ACTIVAR PROTECCIÓN';
             }
         };
     }
