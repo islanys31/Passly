@@ -1,384 +1,106 @@
 # 🔐 Passly - Sistema de Control de Accesos Inteligente
+## v3.0.0 Cloud Edition ☁️
 
-![Version](https://img.shields.io/badge/version-3.0-green.svg)
-![Node](https://img.shields.io/badge/node-18.x-blue.svg)
-![MySQL](https://img.shields.io/badge/mysql-8.0-orange.svg)
-![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![Version](https://img.shields.io/badge/version-3.0.0--cloud-green.svg?style=for-the-badge)](https://github.com/islanys31/Passly)
+[![Status](https://img.shields.io/badge/Status-Live-success.svg?style=for-the-badge)](https://passly3106.vercel.app)
+[![Stack](https://img.shields.io/badge/Stack-Full--JS-blue.svg?style=for-the-badge)](https://nodejs.org)
+[![Security](https://img.shields.io/badge/Security-Hardened-red.svg?style=for-the-badge)](https://helmetjs.github.io/)
 
-**Passly** es un sistema de control de accesos moderno y seguro diseñado para unidades residenciales, edificios corporativos y espacios que requieren gestión de entradas y salidas con tecnología QR, validación en tiempo real y reportes profesionales.
+**Passly** es una plataforma de gestión de identidades y control de accesos de nivel empresarial, diseñada para modernizar la seguridad en unidades residenciales y complejos corporativos. Mediante una arquitectura distribuida en la nube, Passly ofrece una solución **Zero-Trust** con autenticación biométrica simulada, códigos QR dinámicos y monitoreo en tiempo real.
 
-### 🌐 URLs de Producción
+---
+
+### 🚀 Acceso Rápido
 | Servicio | URL |
 |----------|-----|
-| **Frontend (Vercel)** | https://passly3106.vercel.app |
-| **API Backend (Render)** | https://passly-69ah.onrender.com |
-| **Base de Datos (Aiven)** | MySQL Cloud (Aiven) |
-| **Swagger Docs** | https://passly-69ah.onrender.com/api-docs |
+| 🖥️ **Frontend (Vercel)** | [https://passly3106.vercel.app](https://passly3106.vercel.app) |
+| ⚙️ **API Backend (Render)** | [https://passly-69ah.onrender.com](https://passly-69ah.onrender.com) |
+| 📘 **Swagger Docs** | [https://passly-69ah.onrender.com/api-docs](https://passly-69ah.onrender.com/api-docs) |
+
+> [!TIP]
+> **Modo Demo (Magic Login)**: Accede instantáneamente como administrador usando [esta URL de acceso rápido](https://passly-69ah.onrender.com/api/magic/login?role=1). No requiere contraseña.
 
 ---
 
-## 🌟 Características Principales
+## 🔥 Funcionalidades Core
 
-### 🔐 Autenticación y Seguridad (Hardened v2.1.1)
-- ✅ **Paginación Real**: Todos los listados están paginados en el servidor para soportar miles de registros.
-- ✅ **Búsqueda Server-Side**: Filtrado eficiente directamente en SQL (nombre, email, serial, etc.).
-- ✅ **Caché Inteligente**: Reducción drástica de carga en BD mediante caché en memoria con TTL.
-- ✅ Login seguro con JWT y verificación de rol
-- ✅ Autenticación de dos factores (MFA/2FA) vía TOTP
-- ✅ Recuperación de contraseña con códigos de 6 dígitos
-- ✅ Email de Bienvenida y Alertas de Seguridad automáticas
-- ✅ Helmet.js, Rate Limiting estricto (5 intentos login) y Sanitización Global
-- ✅ Aislamiento Multi-tenancy (cada administrador solo ve sus datos)
-- ✅ **Dashboards Basados en Roles**: Vistas dinámicas y seguras para Administrador, Seguridad y Usuario regular.
+### 🛡️ Seguridad Avanzada (Hardening v3.0)
+- **MFA (2FA)**: Autenticación de dos factores vía TOTP (Google Authenticator).
+- **Hardening**: Protección con Helmet.js, Rate Limiting (mitigación de fuerza bruta) y Sanitización XSS.
+- **Auditoría**: Logs inmutables de cada acción administrativa con registro de IP.
+- **Zero-SMTP**: El sistema no bloquea el flujo si el servidor de correo falla, permitiendo auto-activaciones.
 
-### 📊 Dashboard en Tiempo Real
-- ✅ Estadísticas live: usuarios activos, accesos del día, dispositivos, alertas
-- ✅ Gráfica de tráfico por horas (Chart.js)
-- ✅ Últimos accesos actualizados vía WebSockets
-- ✅ Tarjeta de QR personal con generación y descarga
-- ✅ Alertas de seguridad visual
+### 🔑 Ecosistema QR
+- **QR Identidad**: Llave permanente para residentes vinculada a su ficha maestra.
+- **QR Invitado**: Invitaciones temporales firmadas con JWT (auto-expirables).
+- **Scanner Web**: Terminal de validación de alta velocidad compatible con cualquier cámara.
 
-### 🔑 Sistema QR Completo
-- ✅ **QR Personal**: Generación de código QR para usuarios permanentes
-- ✅ **QR Invitado**: Invitaciones temporales firmadas con JWT (4h - 1 semana)
-- ✅ **Escáner QR**: Página dedicada con cámara (html5-qrcode)
-- ✅ **Validación automática**: Registro de acceso al escanear
-
-### 👥 Gestión Completa
-- ✅ CRUD de Usuarios con subida de fotos de perfil
-- ✅ CRUD de Dispositivos (vehículos, motos, bicicletas)
-- ✅ Registro de accesos manual y automático (QR)
-- ✅ Exportación a CSV y PDF profesional (jsPDF)
-- ✅ Soft delete (desactivación sin pérdida de datos)
-
-### 🎨 Diseño Premium
-- ✅ Modo oscuro/claro persistente con toggle
-- ✅ Glassmorphism y efectos modernos
-- ✅ Responsive (móvil, tablet, desktop)
-- ✅ Animaciones suaves y transiciones
-- ✅ Tipografía moderna (Poppins, Roboto, Inter)
-- ✅ Toasts de notificación no intrusivas
-
-### 🐳 Deployment
-- ✅ Docker Compose con 3 servicios (API + MySQL + Nginx)
-- ✅ Nginx como reverse proxy con Gzip y WebSocket proxy
-- ✅ Volúmenes persistentes para datos
-- ✅ Restart automático de servicios
+### 📊 Analítica y Tiempo Real
+- **WebSockets**: Dashboard que se actualiza en vivo sin recargar la página mediante Socket.IO.
+- **Advanced Charts**: Visualización de picos de tráfico, censos de usuarios y tendencias semanales.
+- **Exportación**: Reportes profesionales en PDF (con branding) y CSV (para Excel).
 
 ---
 
-## 🚀 Inicio Rápido
-
-### Opción 1: Desarrollo Local
-
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/Passly.git
-cd Passly
-
-# 2. Crear la base de datos
-mysql -u root -p < database/passly.sql
-
-# 3. Configurar variables de entorno
-cd backend
-cp .env.example .env
-# Edita .env con tus credenciales de MySQL
-
-# 4. Instalar dependencias e iniciar
-npm install
-npm run dev
-```
-
-Accede a: **`http://localhost:3000`**
-
-### Opción 2: Docker (Producción)
-
-```bash
-docker-compose up -d --build
-```
-
-Accede a: **`http://localhost`**
-
-### Credenciales de Prueba (Producción)
-
-| Email | Contraseña | Rol |
-|-------|-----------|-----|
-| `admin@gmail.com` | `Passly@2025*` | Administrador |
-| `juan.perez@passly.com` | `Passly@2025*` | Usuario |
-| `carlos.rod@passly.com` | `Passly@2025*` | Seguridad |
-
----
-
----
-
-## 🏗️ Arquitectura del Sistema
+## 🏗️ Arquitectura en la Nube
 
 ```mermaid
-graph TD
-    User((Usuario)) <--> Nginx[Nginx Reverse Proxy]
-    Nginx <--> Express[API Express / Node.js]
-    Express <--> MySQL[(MySQL 8.0 Database)]
-    Express <--> Sockets[Socket.IO - Real Time]
-    Express <--> Mail[Nodemailer - Gmail]
-    Frontend[Vanilla JS / PWA] <--> Nginx
+graph LR
+    User((Usuario)) --- Vercel[Frontend SPA - Vercel]
+    Vercel -- "REST API" --- Render[Backend API - Render]
+    Render -- "SQL" --- Aiven[(MySQL Cloud - Aiven)]
+    Render -- "WSS" --- User
 ```
 
 ---
 
-## 📁 Estructura del Proyecto
-
-```
-Passly/
-├── backend/
-│   ├── src/
-│   │   ├── config/          # DB pool, Socket.IO, Swagger
-│   │   ├── controllers/     # Auth, User, Device, Access, Transport, Stats
-│   │   ├── middlewares/     # Auth JWT, Security (Helmet/Rate/Validation), Upload
-│   │   ├── routes/          # 6 archivos de rutas API
-│   │   ├── services/        # Email (Nodemailer)
-│   │   ├── utils/           # Backups (node-cron)
-│   │   └── app.js           # Express + Helmet + CORS + Compression
-│   ├── uploads/             # Fotos de perfil
-│   ├── server.js            # HTTP + Socket.IO
-│   ├── Dockerfile
-│   ├── .env / .env.example
-│   └── package.json
-├── frontend/
-│   ├── css/index.css        # Estilos con temas oscuro/claro
-│   ├── js/                  # auth, dashboard, api, utils, theme, forgot, recovery, reset
-│   ├── index.html           # Login/Registro
-│   ├── dashboard.html       # Panel principal
-│   ├── scanner.html         # Escáner QR
-│   ├── forgot.html          # Recuperar contraseña
-│   ├── reset.html           # Restablecer contraseña
-│   └── service-worker.js    # PWA
-├── database/
-│   └── passly.sql           # Schema completo (9 tablas)
-├── nginx/
-│   └── default.conf         # Reverse Proxy + Gzip + WebSocket
-├── docker-compose.yml       # 3 servicios
-├── docs/                    # Documentación formal
-│   ├── 01_REQUISITOS_Y_PROPUESTA.md
-│   ├── 02_DIAGRAMAS_SISTEMA.md
-│   ├── 03_BASE_DE_DATOS.md
-│   ├── 04_MANUALES.md
-│   └── 05_PRUEBAS_Y_DISEÑO.md
-└── README.md
-```
-
----
-
-## 🔌 API REST
-
-### Autenticación
-```
-POST /api/auth/register          - Registrar usuario
-POST /api/auth/login             - Iniciar sesión (JWT)
-POST /api/auth/mfa/login         - Verificar código TOTP para login
-POST /api/auth/forgot-password   - Solicitar código de recuperación
-POST /api/auth/reset-password    - Restablecer contraseña
-```
-
-### Usuarios
-```
-GET    /api/usuarios             - Listar todos
-POST   /api/usuarios             - Crear nuevo
-PUT    /api/usuarios/:id         - Actualizar
-DELETE /api/usuarios/:id         - Desactivar (soft delete)
-POST   /api/usuarios/:id/photo   - Subir foto de perfil
-```
-
-### Dispositivos
-```
-GET    /api/dispositivos         - Listar todos
-POST   /api/dispositivos         - Crear nuevo
-PUT    /api/dispositivos/:id     - Actualizar
-DELETE /api/dispositivos/:id     - Desactivar (soft delete)
-```
-
-### Accesos y QR
-```
-GET    /api/accesos              - Listar historial (con JOINs)
-POST   /api/accesos              - Registrar acceso manual
-GET    /api/accesos/qr           - Generar QR personal
-POST   /api/accesos/invitation   - Crear invitación QR temporal
-POST   /api/accesos/scan         - Validar escaneo QR
-```
-
-### Otros
-```
-GET    /api/medios-transporte    - Listar medios de transporte
-GET    /api/stats                - Estadísticas generales
-```
-
-> 📘 Documentación interactiva: `http://localhost:3000/api-docs` (Swagger)
-
----
-
-## 🔒 Seguridad (Hardening)
-
-| Medida | Detalle |
-|--------|---------|
-| **Helmet.js** | CSP, HSTS (1 año + preload), X-Frame-Options DENY |
-| **Rate Limiting** | Login: 100/15min, Register: 50/h, Recovery: 3/h, API: 100/15min |
-| **express-validator** | Email: @gmail/@hotmail, Password: 8-12 chars complejos, Nombre: solo letras y acentos |
-| **Sanitización** | Eliminación de tags HTML (`<>`) en todos los inputs |
-| **JWT Hardened** | Verificación de propósito + estado del usuario en BD |
-| **MFA (2FA)** | Segundo factor de autenticación TOTP integrado |
-| **Bcrypt** | Salt factor 10 para hash irreversible |
-| **CORS** | Origen restringido en producción |
-| **SQL** | Prepared statements (parámetros ?) |
-| **Docker** | Red aislada, solo Nginx expuesto |
-| **Soft Delete** | Desactivación sin pérdida de datos |
-
----
-
-## 🗄️ Base de Datos
-### Tablas (9)
-| Tabla | Descripción |
-|-------|-------------|
-| `estados` | Diccionario: Activo, Inactivo, Mantenimiento, Bloqueado |
-| `clientes` | Unidades residenciales / empresas |
-| `roles` | Admin, Usuario, Seguridad |
-| `usuarios` | Gestión con credenciales encriptadas, foto y MFA |
-| `medios_transporte` | Vehículo, Motocicleta, Bicicleta, Peatonal |
-| `dispositivos` | Bienes vinculados a usuarios |
-| `accesos` | Log histórico de entradas/salidas |
-| `logs_sistema` | Registro de auditoría administrativa |
-| `recovery_codes` | Códigos de recuperación con expiración |
-
----
-
-## 🎨 Diseño
-
-### Tema Oscuro (Por defecto)
-- Fondo: `#2E2E2E` | Acentos: Verde `#2E7D32` + Azul `#2979FF`
-- Glassmorphism con backdrop blur
-- Gradientes verde → azul en botones
-
-### Tema Claro
-- Fondo: `#FAFAF5` | Acentos: Lavanda `#B39DDB` + Esmeralda `#66BB6A`
-- Sombras suaves
-- Gradientes lavanda → esmeralda
-
-### Responsive
-- ✅ Móvil (< 480px)
-- ✅ Tablet (481-768px)
-- ✅ Desktop (> 768px)
-
----
-
-## 📦 Dependencias Principales
-
-### Backend
-| Paquete | Versión | Función |
-|---------|---------|---------|
-| express | ^4.18.2 | Framework web |
-| mysql2 | ^3.9.8 | Base de datos |
-| jsonwebtoken | ^9.0.2 | Autenticación |
-| bcrypt | ^5.1.1 | Hash de contraseñas |
-| helmet | ^8.1.0 | Headers de seguridad |
-| express-rate-limit | ^7.1.5 | Rate limiting |
-| express-validator | ^7.0.1 | Validaciones |
-| socket.io | ^4.7.4 | Tiempo real |
-| nodemailer | ^6.9.9 | Envío de emails |
-| qrcode | ^1.5.3 | Generación QR |
-| multer | ^1.4.5 | Subida de archivos |
-| compression | ^1.8.1 | Compresión Gzip |
-| cors | ^2.8.5 | Cross-Origin |
-| node-cron | ^3.0.3 | Tareas programadas |
-
-### Frontend
-| Librería | Función |
-|----------|---------|
-| Chart.js | Gráficas de tráfico |
-| jsPDF | Exportación a PDF |
-| html5-qrcode | Escáner QR con cámara |
-| Socket.IO Client | Actualizaciones en tiempo real |
-| QRCode.js | Generación de QR en cliente |
-
----
-
-## 🐳 Docker
-
-### Servicios
-| Servicio | Imagen | Puerto | Función |
-|----------|--------|--------|---------|
-| `passly-web` | Nginx Alpine | 80/443 | Reverse Proxy + SSL + Gzip |
-| `passly-api` | Node 18-slim | 3000 (interno) | API + Socket.IO |
-| `passly-db` | MySQL 8.0 | 3306 (interno) | Base de datos |
-| `passly-certbot` | Certbot | N/A | Renovación SSL automática |
-
-### Comandos
-```bash
-# Levantar todo
-docker-compose up -d --build
-
-# Ver logs
-docker-compose logs -f
-
-# Detener
-docker-compose down
-
-# Reiniciar
-docker-compose restart
-```
-
----
-
-## 🛠️ Configuración
-
-### Variables de Entorno (.env)
-```env
-# Base de Datos
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=tu_contraseña
-DB_NAME=passly
-DB_PORT=3306
-
-# JWT
-JWT_SECRET=tu_clave_secreta_segura
-
-# Servidor
-PORT=3000
-NODE_ENV=development
-
-# Email (Configuración SMTP Flexible)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=catira3132@mail.com
-EMAIL_PASS=contraseña_de_aplicacion
-
-# Producción
-DOMAIN_NAME=localhost
-EMAIL_ADMIN=catira3132@mail.com
-FRONTEND_URL=http://localhost:3000
-```
-
----
-
-## 📚 Documentación
+## 📁 Documentación del Proyecto
 
 | Documento | Descripción |
 |-----------|-------------|
-| `README.md` | Documentación principal e instrucciones (este archivo) |
-| `docs/` | Carpeta reservada para manuales técnicos y requerimientos |
-| `INSTRUCCIONES_DEMO.md` | Guía de uso rápido para evaluar la plataforma y probar roles |
-| `PASO_A_PRODUCCION.md` | Recomendaciones de seguridad al lanzar la app |
+| [📄 Requisitos](file:///c:/Users/Personal/Passly-1/docs/01_REQUISITOS_Y_PROPUESTA.md) | Definición funcional y propuesta técnica |
+| [📊 Diagramas](file:///c:/Users/Personal/Passly-1/docs/02_DIAGRAMAS_SISTEMA.md) | Casos de uso, clases, secuencia y arquitectura |
+| [🗄️ Base de Datos](file:///c:/Users/Personal/Passly-1/docs/03_BASE_DE_DATOS.md) | Modelo E-R, normalización 3FN y diccionario |
+| [📔 Manuales](file:///c:/Users/Personal/Passly-1/docs/04_MANUALES.md) | Manual de Instalación, Técnico y de Usuario |
+| [🧪 Pruebas](file:///c:/Users/Personal/Passly-1/docs/05_PRUEBAS_Y_DISEÑO.md) | Reporte de QA, Seguridad (Hardening) y Estrés |
+| [🎓 Guía de Exposición](file:///c:/Users/Personal/Passly-1/docs/00_GUIA_EXPOSICION.md) | Guión para presentaciones en vivo y demos |
+| [📑 Ficha Técnica (ES)](file:///c:/Users/Personal/Passly-1/docs/FACT_SHEET_ES.md) | Resumen ejecutivo en español |
+| [📑 Fact Sheet (EN)](file:///c:/Users/Personal/Passly-1/docs/FACT_SHEET_EN.md) | Executive summary in English |
 
 ---
 
-## 🆘 Soporte
+## 🛠️ Stack Tecnológico
 
-- 📧 Email: catira3132@mail.com
-- 🐛 Issues: https://github.com/islanys31/Passly/issues
-- 📖 API Docs: http://localhost:3000/api-docs
+| Capa | Tecnologías |
+|------|-------------|
+| **Frontend** | Vanilla JavaScript (SPA), CSS3 Moderno, Chart.js, Socket.IO Client |
+| **Backend** | Node.js, Express, JWT, Bcrypt, Helmet.js, Nodemailer |
+| **Base de Datos** | MySQL 8.0 Cloud (Aiven) |
+| **Infraestructura** | Docker, Render, Vercel, GitHub Actions |
 
 ---
 
-**🔐 Passly v3.0.0 (Cloud Edition) - Sistema de Control de Accesos Inteligente**  
-*Desarrollado con Node.js, Express, MySQL, Socket.IO y Docker*  
-*Desplegado en Render (API) + Vercel (Frontend) + Aiven (MySQL Cloud)*
+## 🚀 Inicio Rápido (Local)
+
+```bash
+# 1. Clonar e Instalar
+git clone https://github.com/islanys31/Passly-1.git
+cd Passly-1/backend && npm install
+
+# 2. Base de Datos
+mysql -u root -p < ../database/passly.sql
+
+# 3. Iniciar
+npm run dev
+```
+
+---
+
+## 🆘 Soporte y Desarrollo
+- **Mantenimiento**: islanys31
+- **Email**: catira3132@mail.com
+- **Licencia**: MIT
+
+---
+
+**🔐 Passly v3.0.0** — *Because security should be smart, fast, and beautiful.*

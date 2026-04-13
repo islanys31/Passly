@@ -11,7 +11,9 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 *   **DISPOSITIVOS**: Bienes muebles asignados a usuarios con identificador único.
 *   **ACCESOS**: Log histórico de movimientos (Entrada/Salida) con marca de tiempo.
 *   **LOGS_SISTEMA**: Registro inmutable de auditoría para acciones críticas (Crear, Editar, Eliminar, Login).
+*   **EQUIPOS**: Maestro de activos tecnológicos (Laptops, Tablets, etc.) independientes de vehículos.
 *   **RECOVERY_CODES**: Códigos de recuperación de contraseña con expiración de 15 minutos.
+*   **LOGIN_ATTEMPTS**: Seguimiento de intentos de acceso por IP para mitigación de ataques de fuerza bruta.
 
 ---
 
@@ -153,6 +155,26 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 | descripcion | VARCHAR(255) | NULLABLE |
 | updated_at | TIMESTAMP | AUTO ON UPDATE |
 
+### 3.12 Tabla `equipos`
+| Campo | Tipo | Restricción |
+|-------|------|-------------|
+| id | INT AUTO_INCREMENT | PRIMARY KEY |
+| usuario_id | INT | FK → usuarios(id), NOT NULL |
+| nombre | VARCHAR(100) | NOT NULL |
+| tipo | VARCHAR(50) | DEFAULT 'General' |
+| serial | VARCHAR(100) | NULLABLE |
+| estado_id | INT | FK → estados(id), DEFAULT 1 |
+| created_at | TIMESTAMP | AUTO |
+
+### 3.13 Tabla `login_attempts`
+| Campo | Tipo | Restricción |
+|-------|------|-------------|
+| id | INT AUTO_INCREMENT | PRIMARY KEY |
+| ip_address | VARCHAR(45) | NOT NULL |
+| email | VARCHAR(100) | NOT NULL |
+| attempt_time | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
+| success | BOOLEAN | DEFAULT FALSE |
+
 ---
 
 ## 4. RESTRICCIONES DE INTEGRIDAD
@@ -178,5 +200,7 @@ El diseño se basa en una arquitectura relacional sólida con llaves foráneas p
 *   `dispositivos.estado_id` → `estados.id`
 *   `accesos.usuario_id` → `usuarios.id`
 *   `accesos.dispositivo_id` → `dispositivos.id`
+*   `equipos.usuario_id` → `usuarios.id`
+*   `equipos.estado_id` → `estados.id`
 *   `logs_sistema.usuario_id` → `usuarios.id`
 *   `notificaciones.usuario_id` → `usuarios.id`

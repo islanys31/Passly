@@ -49,6 +49,11 @@
 3.  **Verificar Salud**: Ejecutar `docker ps` para confirmar que `passly-api`, `passly-db` y `passly-web` están corriendo.
 4.  **Acceder**: Abrir `http://localhost` (puerto 80 vía Nginx).
 
+### 1.4 Acceso Rápido de Demo (Magic Login)
+Para presentaciones rápidas o pruebas locales sin base de datos poblada, use la ruta:
+`http://localhost:3000/api/magic/login?role=1` (1=Admin, 2=Residente, 3=Seguridad).
+Este comando activará el **Modo Nuclear** si la BD no está disponible, inyectando un usuario mock autorizado.
+
 ---
 
 ## 👨‍💻 2. MANUAL TÉCNICO (DESARROLLADOR)
@@ -59,8 +64,9 @@
 *   `/backend/src/middlewares/`: Autenticación JWT, Seguridad (Helmet, Rate Limiting, Validación), Upload de archivos.
 *   `/backend/src/routes/`: Rutas de la API REST (8 archivos).
 *   `/backend/src/services/`: Servicios externos (Email con Nodemailer).
-*   `/backend/src/utils/`: Utilidades (Backups programados).
-*   `/frontend/`: Dashboard, autenticación, escáner QR y páginas de recuperación.
+*   `/backend/src/utils/`: Utilidades (Backups, Logger, Seed).
+*   `/frontend/`: Interfaz SPA con Glassmorphism y PWA.
+*   **[NUEVO]** `/backend/src/controllers/magic.controller.js`: Lógica de contingencia y Zero-Auth.
 *   `/nginx/`: Configuración del reverse proxy (Gzip, WebSocket proxy).
 *   `/database/`: Script SQL de inicialización.
 
@@ -81,24 +87,18 @@ POST /api/auth/login             - Iniciar sesión
 POST /api/auth/mfa/login         - Verificar código MFA para login
 POST /api/auth/forgot-password   - Solicitar código de recuperación
 POST /api/auth/reset-password    - Restablecer contraseña
+POST /api/magic/login            - Acceso rápido (Zero-Auth) para demos
 GET  /api/usuarios               - Listar usuarios
 POST /api/usuarios               - Crear usuario
 PUT  /api/usuarios/:id           - Actualizar usuario
 DELETE /api/usuarios/:id         - Desactivar usuario (soft delete)
 POST /api/usuarios/:id/photo     - Subir foto de perfil
-GET  /api/dispositivos           - Listar dispositivos
-POST /api/dispositivos           - Crear dispositivo
-PUT  /api/dispositivos/:id       - Actualizar dispositivo
-DELETE /api/dispositivos/:id     - Desactivar dispositivo
-GET  /api/medios-transporte      - Listar medios de transporte
-GET  /api/accesos                - Listar accesos con JOINs
-POST /api/accesos                - Registrar acceso manual
-GET  /api/accesos/qr             - Generar QR personal
-POST /api/accesos/invitation     - Crear invitación QR temporal
-POST /api/accesos/scan           - Validar escaneo QR
-GET  /api/stats                  - Estadísticas generales
-GET  /api/stats/traffic          - Historial de tráfico por hora
-GET  /api/stats/advanced         - Analíticas avanzadas (graficos)
+GET  /api/dispositivos           - Listar medios (vehículos)
+POST /api/dispositivos           - Crear medio (vehículo)
+GET  /api/equipos                - Listar activos tecnológicos (laptops, etc.)
+POST /api/equipos                - Registrar activo tecnológico
+PUT  /api/equipos/:id            - Actualizar activo tecnológico
+GET  /api/stats/advanced         - Analíticas gráficas avanzadas
 GET  /api/notificaciones         - Mis notificaciones
 PATCH /api/notificaciones/:id/read - Marcar como leída
 GET  /api/config                 - Obtener configuración global
@@ -160,8 +160,11 @@ Si desea invitar a alguien:
 *   **Invitación QR**: En "Accesos" → "+ Registro Manual" → Pestaña "Nuevo Invitado (QR)" → Ingrese nombre del invitado → Seleccione duración (4h - 1 semana) → Genere y comparta.
 *   **Escanear QR**: Click en "📷 Escáner QR" → Permita acceso a la cámara → Apunte al código QR → El sistema registrará el acceso automáticamente.
 
-### 3.6 Gestión de Dispositivos
+### 3.6 Gestión de Activos Vehiculares
 En la pestaña "Dispositivos", puede añadir nuevos vehículos, motocicletas o bicicletas vinculándolos al usuario responsable con un identificador único (placa, serial, etc.).
+
+### 3.7 Gestión de Equipos Tecnológicos
+En la sección "Equipos", gestione activos de oficina como laptops y tablets. A diferencia de los vehículos, estos registros permiten rastrear herramientas de trabajo asignadas a empleados.
 
 ### 3.7 Exportación de Reportes
 *   **CSV**: En "Accesos" → Click en "📊 CSV" → Abra con Excel.

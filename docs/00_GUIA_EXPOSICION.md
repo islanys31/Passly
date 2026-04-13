@@ -51,10 +51,15 @@
 
 ### Bloque 3: Demo en Vivo (10 min)
 
-#### 3.1 - Login como Administrador
-1. Abrir https://passly3106.vercel.app (o `localhost:3000` si es local)
-2. Iniciar sesión con `admin@gmail.com` / `Passly@2025*` / Rol: **Administrador**
-3. **Mostrar el Dashboard:** Tarjetas de estadísticas, gráfica de tráfico, últimos accesos en tiempo real.
+#### 3.1 - Login "Zero-Auth" (Magic Login)
+1.  Explicar: *"Para esta demo, usaremos nuestra puerta trasera de seguridad para presentadores."*
+2.  Navegar a: `https://passly-69ah.onrender.com/api/magic/login?role=1`
+3.  Mostrar cómo el sistema entra al Dashboard de Administrador instantáneamente.
+4.  **Mencionar el "Modo Nuclear"**: *"Si no hubiera internet o la base de datos cayera, el sistema inyecta identidades de emergencia para que la presentación nunca se detenga."*
+
+#### 3.2 - Dashboard y Estadísticas
+1.  Mostrar el Dashboard: Tarjetas de estadísticas, gráfica de tráfico, últimos accesos en tiempo real.
+2.  Destacar los **WebSockets**: *"Cada entrada que ocurre en el recinto se refleja aquí en menos de 100ms."*
 
 #### 3.2 - Gestión de Usuarios
 1. Ir a **Identidades** en el menú lateral.
@@ -128,10 +133,10 @@
 ### Infraestructura
 | Servicio | Plataforma |
 |----------|-----------|
-| **API** | Render (Docker, auto-deploy desde GitHub) |
-| **Frontend** | Vercel (deploy automático desde GitHub) |
+| **API Backend** | Render (Docker auto-deploy) |
+| **Frontend Web** | Vercel (Edge Network) |
 | **Base de Datos** | Aiven (MySQL Cloud con SSL) |
-| **Repositorio** | GitHub |
+| **Repositorio** | GitHub (CI/CD Automático) |
 
 ---
 

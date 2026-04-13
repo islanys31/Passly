@@ -100,13 +100,20 @@ classDiagram
         +string modulo
         +string ip_address
     }
+    class Equipo {
+        +int id
+        +int usuario_id
+        +string nombre
+        +string tipo
+        +string serial
+        +int estado_id
+    }
     class AuthController {
         +register()
         +login()
         +mfaLogin()
         +mfaVerify()
-        +forgotPassword()
-        +resetPassword()
+        +magicLogin()
     }
     class UserController {
         +getAllUsers()
@@ -122,6 +129,12 @@ classDiagram
         +createGuestInvitation()
         +validateScan()
     }
+    class EquipoController {
+        +getAllEquipos()
+        +createEquipo()
+        +updateEquipo()
+        +deleteEquipo()
+    }
     class StatsController {
         +getGeneralStats()
     }
@@ -136,39 +149,39 @@ classDiagram
     }
 
     Usuario "1" -- "0..*" Dispositivo : posee
+    Usuario "1" -- "0..*" Equipo : posee
     Usuario "1" -- "0..*" Acceso : realiza
     Usuario "1" -- "0..*" LogAuditoria : genera
     Dispositivo "0..1" -- "0..*" Acceso : vinculado_a
     Usuario "1" -- "0..*" RecoveryCode : solicita
     AuthController ..> Usuario : gestiona
     AccessController ..> Acceso : registra
+    EquipoController ..> Equipo : gestiona
     SecurityMiddleware ..> AuthController : protege
 ```
 
 ---
 
-## 3. DIAGRAMA DE DESPLIEGUE (DOCKER)
-Arquitectura física y red.
+## 3. DIAGRAMA DE DESPLIEGUE (CLOUD EDITION)
+Arquitectura distribuida en la nube.
 
 ```mermaid
 graph TD
-    Client[Navegador del Usuario] -- "Puerto 443 (SSL)" --> Nginx[Contenedor Nginx SSL]
-    Nginx -- "Proxy Pass /api (Red Interna)" --> API[Contenedor Node.js API]
-    Nginx -- "Proxy Pass /socket.io" --> API
-    Certbot[Contenedor Certbot] -- "Renovación Certs" --> Nginx
-    API -- "TCP 3306" --> DB[Contenedor MySQL 8.0]
-    API -- "WebSockets (Socket.IO)" --> Client
-    subgraph "Docker Network (passly-network)"
-        Nginx
-        API
-        DB
-        Certbot
-    end
+    Client[Navegador del Usuario] -- "HTTPS (Vercel Edge)" --> Front[Frontend SPA - Vercel]
+    Front -- "Fetch API (REST)" --> Backend[API Node.js - Render]
+    Backend -- "SSL / TCP 3306" --> DB[MySQL Cloud - Aiven]
+    Backend -- "Socket.IO (WSS)" --> Client
+    
     subgraph "Capas de Seguridad"
-        API --> MFA[MFA Provider]
-        API --> Audit[Audit Logger]
-        API --> Helmet[Helmet.js]
-        API --> RateLimit[Rate Limiting]
+        Backend --> MFA[MFA Provider]
+        Backend --> Audit[Audit Logger]
+        Backend --> Helmet[Helmet.js]
+        Backend --> RateLimit[Rate Limiting]
+    end
+    
+    subgraph "Infraestructura CI/CD"
+        Github[Repositorio GitHub] -- "Webhooks" --> Front
+        Github -- "Build Docker" --> Backend
     end
 ```
 
@@ -230,4 +243,47 @@ flowchart TD
     N --> O[Actualizar en BD]
     O --> P[Enviar Email de Confirmación]
     P --> Q[Redirigir a Login]
+```
+
+---
+
+## 6. DIAGRAMA DE SECUENCIA (MAGIC LOGIN)
+Acceso rápido para demostraciones sin credenciales.
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario/Demo
+    participant F as Frontend
+    participant B as Backend (MagicController)
+    participant DB as MySQL/Memory
+
+    U->>F: Acceder a /magic?role=Admin
+    F->>B: GET /api/magic/login?role=1
+    Note over B: Validar Modo Nuclear vs DB
+    B->>DB: Buscar usuario del rol solicitado
+    ALT Base de Datos OK
+        DB-->>B: Retorna datos de usuario real
+    ELSE Base de Datos Down
+        B->>B: Inyectar Mock Data (Modo Nuclear)
+    END
+    B->>B: Generar JWT (Bearer Token)
+    B->>F: Redirigir con JWT y Cookie HTTP-Only
+    F->>F: Inicializar Dashboard en Modo Demo
+    Note over F: WebSocket Autenticado
+```
+
+---
+
+## 7. DIAGRAMA DE ESTADOS (CICLO DE VIDA USUARIO)
+Control de estados y transiciones de seguridad.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Inactivo: Registro Inicial
+    Inactivo --> Activo: Verificación de Email
+    Activo --> Bloqueado: Exceso de Intentos Falal
+    Bloqueado --> Activo: Reset de Contraseña
+    Activo --> Mantenimiento: Acción Admin
+    Mantenimiento --> Activo: Reapertura
+    Activo --> Inactivo: Baja (Soft Delete)
 ```

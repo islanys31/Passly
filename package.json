@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "chart.js": "^4.4.1",
+    "docx": "^9.6.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.1",
     "lucide": "^0.300.0",

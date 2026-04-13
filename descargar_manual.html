@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Passly - Generar Manual Word</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 24px;
+      padding: 50px 60px;
+      text-align: center;
+      max-width: 520px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+    }
+    .logo { font-size: 52px; font-weight: 900; color: #00C77F; letter-spacing: -2px; margin-bottom: 8px; }
+    .logo span { color: #2979FF; }
+    .subtitle { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 40px; }
+    h2 { font-size: 20px; margin-bottom: 12px; color: rgba(255,255,255,0.9); }
+    .desc { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 36px; line-height: 1.6; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, #00C77F, #2979FF);
+      color: white; border: none; border-radius: 14px;
+      padding: 18px 40px; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: all 0.3s;
+      text-decoration: none; letter-spacing: 0.5px;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,199,127,0.4); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .status { margin-top: 24px; font-size: 13px; color: rgba(255,255,255,0.4); min-height: 20px; }
+    .status.ok { color: #00C77F; }
+    .status.error { color: #ff6b6b; }
+    .spinner { display: none; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .features { display: flex; gap: 12px; margin-bottom: 36px; flex-wrap: wrap; justify-content: center; }
+    .feature { background: rgba(255,255,255,0.06); border-radius: 8px; padding: 6px 14px; font-size: 11px; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">PASSLY<span>.</span></div>
+    <div class="subtitle">Sistema de Control de Accesos Inteligente</div>
+    <h2>Manual de Usuario v3.0</h2>
+    <p class="desc">Documento completo con 14 secciones, 8 capturas de pantalla, tablas de referencia, glosario y preguntas frecuentes.</p>
+
+    <div class="features">
+      <span class="feature">14 Secciones</span>
+      <span class="feature">8 Figuras</span>
+      <span class="feature">Glosario</span>
+      <span class="feature">FAQ</span>
+      <span class="feature">Formato Word</span>
+    </div>
+
+    <button class="btn" id="btnDownload" onclick="generateDoc()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">⬇ Descargar Manual (.docx)</span>
+    </button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- docx library desde CDN -->
+  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+
+  <script>
+  async function generateDoc() {
+    const btn    = document.getElementById('btnDownload');
+    const st     = document.getElementById('status');
+    const sp     = document.getElementById('spinner');
+    const btnTxt = document.getElementById('btnText');
+
+    btn.disabled = true;
+    sp.style.display = 'block';
+    btnTxt.textContent = 'Generando documento...';
+    st.className = 'status';
+    st.textContent = 'Construyendo el manual, por favor espere...';
+
+    try {
+      const {
+        Document, Packer, Paragraph, TextRun, AlignmentType,
+        Table, TableRow, TableCell, WidthType, BorderStyle,
+        ShadingType, convertInchesToTwip, Header, Footer,
+        PageNumber, PageBreak
+      } = window.docx;
+
+      const C = {
+        green:  "1B8F5E",
+        blue:   "2356D4",
+        accent: "00C77F",
+        gray:   "6B6B8A",
+        text:   "1F1F2E",
+      };
+
+      const h1 = (t) => new Paragraph({
+        children: [new TextRun({ text: t, bold: true, color: C.green, size: 40, font: "Calibri" })],
+        spacing:  { before: 400, after: 200 },
+        border:   { bottom: { style: BorderStyle.SINGLE, size: 8, color: C.accent } },
+      });
+      const h2 = (t) => new Paragraph({
+        children: [new TextRun({ text: t, bold: true, color: C.blue, size: 28, font: "Calibri" })],
+        spacing:  { before: 320, after: 140 },
+      });
+      const p = (t) => new Paragraph({
+        children: [new TextRun({ text: t, color: C.text, size: 22, font: "Calibri" })],
+        spacing:  { after: 140 },
+      });
+      const bull = (t) => new Paragraph({
+        children: [new TextRun({ text: t, color: C.text, size: 22, font: "Calibri" })],
+        bullet: { level: 0 },
+        spacing: { after: 80 },
+      });
+      const num = (t) => new Paragraph({
+        children:  [new TextRun({ text: t, color: C.text, size: 22, font: "Calibri" })],
+        numbering: { reference: "num-list", level: 0 },
+        spacing:   { after: 100 },
+      });
+      const sp2 = () => new Paragraph({ text: "", spacing: { after: 100 } });
+      const pb  = () => new Paragraph({ children: [new PageBreak()], spacing: { after: 0 } });
+
+      function noteBox(label, body, borderColor, bgColor) {
+        const nb = { style: BorderStyle.NONE };
+        return new Table({
+          width:   { size: 100, type: WidthType.PERCENTAGE },
+          borders: {
+            top:    { style: BorderStyle.SINGLE, size: 2,  color: borderColor },
+            bottom: { style: BorderStyle.SINGLE, size: 2,  color: borderColor },
+            left:   { style: BorderStyle.SINGLE, size: 18, color: borderColor },
+            right:  nb, insideH: nb, insideV: nb,
+          },
+          rows: [new TableRow({ children: [new TableCell({
+            shading: { fill: bgColor, type: ShadingType.CLEAR },
+            margins: { top: 80, bottom: 80, left: 160, right: 80 },
+            borders: { top: nb, bottom: nb, left: nb, right: nb },
+            children: [
+              new Paragraph({ children: [new TextRun({ text: label, bold: true, color: borderColor, size: 20, font: "Calibri" })], spacing: { after: 60 } }),
+              new Paragraph({ children: [new TextRun({ text: body, italics: true, color: C.text, size: 20, font: "Calibri" })], spacing: { after: 0 } }),
+            ],
+          })] })],
+        });
+      }
+
+      const noteInfo = (t) => noteBox("NOTA",       t, "1B8F5E", "E8F5E9");
+      const noteWarn = (t) => noteBox("IMPORTANTE", t, "E65100", "FFF8E1");
+      const noteCaut = (t) => noteBox("SEGURIDAD",  t, "C62828", "FFEBEE");
+      const noteTip  = (t) => noteBox("CONSEJO",    t, "2356D4", "E3F2FD");
+
+      function tbl(headers, rows) {
+        const nb  = { style: BorderStyle.NONE };
+        const sbW = { style: BorderStyle.SINGLE, size: 2, color: "FFFFFF" };
+        const sbG = { style: BorderStyle.SINGLE, size: 2, color: "E0E0E0" };
+        const hRow = new TableRow({
+          tableHeader: true,
+          children: headers.map(h => new TableCell({
+            shading: { fill: C.green, type: ShadingType.CLEAR },
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            borders: { top: sbW, bottom: sbW, left: sbW, right: sbW },
+            children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: "FFFFFF", size: 20, font: "Calibri" })] })],
+          })),
+        });
+        const dRows = rows.map((row, ri) => new TableRow({
+          children: row.map(cell => new TableCell({
+            shading: { fill: ri % 2 === 0 ? "F0FFF4" : "FFFFFF", type: ShadingType.CLEAR },
+            margins: { top: 60, bottom: 60, left: 120, right: 120 },
+            borders: { top: sbG, bottom: sbG, left: sbG, right: sbG },
+            children: [new Paragraph({ children: [new TextRun({ text: cell, size: 20, color: C.text, font: "Calibri" })] })],
+          })),
+        }));
+        return new Table({
+          width:   { size: 100, type: WidthType.PERCENTAGE },
+          borders: {
+            top:     { style: BorderStyle.SINGLE, size: 4, color: C.green },
+            bottom:  { style: BorderStyle.SINGLE, size: 4, color: C.green },
+            left:    { style: BorderStyle.SINGLE, size: 4, color: C.green },
+            right:   { style: BorderStyle.SINGLE, size: 4, color: C.green },
+            insideH: { style: BorderStyle.SINGLE, size: 2, color: "E0E0E0" },
+            insideV: { style: BorderStyle.SINGLE, size: 2, color: "E0E0E0" },
+          },
+          rows: [hRow, ...dRows],
+        });
+      }
+
+      // PORTADA
+      const cover = [
+        new Paragraph({ text: "", spacing: { before: 1200, after: 0 } }),
+        new Paragraph({ children: [new TextRun({ text: "PASSLY", bold: true, size: 120, color: C.green, font: "Calibri" })], alignment: AlignmentType.CENTER, spacing: { after: 80 } }),
+        new Paragraph({ children: [new TextRun({ text: "Sistema de Control de Accesos Inteligente", size: 32, color: C.blue, font: "Calibri" })], alignment: AlignmentType.CENTER, spacing: { after: 720 } }),
+        new Paragraph({ children: [new TextRun({ text: "MANUAL DE USUARIO", bold: true, size: 56, color: C.text, font: "Calibri" })], alignment: AlignmentType.CENTER, spacing: { after: 180 } }),
+        new Paragraph({ children: [new TextRun({ text: "Version 3.0.0  -  Cloud Edition  -  Abril 2026", size: 24, color: C.gray, font: "Calibri" })], alignment: AlignmentType.CENTER, spacing: { after: 1000 } }),
+        tbl(["Campo", "Detalle"], [
+          ["Version",           "1.0"],
+          ["Fecha",             "Abril 2026"],
+          ["URL de produccion", "https://passly3106.vercel.app"],
+          ["Soporte tecnico",   "catira3132@mail.com"],
+          ["Tecnologias",       "Node.js - Express - MySQL - Socket.IO - Docker"],
+        ]),
+        pb(),
+      ];
+
+      const children = [
+        ...cover,
+
+        h1("1. Introduccion"),
+        p("Passly es una plataforma web de gestion y control de accesos disenada para unidades residenciales, edificios corporativos y cualquier espacio que requiera controlar quien entra y sale con precision, seguridad y en tiempo real."),
+        sp2(), bull("Codigos QR personales y temporales para invitados con expiracion automatica."),
+        bull("Monitoreo en tiempo real mediante WebSockets sin necesidad de recargar la pagina."),
+        bull("Autenticacion de dos factores (MFA/2FA) mediante TOTP para maxima seguridad."),
+        bull("Reportes exportables en CSV y PDF con diseno profesional."),
+        bull("Gestion completa de usuarios, dispositivos y registros de acceso."),
+        bull("Graficas y analiticas del flujo de personas por hora, dia y semana."), pb(),
+
+        h1("2. Roles del Sistema"),
+        p("Passly define cuatro niveles de acceso:"), sp2(),
+        tbl(["Rol", "Descripcion", "Permisos Principales"], [
+          ["Super Admin",   "Administrador global",          "Acceso total a todos los modulos y sedes"],
+          ["Administrador", "Gestor de una sede o unidad",   "CRUD de usuarios, dispositivos, accesos y configuracion"],
+          ["Residente",     "Usuario regular / empleado",     "QR personal, historial propio, actualizar perfil"],
+          ["Seguridad",     "Personal de vigilancia",        "Escaner QR, accesos manuales, historial"],
+        ]), sp2(),
+        noteInfo("Al iniciar sesion, debe seleccionar el rol correspondiente a su cuenta. Solo vera las opciones disponibles para ese rol."), pb(),
+
+        h1("3. Acceso a la Plataforma"),
+        h2("3.1 Pagina de Inicio"),
+        p("Al ingresar a https://passly3106.vercel.app vera la pagina de aterrizaje con el boton 'Ingresar' en la esquina superior derecha y las secciones Inicio, Funciones, Nosotros y Contacto."),
+        h2("3.2 Iniciar Sesion"),
+        p("Haga clic en 'Ingresar'. Complete el formulario modal con su Correo, Contrasena y Nivel de Autorizacion (rol), luego presione 'ENTRAR AL SISTEMA'."),
+        sp2(), noteWarn("Tras 5 intentos fallidos el sistema bloquea temporalmente el acceso. Use el enlace de recuperacion de contrasena si es necesario."), sp2(),
+        h2("3.3 Crear Cuenta (Registro)"),
+        p("Haga clic en 'Registrate aqui'. Complete Nombre, Apellido, Email, Contrasena y Rol. Haga clic en 'REGISTRARME'. Recibira un correo de bienvenida automaticamente."),
+        sp2(), noteTip("La contrasena debe tener entre 8 y 12 caracteres con al menos una mayuscula, una minuscula, un numero y un caracter especial. Ejemplo: Passly@2025*"), sp2(),
+        h2("3.4 Verificacion 2FA / MFA"),
+        p("Si su cuenta tiene activado el segundo factor, despues de ingresar email y contrasena el sistema solicita el codigo de 6 digitos de su aplicacion autenticadora (Google Authenticator, Authy o Microsoft Authenticator). El codigo cambia cada 30 segundos."),
+        h2("3.5 Recuperacion de Contrasena"),
+        num("Haga clic en 'Olvido su contrasena?' en el modal de login."),
+        num("Ingrese su correo electronico y haga clic en 'Enviar Codigo'."),
+        num("Recibira un codigo de 6 digitos valido por 15 minutos."),
+        num("Ingrese el codigo y su nueva contrasena, luego haga clic en 'CAMBIAR CONTRASENA'."),
+        sp2(), noteCaut("Solo se permiten 3 solicitudes de recuperacion por hora por razones de seguridad."), pb(),
+
+        h1("4. Panel de Control (Dashboard)"),
+        p("Tras iniciar sesion accedara al Panel de Control, el nucleo operativo de Passly con estadisticas en tiempo real y acceso a todos los modulos."),
+        h2("4.1 Barra Lateral (Sidebar)"),
+        p("Los modulos visibles dependen del rol del usuario:"), sp2(),
+        tbl(["Seccion del Menu", "Administrador", "Residente", "Seguridad"], [
+          ["Vista General",   "SI", "SI", "SI"],
+          ["Usuarios",        "SI", "NO", "NO"],
+          ["Dispositivos",    "SI", "SI", "NO"],
+          ["Accesos",         "SI", "SI", "SI"],
+          ["Escaner QR",      "SI", "NO", "SI"],
+          ["Analiticas",      "SI", "NO", "NO"],
+          ["Configuracion",   "SI", "NO", "NO"],
+        ]), sp2(),
+        h2("4.2 Estadisticas en Tiempo Real"),
+        bull("Usuarios Activos: Total de cuentas activas en el sistema."),
+        bull("Accesos del Dia: Total de entradas y salidas registradas hoy."),
+        bull("Dispositivos: Cantidad de vehiculos y dispositivos activos."),
+        bull("Alertas: Numero de anomalias de seguridad pendientes."), sp2(),
+        h2("4.3 Mi Llave QR Personal"),
+        num("Localice la seccion 'Mi Llave QR' en el panel."),
+        num("Haga clic en 'Generar' para crear su codigo QR unico."),
+        num("Haga clic en 'Descargar' para guardar el QR como imagen PNG."),
+        num("Muestre este QR al personal de seguridad para registrar su entrada o salida."),
+        sp2(), noteInfo("El QR personal es permanente y esta vinculado a su cuenta mientras este activa."), pb(),
+
+        h1("5. Gestion de Usuarios"),
+        noteCaut("Disponible exclusivamente para Administrador y Super Admin."), sp2(),
+        h2("5.1 Ver Listado"),
+        p("Haga clic en 'Usuarios'. La tabla muestra foto, nombre, email, rol y estado. Use busqueda y paginacion para navegar."),
+        h2("5.2 Crear Usuario"),
+        num("Haga clic en '+ Nuevo Usuario'. Complete Nombre, Apellido, Email, Contrasena y Rol."),
+        num("Haga clic en 'Confirmar'. El usuario recibira un correo de bienvenida automaticamente."),
+        h2("5.3 Editar Usuario"),
+        num("Haga clic en el icono de edicion junto al usuario. Actualice los campos y haga clic en 'Confirmar'."),
+        h2("5.4 Desactivar Usuario"),
+        num("Haga clic en el icono de eliminacion. Confirme la accion."),
+        num("El usuario queda inactivo pero sus datos se conservan integros."),
+        sp2(), noteInfo("Passly usa Soft Delete: los usuarios desactivados conservan todo su historial para auditoria."), pb(),
+
+        h1("6. Gestion de Dispositivos"),
+        p("Un dispositivo representa cualquier medio de transporte vinculado a un usuario: vehiculo, motocicleta, bicicleta u otro."),
+        h2("6.1 Ver Dispositivos"),
+        p("Haga clic en 'Dispositivos'. La tabla muestra el identificador, tipo, usuario propietario y estado."),
+        h2("6.2 Agregar Dispositivo"),
+        num("Haga clic en '+ Nuevo Dispositivo'."),
+        num("Complete: Identificador unico, Tipo, Usuario propietario y Descripcion opcional."),
+        num("Haga clic en 'Confirmar'."),
+        h2("6.3 Editar / Desactivar Dispositivo"),
+        p("Use los iconos de edicion o eliminacion junto al dispositivo. Al desactivar, los registros historicos se conservan."), pb(),
+
+        h1("7. Control de Accesos"),
+        p("El modulo de Accesos registra cada entrada y salida del recinto y permite exportar el historial completo."),
+        h2("7.1 Ver Historial"),
+        p("Haga clic en 'Accesos'. La tabla muestra: usuario, tipo (Entrada/Salida), dispositivo, metodo (Manual o QR), fecha y hora. Use filtros y paginacion para navegar."),
+        h2("7.2 Registrar Acceso Manual"),
+        num("Haga clic en '+ Registro Manual'."),
+        num("Seleccione: Usuario, Dispositivo (si aplica), Tipo y Observaciones."),
+        num("Haga clic en 'Confirmar'. Los administradores reciben una notificacion en tiempo real."),
+        h2("7.3 Invitar a un Huesped (QR Temporal)"),
+        num("En 'Accesos' -> '+ Registro Manual' -> 'Nuevo Invitado (QR)'."),
+        num("Complete: Nombre, Email del invitado y Duracion (4h / 24h / 3 dias / 1 semana)."),
+        num("Haga clic en 'Generar Invitacion'. El sistema envia el QR al email del invitado."),
+        sp2(), noteInfo("El QR de invitado se invalida automaticamente al vencer el tiempo seleccionado."), sp2(),
+        h2("7.4 Exportar Registros"),
+        tbl(["Boton", "Formato", "Uso sugerido"], [
+          ["CSV", "Archivo .csv", "Abrir con Excel, Google Sheets o LibreOffice Calc"],
+          ["PDF", "Documento .pdf", "Reporte profesional con logo corporativo y tablas"],
+        ]), pb(),
+
+        h1("8. Escaner QR"),
+        p("Permite al personal de seguridad registrar accesos usando la camara del dispositivo. Es la herramienta principal de validacion de identidad en tiempo real."),
+        noteCaut("Disponible para Administrador y Seguridad. Requiere permiso de camara y conexion HTTPS."), sp2(),
+        h2("8.1 Como Usar el Escaner"),
+        num("Haga clic en 'Escaner QR' en el menu lateral."),
+        num("Permita el acceso a la camara cuando el navegador lo solicite."),
+        num("La camara trasera se activa con un cuadro de enfoque."),
+        num("Pida al usuario que muestre su QR (desde el dashboard o el email)."),
+        num("Apunte la camara al codigo; el sistema lo detecta automaticamente."),
+        num("Resultado: verde (Acceso Autorizado) o rojo (mensaje de error especifico)."),
+        num("Haga clic en 'REINICIAR ESCANER' para procesar al siguiente usuario."), sp2(),
+        h2("8.2 Mensajes de Error"),
+        tbl(["Error", "Causa", "Solucion"], [
+          ["Permiso denegado",           "El navegador bloqueo la camara",       "Active el permiso en configuracion del navegador"],
+          ["Hardware no encontrado",     "El dispositivo no tiene camara",       "Use un dispositivo con camara integrada"],
+          ["Requiere conexion HTTPS",    "Accede por HTTP en lugar de HTTPS",    "Use la URL oficial HTTPS de la plataforma"],
+          ["QR invalido o expirado",     "El QR de invitado vencio",             "Solicite al administrador una nueva invitacion"],
+        ]), pb(),
+
+        h1("9. Analiticas Avanzadas"),
+        noteCaut("Solo disponible para Administrador y Super Admin."), sp2(),
+        p("La seccion Analiticas ofrece reportes graficos para comprender el flujo de accesos y tomar decisiones informadas."),
+        tbl(["Grafica", "Descripcion"], [
+          ["Tendencia Semanal",    "Linea comparativa de accesos de los ultimos 7 dias."],
+          ["Medios de Transporte", "Distribucion porcentual: vehiculo, moto, bicicleta, peatonal."],
+          ["Censos por Rol",       "Cantidad de usuarios activos clasificados por tipo de rol."],
+          ["Picos por Hora",       "Horarios de mayor trafico en el recinto durante el dia."],
+        ]), pb(),
+
+        h1("10. Mi Perfil"),
+        h2("10.1 Actualizar Datos Personales"),
+        num("Haga clic en su nombre en la barra superior. Modifique Nombre, Apellido o Email."),
+        num("Presione 'Guardar Cambios' para aplicar la actualizacion."),
+        h2("10.2 Cambiar Foto de Perfil"),
+        num("Haga clic en el avatar circular en el panel de perfil."),
+        num("Seleccione una imagen JPG o PNG desde su dispositivo. Se actualiza de inmediato."),
+        h2("10.3 Activar Autenticacion de Dos Factores (MFA)"),
+        num("Perfil -> 'Seguridad' -> 'Activar Autenticacion de Dos Factores'."),
+        num("Escanee el QR generado con Google Authenticator, Authy o Microsoft Authenticator."),
+        num("Ingrese el codigo de 6 digitos para confirmar la vinculacion."),
+        num("Recibira un correo confirmando que el 2FA fue activado."),
+        sp2(), noteCaut("Guarde sus codigos de respaldo. Si pierde acceso a su app autenticadora sin ellos, no podra iniciar sesion."), pb(),
+
+        h1("11. Configuracion del Sistema"),
+        noteCaut("Solo disponible para el rol Administrador."), sp2(),
+        tbl(["Parametro", "Descripcion"], [
+          ["Nombre de la sede",         "Visible en reportes y correos del sistema"],
+          ["Logo corporativo",          "Imagen que aparece en el encabezado del dashboard"],
+          ["Tiempo de validez QR",      "Duracion maxima para QR de invitados externos"],
+          ["Politica de auto-registro", "Define si los usuarios pueden crear cuentas libremente"],
+        ]), sp2(),
+        p("Haga clic en 'Guardar Configuracion' para aplicar los cambios a todos los usuarios."), pb(),
+
+        h1("12. Notificaciones"),
+        p("El icono de campana en la barra superior muestra notificaciones en tiempo real:"),
+        bull("Acceso registrado: cuando alguien entra o sale del recinto."),
+        bull("Nuevo usuario: cuando se crea una cuenta en la plataforma."),
+        bull("Alerta de seguridad: intentos de login fallidos y activaciones de MFA."),
+        bull("QR expirado: cuando un codigo de invitado vence su validez."), sp2(),
+        num("Haga clic en el icono de campana para abrir el panel de notificaciones."),
+        num("Haga clic en una notificacion individual para marcarla como leida."),
+        num("Haga clic en 'Limpiar' para descartar todas las notificaciones."), pb(),
+
+        h1("13. Preguntas Frecuentes (FAQ)"),
+        h2("Por que no puedo iniciar sesion si mi contrasena es correcta?"),
+        p("Verifique que selecciono el rol correcto en el menu desplegable. El rol debe coincidir con el asignado a su cuenta."), sp2(),
+        h2("Cuanto tiempo es valido mi codigo QR personal?"),
+        p("El QR personal es permanente mientras su cuenta este activa. Los QR de invitados tienen duracion limitada (4 horas a 1 semana)."), sp2(),
+        h2("No recibi el codigo de recuperacion de contrasena."),
+        num("Revise su carpeta de Spam o correo no deseado."),
+        num("Verifique que el email fue escrito correctamente."),
+        num("Espere hasta 5 minutos, el envio puede demorar."),
+        num("Si persiste, contacte al administrador del sistema."), sp2(),
+        h2("Que hago si pierdo acceso a mi aplicacion 2FA?"),
+        p("Contacte al administrador para que deshabilite manualmente el 2FA de su cuenta."), sp2(),
+        h2("El sistema funciona en telefonos y tabletas?"),
+        p("Si. Passly es 100% responsive y funciona en Android, iOS, tabletas y computadoras. El diseno se adapta automaticamente."), sp2(),
+        h2("Por que el escaner QR no funciona?"),
+        bull("El navegador debe tener habilitado el permiso de acceso a la camara."),
+        bull("La conexion debe ser HTTPS (no HTTP)."),
+        bull("Debe haber buena iluminacion para detectar el codigo correctamente."), sp2(),
+        h2("Se eliminan datos al desactivar un usuario?"),
+        p("No. El sistema usa Soft Delete: el usuario queda inactivo pero todos sus datos se conservan para auditoria."), sp2(),
+        h2("Puedo exportar los registros en Excel?"),
+        p("Si. La opcion CSV genera un archivo compatible con Excel, Google Sheets y LibreOffice Calc."), pb(),
+
+        h1("14. Glosario de Terminos"),
+        tbl(["Termino", "Definicion"], [
+          ["JWT",           "JSON Web Token. Mecanismo de autenticacion segura para identificar al usuario en cada peticion."],
+          ["MFA / 2FA",     "Autenticacion Multi-Factor. Requiere un codigo adicional ademas de la contrasena."],
+          ["TOTP",          "Time-based One-Time Password. Codigo temporal de 6 digitos generado cada 30 segundos."],
+          ["QR",            "Quick Response Code. Codigo de barras 2D para validar accesos de forma rapida."],
+          ["Soft Delete",   "Desactivacion logica sin eliminar datos fisicamente. Conserva historial para auditoria."],
+          ["WebSocket",     "Protocolo de comunicacion en tiempo real entre servidor y navegador."],
+          ["Dashboard",     "Panel de control con estadisticas y acceso a todos los modulos del sistema."],
+          ["Glassmorphism", "Diseno visual que simula vidrio esmerilado con transparencia y bordes suaves."],
+          ["Sede",          "Unidad residencial, edificio o espacio administrado por Passly."],
+          ["CSV",           "Comma-Separated Values. Formato de archivo compatible con hojas de calculo."],
+          ["PDF",           "Portable Document Format. Formato estandar para reportes formales."],
+          ["CRUD",          "Create, Read, Update, Delete. Las cuatro operaciones basicas de datos."],
+        ]), sp2(),
+        new Paragraph({ children: [new TextRun({ text: "Manual de Usuario - PASSLY v3.0.0 (Cloud Edition)", italics: true, color: C.gray, size: 18, font: "Calibri" })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 60 } }),
+        new Paragraph({ children: [new TextRun({ text: "Node.js - Express - MySQL - Socket.IO - Docker", italics: true, color: C.gray, size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER, spacing: { after: 60 } }),
+        new Paragraph({ children: [new TextRun({ text: "2026 Passly - Todos los derechos reservados", italics: true, color: C.gray, size: 16, font: "Calibri" })], alignment: AlignmentType.CENTER, spacing: { after: 0 } }),
+      ];
+
+      const doc = new Document({
+        numbering: {
+          config: [{ reference: "num-list", levels: [{ level: 0, format: "decimal", text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] }],
+        },
+        sections: [{
+          properties: { page: { margin: { top: convertInchesToTwip(1), bottom: convertInchesToTwip(1), left: convertInchesToTwip(1.25), right: convertInchesToTwip(1.25) } } },
+          headers: {
+            default: new Header({ children: [new Paragraph({ children: [new TextRun({ text: "PASSLY ", bold: true, color: C.green, size: 18, font: "Calibri" }), new TextRun({ text: "- Manual de Usuario v3.0", color: C.gray, size: 18, font: "Calibri" })], border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: "DDDDDD" } } })] }),
+          },
+          footers: {
+            default: new Footer({ children: [new Paragraph({ children: [new TextRun({ text: "2026 Passly  |  Sistema de Control de Accesos  |  Pagina ", color: C.gray, size: 16, font: "Calibri" }), new TextRun({ children: [PageNumber.CURRENT], color: C.gray, size: 16 }), new TextRun({ text: " de ", color: C.gray, size: 16, font: "Calibri" }), new TextRun({ children: [PageNumber.TOTAL_PAGES], color: C.gray, size: 16 })], alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 4, color: "DDDDDD" } } })] }),
+          },
+          children,
+        }],
+      });
+
+      st.textContent = 'Empaquetando el archivo Word...';
+      const buf  = await Packer.toBuffer(doc);
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = "MANUAL_DE_USUARIO_PASSLY.docx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      st.textContent = "✅ Documento descargado exitosamente!";
+      st.className   = "status ok";
+      btnTxt.textContent = "⬇ Descargar de nuevo";
+    } catch (err) {
+      console.error(err);
+      st.textContent = "❌ Error: " + err.message;
+      st.className   = "status error";
+      btnTxt.textContent = "⬇ Descargar Manual (.docx)";
+    }
+
+    sp.style.display = 'none';
+    btn.disabled     = false;
+  }
+  </script>
+</body>
+</html>

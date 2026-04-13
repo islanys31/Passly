@@ -16,12 +16,15 @@
 *   **RF-09: Gestión de Fotos**: Subida de fotos de perfil para identificación visual de usuarios (JPG/PNG, máximo 2MB).
 *   **RF-12: Eliminación Lógica de Usuarios**: Capacidad de dar de baja o eliminar usuarios de forma lógica (cambio de estado), registrando la acción en sistema sin perder la integridad de datos históricos.
 *   **RF-13: Ficha Maestra de Usuario**: Vista consolidada donde el administrador puede visualizar el resumen completo de un usuario, incluyendo sus dispositivos vehiculares, tecnológicos y últimos movimientos en el sistema.
+*   **RF-14: Gestión de Equipos Tecnológicos**: Módulo independiente para el registro de activos móviles (Laptops, Tablets, Radios, Herramientas) vinculados a un usuario con serial e identificador único.
+*   **RF-15: Acceso Rápido de Demo (Magic Login)**: Punto de entrada "Zero-Auth" que permite a presentadores acceder a roles específicos (Admin/Seguridad) instantáneamente sin contraseña para fines de demostración.
+*   **RF-16: Modo Nuclear (Offline Mock)**: Mecanismo de contingencia que inyecta identidades simuladas en memoria si la base de datos se encuentra inaccesible, garantizando que la demo nunca falle.
 
 ### 1.2 Requisitos No Funcionales (RNF)
 *   **RNF-01: Seguridad (Hardening)**: Encriptación con Bcrypt (salt 10), protección de headers con Helmet.js (CSP, HSTS), Rate Limiting por endpoint, sanitización de inputs, autenticación de dos factores (MFA/TOTP) y validaciones estrictas con express-validator.
-*   **RNF-02: Disponibilidad**: Despliegue en contenedores Docker con restart automático y Nginx como reverse proxy.
-*   **RNF-03: Desempeño**: Respuestas optimizadas con Gzip (compression middleware + Nginx), caché de assets (7 días + ETags), Service Workers activos. Latencia < 400ms.
-*   **RNF-04: Escalabilidad**: Arquitectura MVC orientada a servicios con pool de conexiones MySQL (100+ conexiones para alto tráfico), WebSockets para tiempo real.
+*   **RNF-02: Disponibilidad y Redundancia**: Despliegue multi-nube utilizando Render para el Backend (Node.js), Vercel para el Frontend (SPA) y Aiven para MySQL Cloud con SSL.
+*   **RNF-03: Desempeño Crítico**: Respuestas optimizadas con Gzip, caché de assets (7 días), Service Workers para modo offline PWA y latencia < 300ms en operaciones core.
+*   **RNF-04: Escalabilidad Horizontal**: Arquitectura MVC desacoplada orientada a micro-servicios con pool de 100+ conexiones concurrentes y balanceo de carga nativo de los proveedores cloud.
 *   **RNF-05: Responsividad**: Interfaz adaptativa con diseño Mobile-First que se ajusta a móviles, tablets y escritorio.
 
 ---
