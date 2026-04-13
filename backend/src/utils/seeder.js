@@ -35,7 +35,7 @@ async function seedDatabase() {
             const [rows] = await conn.execute('SELECT id FROM usuarios WHERE email = ?', [a.email]);
             if (rows.length === 0) {
                 await conn.execute(
-                    'INSERT INTO usuarios (nombre, apellido, email, password, rol_id, estado_id, cliente_id) VALUES (?, "Admin", ?, ?, ?, 1, ?)',
+                    "INSERT INTO usuarios (nombre, apellido, email, password, rol_id, estado_id, cliente_id) VALUES (?, 'Admin', ?, ?, ?, 1, ?)",
                     [a.nombre, a.email, passwordHash, a.rol_id, a.client_id]
                 );
                 console.log(`✅ Admin inyectado: ${a.email}`);
@@ -63,7 +63,7 @@ async function seedDatabase() {
         }
 
         // Obtener ID del residente para asignarle datos
-        const [[resUser]] = await conn.execute('SELECT id FROM usuarios WHERE email = "residente@passly.com"');
+        const [[resUser]] = await conn.execute("SELECT id FROM usuarios WHERE email = 'residente@passly.com'");
         const resId = resUser.id;
 
         // 4. Inyectar Vehículos y Equipos (Para que se vean en el Dashboard)
