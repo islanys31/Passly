@@ -1887,23 +1887,34 @@ function renderModalFields(type, item) {
     if (type === 'accesos') {
         return `
             <div style="text-align:left;">
-                <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">Crea una invitación temporal para un invitado o registra un acceso manual.</p>
-                <div class="form-group"><label>Nombre del Invitado</label><input type="text" id="guest_name" placeholder="Ej: Juan Pérez"></div>
-                <div class="form-group"><label>Email del Invitado (Opcional)</label><input type="email" id="guest_email" placeholder="Para enviarle el QR directamente"></div>
-                <div class="form-group"><label>Teléfono WhatsApp (Opcional)</label><input type="tel" id="guest_phone" placeholder="Ej: 573123456789"></div>
-                <div class="form-group">
-                    <label>Expiración (Horas)</label>
-                    <select id="guest_expires">
-                        <option value="1">1 hora</option>
-                        <option value="4">4 horas</option>
-                        <option value="24">24 horas</option>
-                        <option value="48">48 horas</option>
-                    </select>
+                <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);" id="guestDesc">Crea una invitación temporal para un invitado.</p>
+                <div id="guestInputsWrapper">
+                    <div class="form-group"><label>Nombre del Invitado</label><input type="text" id="guest_name" placeholder="Ej: Juan Pérez"></div>
+                    <div class="form-group"><label>Email (Opcional)</label><input type="email" id="guest_email" placeholder="Para enviarle el QR"></div>
+                    <div class="form-group"><label>Teléfono WhatsApp (Opcional)</label><input type="tel" id="guest_phone" placeholder="Ej: 573123456789"></div>
+                    <div class="form-group">
+                        <label>Expiración (Horas)</label>
+                        <select id="guest_expires">
+                            <option value="1">1 hora</option>
+                            <option value="4">4 horas</option>
+                            <option value="24">24 horas</option>
+                            <option value="48">48 horas</option>
+                        </select>
+                    </div>
                 </div>
-                <div id="invitationResult" style="margin-top:20px; display:none; text-align:center;">
-                    <div id="guestQR" style="background:white; padding:10px; width:150px; height:150px; margin:0 auto; border-radius:8px;"></div>
-                    <button class="btn-table" id="btnShareWA" style="background:#25D366; color:white; margin-top:15px; width:100%;">
-                        <i>📱</i> Abrir WhatsApp Directo
+                <div id="invitationResult" style="margin-top:10px; display:none; text-align:center;">
+                    <p style="color:var(--accent-green); font-weight:600; margin-bottom:15px; font-size:16px;">¡Invitación Creada!</p>
+                    <div id="guestQR" style="background:white; padding:15px; width:180px; height:180px; margin:0 auto; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15);"></div>
+                    
+                    <div style="margin-top:24px; background:var(--bg-secondary); padding:10px 15px; border-radius:12px; border:1px solid var(--glass-border); display:flex; align-items:center; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2);">
+                        <input type="text" id="guestLinkCopier" readonly style="flex:1; background:transparent; border:none; color:var(--text-primary); font-size:12px; letter-spacing:0.02em;">
+                        <button class="btn-icon" id="btnCopyLink" style="padding:6px; margin-left:10px; background:var(--card-bg); border-radius:8px; color:var(--accent-blue);" title="Copiar Enlace">
+                            <i data-lucide="copy" style="width:16px;"></i>
+                        </button>
+                    </div>
+
+                    <button class="btn-primary" id="btnShareWA" style="background:#25D366; color:white; margin-top:20px; width:100%; border:none; border-radius:12px; height:48px;">
+                        Enviar por WhatsApp
                     </button>
                 </div>
             </div>
@@ -2025,11 +2036,32 @@ async function handleModalSave(type, id) {
         try {
             const res = await apiRequest('/accesos/invitation', 'POST', { guestName, guestEmail, expirationHours });
             if (res.ok) {
+                const inputsWrapper = document.getElementById('guestInputsWrapper');
+                const desc = document.getElementById('guestDesc');
+                if (inputsWrapper) inputsWrapper.style.display = 'none';
+                if (desc) desc.style.display = 'none';
+
                 const resultDiv = document.getElementById('invitationResult');
                 const qrDiv = document.getElementById('guestQR');
                 const waBtn = document.getElementById('btnShareWA');
+                
+                // Configurar Link Visual
+                const linkCopier = document.getElementById('guestLinkCopier');
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const baseUrl = isLocalhost ? 'http://localhost:5500' : 'https://passly.vercel.app';
+                const inviteLink = `${baseUrl}/guest.html?token=${res.data.token}`;
 
-                qrDiv.innerHTML = `<img src="${res.data.qr}" style="width:100%;">`;
+                if (linkCopier) linkCopier.value = inviteLink;
+
+                const copyBtn = document.getElementById('btnCopyLink');
+                if (copyBtn) {
+                    copyBtn.onclick = () => {
+                        navigator.clipboard.writeText(inviteLink);
+                        showToast("Enlace copiado al portapapeles", "success");
+                    };
+                }
+
+                qrDiv.innerHTML = `<img src="${res.data.qr}" style="width:100%; border-radius:8px;">`;
                 resultDiv.style.display = 'block';
 
                 waBtn.onclick = async () => {
@@ -2039,9 +2071,21 @@ async function handleModalSave(type, id) {
                 };
 
                 showToast(res.data.sentByEmail ? "Invitación generada y enviada" : "Invitación generada", "success");
+                
+                if (window.lucide) window.lucide.createIcons();
+                
+                // Aquí cambiamos el tipo de botón para cerrar el formulario instantaneamente (Flujo UX)
+                if (btnSave) {
+                    btnSave.classList.remove('btn-loading');
+                    btnSave.innerHTML = "FINALIZAR";
+                    btnSave.style.background = "var(--glass-border)";
+                    btnSave.style.color = "var(--text-primary)";
+                    btnSave.onclick = closeModal;
+                }
+                return; // Cortamos el finally normal para no resetear el boton arriba
             }
-        } finally {
-            if (btnSave) {
+        } catch(e) {} finally {
+            if (btnSave && btnSave.innerHTML !== "FINALIZAR") {
                 btnSave.classList.remove('btn-loading');
                 btnSave.disabled = false;
                 btnSave.innerHTML = "Guardar";
