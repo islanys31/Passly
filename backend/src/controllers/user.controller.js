@@ -50,7 +50,9 @@ exports.getAllUsers = async (req, res) => {
             [tenantId, ...searchParams, limit, offset]
         );
 
-        res.json(paginatedResponse(rows, total, page, limit));
+        const response = paginatedResponse(rows, total, page, limit);
+        response.debug_tenant_id = tenantId; // Para ver en la consola F12
+        res.json(response);
     } catch (error) {
         res.status(500).json({ ok: false, error: 'Error al obtener usuarios' });
     }

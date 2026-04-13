@@ -674,7 +674,7 @@ async function renderUsuarios(container, page = 1) {
     
     // Petición paginada al backend
     const { ok, data } = await apiRequest(`/usuarios?page=${page}&limit=20${searchParam}`);
-    console.log(`📦 Passly Debug - Usuarios en Sede:`, data.data || data);
+    console.log(`📦 Passly Debug - Usuarios en Sede (ID: ${data.debug_tenant_id}):`, data.data || data);
     if (!ok) return;
 
     currentData = data.data || data;
