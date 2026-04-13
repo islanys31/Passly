@@ -2041,7 +2041,11 @@ async function handleModalSave(type, id) {
                 showToast(res.data.sentByEmail ? "Invitación generada y enviada" : "Invitación generada", "success");
             }
         } finally {
-            if (btnSave) btnSave.classList.remove('btn-loading');
+            if (btnSave) {
+                btnSave.classList.remove('btn-loading');
+                btnSave.disabled = false;
+                btnSave.innerHTML = "Guardar";
+            }
         }
         return;
     }

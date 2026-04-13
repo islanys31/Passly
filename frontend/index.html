@@ -182,7 +182,10 @@
             <div class="card glass-glow" id="loginCard">
                 <h2 style="margin-bottom: 24px;">Iniciar Sesión</h2>
                 <div class="input-group"><i data-lucide="mail"></i><input id="emailLogin" type="email" placeholder="Correo Corporativo"></div>
-                <div class="input-group"><i data-lucide="lock"></i><input id="passLogin" type="password" placeholder="Contraseña"></div>
+                <div class="input-group" style="position:relative;">
+                    <i data-lucide="lock"></i><input id="passLogin" type="password" placeholder="Contraseña" style="padding-right:35px; width:100%;">
+                    <i data-lucide="eye" id="togglePassLogin" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); width:16px; cursor:pointer; opacity:0.6;"></i>
+                </div>
                 <div class="input-group">
                     <i data-lucide="briefcase"></i>
                     <select id="rolLogin">
