@@ -233,18 +233,9 @@ function initEventListeners() {
     };
 
     togglePass('togglePassLogin', 'passLogin');
-
-    // Soporte para checkbox showReg opcional
-    const showReg = document.getElementById("showReg");
-    if (showReg) {
-        showReg.onchange = e => {
-            const type = e.target.checked ? "text" : "password";
-            const passReg = document.getElementById("passRegistro");
-            const passConf = document.getElementById("passConfirm");
-            if (passReg) passReg.type = type;
-            if (passConf) passConf.type = type;
-        };
-    }
+    togglePass('togglePassRegistro', 'passRegistro');
+    togglePass('togglePassConfirm', 'passConfirm');
+    togglePass('toggleNewPassword', 'newPassword');
 
     // Acción de envío
     const btnLogin = document.getElementById("btnLogin");

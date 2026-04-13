@@ -1756,6 +1756,19 @@ function showModal(type, item = null) {
         });
     } else {
         body.innerHTML = renderModalFields(type, item);
+        
+        // Activar toggle de contraseña si existe
+        const toggleBtn = document.getElementById('toggleModalPass');
+        const passInput = document.getElementById('m_pass');
+        if (toggleBtn && passInput) {
+            toggleBtn.onclick = () => {
+                const isPass = passInput.type === 'password';
+                passInput.type = isPass ? 'text' : 'password';
+                toggleBtn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" style="width:18px;"></i>`;
+                if (window.lucide) window.lucide.createIcons();
+            };
+        }
+        
         if (window.lucide) window.lucide.createIcons();
     }
 
@@ -1792,7 +1805,12 @@ function renderModalFields(type, item) {
             </div>
             <div class="form-group">
                 <label>${item ? 'Nueva Contraseña (Opcional)' : 'Contraseña Inicial'}</label>
-                <input type="password" id="m_pass" placeholder="Mínimo 8 caracteres">
+                <div class="password-container" style="position:relative;">
+                    <input type="password" id="m_pass" placeholder="Mínimo 8 caracteres" style="padding-right:45px;">
+                    <button type="button" id="toggleModalPass" class="btn-icon" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); height:32px; width:32px; background:transparent; border:none; color:var(--text-muted); padding:0; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="eye" style="width:18px;"></i>
+                    </button>
+                </div>
             </div>
         `;
     }

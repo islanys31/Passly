@@ -207,8 +207,14 @@
                 </div>
                 <div class="input-group"><i data-lucide="mail"></i><input id="emailRegistro" type="email" placeholder="Email"></div>
                 <div class="auth-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-                    <input id="passRegistro" type="password" placeholder="Contraseña" class="glass">
-                    <input id="passConfirm" type="password" placeholder="Confirmar" class="glass">
+                    <div style="position:relative;">
+                        <input id="passRegistro" type="password" placeholder="Contraseña" class="glass" style="padding-right:35px; width:100%;">
+                        <i data-lucide="eye" id="togglePassRegistro" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); width:16px; cursor:pointer; opacity:0.6;"></i>
+                    </div>
+                    <div style="position:relative;">
+                        <input id="passConfirm" type="password" placeholder="Confirmar" class="glass" style="padding-right:35px; width:100%;">
+                        <i data-lucide="eye" id="togglePassConfirm" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); width:16px; cursor:pointer; opacity:0.6;"></i>
+                    </div>
                 </div>
                 <div class="input-group">
                     <i data-lucide="briefcase"></i>
@@ -249,7 +255,10 @@
             <div id="recoveryStep2" style="display:none;">
                 <h2 style="margin-bottom:20px;">Nueva Contraseña</h2>
                 <div class="input-group"><i data-lucide="key"></i><input id="recoveryCode" type="text" placeholder="Código recibido"></div>
-                <div class="input-group"><i data-lucide="lock"></i><input id="newPassword" type="password" placeholder="Nueva contraseña"></div>
+                <div style="position:relative; margin-bottom:16px;">
+                    <input id="newPassword" type="password" placeholder="Nueva contraseña" class="glass" style="padding-right:35px; width:100%;">
+                    <i data-lucide="eye" id="toggleNewPassword" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); width:18px; cursor:pointer; opacity:0.7;"></i>
+                </div>
                 <button id="btnResetPassword" class="btn-primary" style="width:100%; margin-top:16px;">CAMBIAR CONTRASEÑA</button>
             </div>
         </div>
