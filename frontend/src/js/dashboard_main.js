@@ -35,7 +35,10 @@ async function initDashboard() {
     }
     if (userAvatarEl) {
         if (user.foto_url) {
-            userAvatarEl.innerHTML = `<img src="${user.foto_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const baseurl = isLocal ? "" : "https://passly-api.onrender.com";
+            const finalUrl = user.foto_url.startsWith('http') ? user.foto_url : `${baseurl}${user.foto_url}`;
+            userAvatarEl.innerHTML = `<img src="${finalUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" class="user-avatar-img">`;
         } else {
             userAvatarEl.textContent = nombre.charAt(0).toUpperCase();
         }

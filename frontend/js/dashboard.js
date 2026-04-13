@@ -18,6 +18,13 @@ let currentView = 'overview'; // Seguimiento de qué "página interna" estamos v
 let currentPagination = null; // Control de páginas para tablas con muchos registros
 let notifications = [];       // Almacén para alertas en tiempo real (WebSockets)
 
+window.getPhotoUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return url;
+    return `https://passly-api.onrender.com${url}`;
+};
+
 // Exposición al objeto global 'window' para que los botones con onclick en HTML funcionen con módulos ES
 window.closeModal = closeModal;
 window.loadView = loadView;
@@ -257,7 +264,7 @@ function setupUI() {
     document.getElementById('userName').textContent = `${nombre} ${apellido}`;
     const avatarEl = document.getElementById('userInitial');
     if (userData.foto_url) {
-        avatarEl.innerHTML = `<img src="${userData.foto_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        avatarEl.innerHTML = `<img src="${window.getPhotoUrl(userData.foto_url)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
     } else {
         avatarEl.textContent = nombre.charAt(0).toUpperCase();
     }
@@ -726,7 +733,7 @@ function generateUserTable(data) {
                 return `<tr>
                 <td>
                     <div class="user-avatar" style="width:32px; height:32px; border:1px solid var(--glass-border);">
-                        ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; border-radius:50%;">` : inicial}
+                        ${u.foto_url ? `<img src="${window.getPhotoUrl(u.foto_url)}" style="width:100%; border-radius:50%;">` : inicial}
                     </div>
                 </td>
                 <td><strong style="color:var(--text-primary)">${escapeHTML(nombre)} ${escapeHTML(apellido)}</strong></td>
@@ -833,7 +840,7 @@ async function renderMiPerfil(container) {
             <div style="display:flex; align-items:center; gap:24px; margin-bottom:40px;">
                 <div style="position:relative;">
                     <div id="profileAvatarPreview" style="width:120px; height:120px; border-radius:32px; background:var(--bg-secondary); border:1px solid var(--glass-border); overflow:hidden; display:flex; justify-content:center; align-items:center; font-size:48px; box-shadow:0 12px 24px rgba(0,0,0,0.2);">
-                        ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; height:100%; object-fit:cover;">` : u.nombre.charAt(0)}
+                        ${u.foto_url ? `<img src="${window.getPhotoUrl(u.foto_url)}" style="width:100%; height:100%; object-fit:cover;">` : u.nombre.charAt(0)}
                     </div>
                     <button id="btnUploadPhoto" class="btn-icon" style="position:absolute; bottom:-10px; right:-10px; background:var(--accent-primary); color:white; border-radius:12px; width:40px; height:40px; box-shadow:0 4px 12px var(--accent-primary-alpha);" title="Subir foto">
                         <i data-lucide="camera" style="width:18px;"></i>
@@ -947,7 +954,7 @@ async function renderMiPerfil(container) {
 
                 // En lugar de setupUI() que recarga todo, solo actualizamos los avatares visualmente en el menú por si acaso.
                 document.querySelectorAll('.user-avatar-img').forEach(img => {
-                    img.src = result.photoUrl;
+                    img.src = window.getPhotoUrl(result.photoUrl);
                 });
             } else {
                 showToast(result.error || "Error al subir foto", "error");
@@ -2188,7 +2195,7 @@ async function showUserDetail(userId) {
         body.innerHTML = `
             <div style="display:grid; grid-template-columns: 80px 1fr; gap:20px; text-align:left; border-bottom:1px solid var(--border-color); padding-bottom:20px; margin-bottom:20px;">
                 <div class="user-avatar" style="width:70px; height:70px; font-size:28px;">
-                    ${user.foto_url ? `<img src="${user.foto_url}" style="width:100%; border-radius:12px;">` : user.nombre.charAt(0)}
+                    ${user.foto_url ? `<img src="${window.getPhotoUrl(user.foto_url)}" style="width:100%; border-radius:12px;">` : user.nombre.charAt(0)}
                 </div>
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:start;">
