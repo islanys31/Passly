@@ -56,12 +56,12 @@ exports.getGeneralStats = async (req, res) => {
             ]);
             stats = { users: 1, accessToday, tech, vehicles, alerts: 0 };
         } else {
-            // Admin/Seguridad: datos globales (simplificados sin JOIN pesado)
+            // Admin/Seguridad: datos globales filtrados por sede
             const [users, accessToday, tech, vehicles, alerts] = await Promise.all([
                 safeQuery('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 1 AND cliente_id = ?', [tenantId]),
-                safeQuery('SELECT COUNT(*) as total FROM accesos WHERE DATE(fecha_hora) = CURDATE()', []),
-                safeQuery('SELECT COUNT(*) as total FROM equipos WHERE estado_id = 1', []),
-                safeQuery('SELECT COUNT(*) as total FROM dispositivos WHERE estado_id = 1', []),
+                safeQuery('SELECT COUNT(*) as total FROM accesos a JOIN usuarios u ON a.usuario_id = u.id WHERE DATE(a.fecha_hora) = CURDATE() AND u.cliente_id = ?', [tenantId]),
+                safeQuery('SELECT COUNT(*) as total FROM equipos e JOIN usuarios u ON e.usuario_id = u.id WHERE e.estado_id = 1 AND u.cliente_id = ?', [tenantId]),
+                safeQuery('SELECT COUNT(*) as total FROM dispositivos d JOIN usuarios u ON d.usuario_id = u.id WHERE d.estado_id = 1 AND u.cliente_id = ?', [tenantId]),
                 safeQuery('SELECT COUNT(*) as total FROM usuarios WHERE estado_id = 4 AND cliente_id = ?', [tenantId])
             ]);
             stats = { users, accessToday, tech, vehicles, alerts };

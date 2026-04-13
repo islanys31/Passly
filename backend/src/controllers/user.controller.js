@@ -38,7 +38,7 @@ exports.getAllUsers = async (req, res) => {
 
         const [rows] = await db.query(
             `SELECT id, nombre, apellido, email, rol_id, estado_id, foto_url, created_at
-             FROM usuarios WHERE cliente_id = ? ${searchFilter} LIMIT ? OFFSET ?`,
+             FROM usuarios WHERE cliente_id = ? ${searchFilter} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
             [tenantId, ...searchParams, limit, offset]
         );
 

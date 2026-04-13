@@ -1740,7 +1740,7 @@ function showModal(type, item = null) {
     if (type === 'vehiculos' || type === 'dispositivos') {
         body.innerHTML = `<div class="loading-spinner"></div> Cargando formulario...`;
         Promise.all([
-            apiRequest('/usuarios'),
+            apiRequest('/usuarios?limit=1000'),
             apiRequest('/transportes')
         ]).then(([usersRes, transRes]) => {
             const users = usersRes.data.data || usersRes.data;
