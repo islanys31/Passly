@@ -156,6 +156,9 @@ exports.sendVerificationEmail = async (to, userName, token) => {
                     </a>
                 </div>
             </div>
+        `
+    };
+
     try {
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
             console.log("⚠️ Simulación de envío: No hay credenciales SMTP configuradas.");
