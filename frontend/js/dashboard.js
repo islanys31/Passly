@@ -1777,13 +1777,16 @@ function renderModalFields(type, item) {
             <div class="form-group"><label>Apellido</label><input type="text" id="m_apellido" value="${item?.apellido || ''}"></div>
             <div class="form-group"><label>Email</label><input type="email" id="m_email" value="${item?.email || ''}"></div>
             <div class="form-group">
-                <label>Rol</label>
+                <label>Rol de Acceso</label>
                 <select id="m_rol">
-                    <option value="4" ${item?.rol_id === 4 ? 'selected' : ''}>Super Admin</option>
                     <option value="1" ${item?.rol_id === 1 ? 'selected' : ''}>Administrador</option>
-                    <option value="2" ${item?.rol_id === 2 ? 'selected' : ''}>Usuario</option>
-                    <option value="3" ${item?.rol_id === 3 ? 'selected' : ''}>Seguridad</option>
+                    <option value="2" ${item?.rol_id === 2 ? 'selected' : ''}>Residente / Usuario</option>
+                    <option value="3" ${item?.rol_id === 3 ? 'selected' : ''}>Personal de Seguridad</option>
                 </select>
+            </div>
+            <div class="form-group">
+                <label>${item ? 'Nueva Contraseña (Opcional)' : 'Contraseña Inicial'}</label>
+                <input type="password" id="m_pass" placeholder="Mínimo 8 caracteres">
             </div>
         `;
     }
@@ -1950,19 +1953,32 @@ async function handleModalSave(type, id) {
     }
 
     const btnSave = document.getElementById('btnSave');
-    if (btnSave) btnSave.classList.add('btn-loading');
+    let originalText = "";
+    if (btnSave) {
+        originalText = btnSave.innerHTML;
+        btnSave.disabled = true;
+        btnSave.innerHTML = `<span class="loading-spinner"></span> Procesando...`;
+        btnSave.classList.add('btn-loading');
+    }
 
     try {
         const finalRes = await apiRequest(url, method, payload);
-        if (finalRes.ok) {
+        if (finalRes && finalRes.ok) {
             showToast(id ? 'Actualizado correctamente' : 'Creado correctamente', 'success');
             closeModal();
             loadView(type);
         } else {
-            showToast(finalRes.data?.error || "Error al guardar", "error");
+            showToast(finalRes?.data?.error || finalRes?.error || "Error al procesar la solicitud", "error");
         }
+    } catch (err) {
+        console.error("Save error:", err);
+        showToast("Error de conexión con el servidor", "error");
     } finally {
-        if (btnSave) btnSave.classList.remove('btn-loading');
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = originalText;
+            btnSave.classList.remove('btn-loading');
+        }
     }
 }
 
