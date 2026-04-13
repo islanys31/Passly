@@ -18,6 +18,7 @@ const speakeasy = require('speakeasy');           // Generación de códigos MFA
 const QRCode = require('qrcode');                 // Conversión de códigos a imagen QR
 const { trackFailedAttempt, resetAttempts } = require('../middlewares/ipBlocker'); // Blindaje contra Fuerza Bruta
 const emailService = require('../services/email.service'); // Notificaciones al usuario
+const statsController = require('./stats.controller');
 
 /**
  * REGISTRO DE USUARIO
@@ -67,6 +68,7 @@ exports.register = async (req, res) => {
 
         // Actualizar estadísticas del Dashboard vía Sockets
         const { getIO } = require('../config/socket');
+        statsController.clearStatsCache(rol_id, result.insertId, cliente_id || 1);
         getIO().emit('stats_update');
 
         // Enviar correo de verificación (Botón de un solo clic)

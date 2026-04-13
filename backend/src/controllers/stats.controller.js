@@ -18,6 +18,16 @@ function getStatsFromCache(tenantId) {
     return entry.stats;
 }
 
+/**
+ * [ACTUALIZACIÓN CRÍTICA]
+ * Permite limpiar la caché de forma manual cuando se registra un nuevo
+ * vehículo, equipo o acceso, forzando al Dashboard a mostrar datos reales.
+ */
+exports.clearStatsCache = (roleId, userId, tenantId) => {
+    const cacheKey = roleId === 2 ? `user_${userId}` : `tenant_${tenantId}`;
+    statsCache.delete(cacheKey);
+};
+
 exports.getGeneralStats = async (req, res) => {
     try {
         const tenantId = req.user.cliente_id;

@@ -6,6 +6,7 @@ const { logAction } = require('../utils/logger');
 const emailService = require('../services/email.service');
 const { getPagination, paginatedResponse } = require('../utils/pagination');
 const { invalidateUserCache } = require('../middlewares/authMiddleware');
+const statsController = require('./stats.controller');
 
 /**
  * @file user.controller.js
@@ -181,6 +182,7 @@ exports.createUser = async (req, res) => {
         // Audit Log
         await logAction(req.user.id, 'Crear Usuario', 'Usuarios', { email, rol_id }, req.ip);
 
+        statsController.clearStatsCache(rol_id, result.insertId, tenantId);
         require('../config/socket').getIO().emit('stats_update');
 
         // Enviar correo de bienvenida al nuevo usuario (No bloqueante)
@@ -215,6 +217,7 @@ exports.updateUser = async (req, res) => {
         // Si cambió el estado del usuario, invalidar su caché de autenticación
         invalidateUserCache(parseInt(id));
 
+        statsController.clearStatsCache(rol_id, id, tenantId);
         require('../config/socket').getIO().emit('stats_update');
         res.json({ ok: true });
     } catch (error) {
@@ -241,6 +244,7 @@ exports.deleteUser = async (req, res) => {
         // Forzar cierre de sesión inmediato del usuario desactivado
         invalidateUserCache(parseInt(id));
 
+        statsController.clearStatsCache(null, id, tenantId);
         require('../config/socket').getIO().emit('stats_update');
         res.json({ ok: true });
     } catch (error) {

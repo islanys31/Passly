@@ -1,6 +1,7 @@
 const { pool: db } = require('../config/db');
 const emailService = require('../services/email.service');
 const { getPagination, paginatedResponse } = require('../utils/pagination');
+const statsController = require('./stats.controller');
 
 exports.getAllAccess = async (req, res) => {
     try {
@@ -77,6 +78,11 @@ exports.logAccess = async (req, res) => {
         const user = userData[0];
 
         const io = require('../config/socket').getIO();
+
+        // Invalida caché de estadísticas
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
+        statsController.clearStatsCache(2, targetId, tenantId);
+
         io.emit('new_access', {
             id: result.insertId,
             tipo: tipo || 'Entrada',
@@ -263,6 +269,11 @@ exports.validateScan = async (req, res) => {
 
         // Notificar via Socket
         const io = require('../config/socket').getIO();
+
+        // Invalida caché de estadísticas (del host y del scanner)
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
+        if (result.id) statsController.clearStatsCache(2, result.id, tenantId);
+
         io.emit('new_access', {
             id: insert.insertId,
             tipo: type,

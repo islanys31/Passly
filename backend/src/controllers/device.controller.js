@@ -1,6 +1,7 @@
 const { pool: db } = require('../config/db');
 const { logAction } = require('../utils/logger');
 const { getPagination, paginatedResponse } = require('../utils/pagination');
+const statsController = require('./stats.controller');
 
 /**
  * @file device.controller.js
@@ -87,6 +88,10 @@ exports.createDevice = async (req, res) => {
         // Audit Log
         await logAction(req.user.id, 'Vincular Dispositivo', 'Dispositivos', { nombre, uid: identificador_unico, target_user: usuario_id }, req.ip);
 
+        // Limpiar caché de estadísticas (Admin/Sede y el Usuario residente si aplica)
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
+        statsController.clearStatsCache(2, usuario_id, tenantId);
+
         require('../config/socket').getIO().emit('stats_update');
         res.status(201).json({ ok: true, id: result.insertId });
     } catch (error) {
@@ -119,6 +124,9 @@ exports.updateDevice = async (req, res) => {
         // Audit Log
         await logAction(req.user.id, 'Actualizar Dispositivo', 'Dispositivos', { device_id: id, nombre }, req.ip);
 
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
+        if (usuario_id) statsController.clearStatsCache(2, usuario_id, tenantId);
+
         require('../config/socket').getIO().emit('stats_update');
         res.json({ ok: true });
     } catch (error) {
@@ -145,6 +153,8 @@ exports.deleteDevice = async (req, res) => {
 
         // Audit Log
         await logAction(req.user.id, 'Desactivar Dispositivo', 'Dispositivos', { device_id: id }, req.ip);
+
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
 
         require('../config/socket').getIO().emit('stats_update');
         res.json({ ok: true });

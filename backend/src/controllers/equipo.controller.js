@@ -8,6 +8,7 @@
 const { pool: db } = require('../config/db');
 const { logAction } = require('../utils/logger');
 const { getPagination, paginatedResponse } = require('../utils/pagination');
+const statsController = require('./stats.controller');
 
 /**
  * Obtiene todos los equipos tecnológicos de la organización del usuario autenticado.
@@ -74,6 +75,11 @@ exports.createEquipo = async (req, res) => {
         );
 
         await logAction(req.user.id, 'Registrar Equipo', 'Equipos', { nombre, tipo, serial, target_user: usuario_id }, req.ip);
+
+        // Limpiar caché de estadísticas
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
+        statsController.clearStatsCache(2, usuario_id, tenantId);
+
         require('../config/socket').getIO().emit('stats_update');
 
         res.status(201).json({ ok: true, id: result.insertId });
@@ -109,6 +115,10 @@ exports.updateEquipo = async (req, res) => {
         );
 
         await logAction(req.user.id, 'Actualizar Equipo', 'Equipos', { equipo_id: id, nombre }, req.ip);
+
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
+        if (usuario_id) statsController.clearStatsCache(2, usuario_id, tenantId);
+
         require('../config/socket').getIO().emit('stats_update');
 
         res.json({ ok: true });
@@ -138,6 +148,9 @@ exports.deleteEquipo = async (req, res) => {
 
         await db.query('UPDATE equipos SET estado_id = 2 WHERE id = ?', [id]);
         await logAction(req.user.id, 'Desactivar Equipo', 'Equipos', { equipo_id: id }, req.ip);
+
+        statsController.clearStatsCache(req.user.rol_id, req.user.id, tenantId);
+
         require('../config/socket').getIO().emit('stats_update');
 
         res.json({ ok: true });
