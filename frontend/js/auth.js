@@ -215,27 +215,30 @@ function initEventListeners() {
         aceptoTerminos.onchange = () => checkRegistrationFormValidity();
     }
 
-    // Control visual: Mostrar/Ocultar contraseñas
-    const togglePass = (btnId, inputId) => {
-        const btn = document.getElementById(btnId);
+    // Control visual: Mostrar/Ocultar contraseñas (Mediante Delegación de Eventos)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#togglePassLogin, #togglePassRegistro, #togglePassConfirm, #toggleNewPassword');
+        if (!btn) return;
+
+        let inputId = '';
+        if (btn.id === 'togglePassLogin') inputId = 'passLogin';
+        else if (btn.id === 'togglePassRegistro') inputId = 'passRegistro';
+        else if (btn.id === 'togglePassConfirm') inputId = 'passConfirm';
+        else if (btn.id === 'toggleNewPassword') inputId = 'newPassword';
+
         const input = document.getElementById(inputId);
-        if (!btn || !input) return;
+        if (!input) return;
 
-        btn.onclick = () => {
-            const isPass = input.type === 'password';
-            input.type = isPass ? 'text' : 'password';
-            const icon = btn.tagName.toUpperCase() === 'I' ? btn : btn.querySelector('i');
-            if (icon) {
-                icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
-                if (window.lucide) window.lucide.createIcons();
-            }
-        };
-    };
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
 
-    togglePass('togglePassLogin', 'passLogin');
-    togglePass('togglePassRegistro', 'passRegistro');
-    togglePass('togglePassConfirm', 'passConfirm');
-    togglePass('toggleNewPassword', 'newPassword');
+        // Recreamos la etiqueta <i> nativa para que Lucide reconstruya el SVG limpio sin perder estilos ni ID
+        const currentStyle = btn.getAttribute('style') || '';
+        const newIconName = isPass ? 'eye-off' : 'eye';
+        btn.outerHTML = `<i data-lucide="${newIconName}" id="${btn.id}" style="${currentStyle}"></i>`;
+        
+        if (window.lucide) window.lucide.createIcons();
+    });
 
     // Acción de envío
     const btnLogin = document.getElementById("btnLogin");
