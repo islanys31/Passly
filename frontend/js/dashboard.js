@@ -2077,6 +2077,7 @@ async function handleModalSave(type, id) {
                 // Aquí cambiamos el tipo de botón para cerrar el formulario instantaneamente (Flujo UX)
                 if (btnSave) {
                     btnSave.classList.remove('btn-loading');
+                    btnSave.disabled = false;
                     btnSave.innerHTML = "FINALIZAR";
                     btnSave.style.background = "var(--glass-border)";
                     btnSave.style.color = "var(--text-primary)";
