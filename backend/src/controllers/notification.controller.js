@@ -21,3 +21,11 @@ exports.getNotifications = async (req, res) => {
         res.status(500).json({ ok: false, error: 'Fallo al obtener notificaciones' });
     }
 };
+
+exports.markAsRead = async (req, res) => {
+    res.json({ ok: true });
+};
+
+exports.createNotification = async (req, res) => {
+    res.json({ ok: true });
+};
