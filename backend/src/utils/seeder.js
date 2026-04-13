@@ -108,6 +108,12 @@ async function seedDatabase() {
             );
         }
         
+        // 6. REPARACIÓN: Asignar registros huérfanos a Medellín (ID 1)
+        const [orphanResult] = await conn.execute('UPDATE usuarios SET cliente_id = 1 WHERE cliente_id IS NULL');
+        if (orphanResult.affectedRows > 0) {
+            console.log(`✅ REPARACIÓN: Se recuperaron ${orphanResult.affectedRows} identidades huérfanas.`);
+        }
+        
         console.log('🚀 SEEDING COMPLETADO: Sistema poblado para Medellín.');
 
     } catch (e) {
