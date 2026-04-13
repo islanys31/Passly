@@ -110,7 +110,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 1. CONTROL DE ACCESO: ¿Tiene permiso para estar aquí?
     userData = checkAuth();
-    if (!userData) return; // Si no hay token, checkAuth redirige al index.html
+    console.log("🛠️ Passly Debug - Usuario Activo:", userData);
+    if (!userData) return;
 
     // 2. CONSTRUCCIÓN DE INTERFAZ: Adaptar el diseño al usuario
     initTheme();          // Aplicar Modo Oscuro o Claro
@@ -673,6 +674,7 @@ async function renderUsuarios(container, page = 1) {
     
     // Petición paginada al backend
     const { ok, data } = await apiRequest(`/usuarios?page=${page}&limit=20${searchParam}`);
+    console.log(`📦 Datos recibidos del servidor (Pág ${page}):`, data);
     if (!ok) return;
 
     currentData = data.data || data;

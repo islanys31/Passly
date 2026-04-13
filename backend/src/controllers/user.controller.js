@@ -21,7 +21,15 @@ const { invalidateUserCache } = require('../middlewares/authMiddleware');
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const tenantId = req.user.cliente_id;
+        let tenantId = req.user.cliente_id;
+        const roleId = req.user.rol_id;
+
+        // [SALVAGUARDA] Si el admin no tiene cliente_id en su pase (Token viejo), lo buscamos en tiempo real
+        if (roleId === 1 && !tenantId) {
+            const [me] = await db.query('SELECT cliente_id FROM usuarios WHERE id = ?', [req.user.id]);
+            if (me.length > 0) tenantId = me[0].cliente_id;
+        }
+
         const { page, limit, offset } = getPagination(req.query, 20, 100);
 
         // Búsqueda server-side por nombre, apellido o email
