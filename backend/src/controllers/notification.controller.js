@@ -1,46 +1,23 @@
-const { pool } = require('../config/db');
+const { pool: db } = require('../config/db');
 
-const getNotifications = async (req, res) => {
+exports.getNotifications = async (req, res) => {
     try {
-        const usuario_id = req.user.id;
-        const [rows] = await pool.query(
-            'SELECT * FROM notificaciones WHERE usuario_id = ? OR usuario_id IS NULL ORDER BY fecha_hora DESC LIMIT 20',
-            [usuario_id]
-        );
-        res.json({ ok: true, data: rows });
+        const tenantId = req.user.cliente_id;
+        // Obtenemos los últimos 10 logs de auditoría o accesos según el rol
+        let query = '';
+        let params = [];
+        
+        if (req.user.rol_id === 1 || req.user.rol_id === 4) {
+            query = 'SELECT * FROM accesos a JOIN usuarios u ON a.usuario_id = u.id WHERE u.cliente_id = ? ORDER BY a.fecha_hora DESC LIMIT 10';
+            params = [tenantId];
+        } else {
+            query = 'SELECT * FROM accesos WHERE usuario_id = ? ORDER BY fecha_hora DESC LIMIT 10';
+            params = [req.user.id];
+        }
+        
+        const [notifications] = await db.query(query, params);
+        res.json({ ok: true, data: notifications });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ ok: false, message: 'Error al obtener notificaciones' });
+        res.status(500).json({ ok: false, error: 'Fallo al obtener notificaciones' });
     }
-};
-
-const markAsRead = async (req, res) => {
-    try {
-        const { id } = req.params;
-        await pool.query('UPDATE notificaciones SET leido = 1 WHERE id = ?', [id]);
-        res.json({ ok: true, message: 'Notificación marcada como leída' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ ok: false, message: 'Error al actualizar notificación' });
-    }
-};
-
-const createNotification = async (req, res) => {
-    try {
-        const { usuario_id, titulo, mensaje, tipo } = req.body;
-        await pool.query(
-            'INSERT INTO notificaciones (usuario_id, titulo, mensaje, tipo) VALUES (?, ?, ?, ?)',
-            [usuario_id, titulo, mensaje, tipo || 'info']
-        );
-        res.json({ ok: true, message: 'Notificación creada' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ ok: false, message: 'Error al crear notificación' });
-    }
-};
-
-module.exports = {
-    getNotifications,
-    markAsRead,
-    createNotification
 };

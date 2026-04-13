@@ -33,6 +33,7 @@ const statsRoutes = require('./routes/stats.routes');       // Datos estadístic
 const logRoutes = require('./routes/log.routes');           // Rastro de auditoría para admin
 const configRoutes = require('./routes/config.routes');     // Configuraciones del sistema
 const clientRoutes = require('./routes/client.routes');     // Módulo Multi-tenancy
+const notificationRoutes = require('./routes/notification.routes'); // Centro de Alertas
 
 // ============================================
 // SEGURIDAD REFORZADA (HARDENING)
@@ -171,6 +172,7 @@ app.use('/api/stats', statsRoutes);       // Analítica y KPI's
 app.use('/api/logs', logRoutes);           // Transparencia y Trazabilidad (Auditoría)
 app.use('/api/config', configRoutes);      // Configuración General
 app.use('/api/clientes', clientRoutes);    // Módulo Multi-tenancy
+app.use('/api/notificaciones', notificationRoutes); // Centro de Notificaciones (Feedback dinámico)
 
 // ============================================
 // AUTO-REPARACIÓN TEMPORAL (SEED)
