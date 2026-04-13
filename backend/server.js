@@ -99,6 +99,11 @@ async function runProMigration() {
 
 server.listen(PORT, '0.0.0.0', async () => {
     await runProMigration();
+    
+    // Inyección de Datos de Prueba (Seeder)
+    const { seedDatabase } = require('./src/utils/seeder');
+    await seedDatabase();
+
     try {
         // Prueba de conexión a la base de datos
         await pool.query('SELECT 1');

@@ -1721,7 +1721,7 @@ function showModal(type, item = null) {
     saveBtn.onclick = () => handleModalSave(type, item?.id);
 
     if (type === 'vehiculos' || type === 'dispositivos') {
-        body.innerHTML = `< div class="loading-spinner" ></div > Cargando formulario...`;
+        body.innerHTML = `<div class="loading-spinner"></div> Cargando formulario...`;
         Promise.all([
             apiRequest('/usuarios'),
             apiRequest('/transportes')
