@@ -156,16 +156,17 @@ exports.sendVerificationEmail = async (to, userName, token) => {
                     </a>
                 </div>
             </div>
-        `
-    };
-
     try {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.log("⚠️ Simulación de envío: No hay credenciales SMTP configuradas.");
+            throw new Error("Credenciales incompletas");
+        }
         const info = await transporter.sendMail(mailOptions);
         return { success: true };
     } catch (error) {
         console.log(`\n---------------------------------------------------------`);
         console.log(`[DEBUG VERIFICACIÓN] Usuario: ${userName} (${to})`);
-        console.log(`👉 Link: ${verificationLink}`);
+        console.log(`👉 Link Auto-Activación: ${verificationLink}`);
         console.log(`---------------------------------------------------------\n`);
         return { success: false, link: verificationLink };
     }
