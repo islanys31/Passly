@@ -922,7 +922,7 @@ async function renderMiPerfil(container) {
         btnUpload.disabled = true;
 
         const formData = new FormData();
-        formData.append('foto', file);
+        formData.append('photo', file);
 
         try {
             const token = localStorage.getItem('auth_token');
