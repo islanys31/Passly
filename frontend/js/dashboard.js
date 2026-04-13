@@ -674,7 +674,7 @@ async function renderUsuarios(container, page = 1) {
     
     // Petición paginada al backend
     const { ok, data } = await apiRequest(`/usuarios?page=${page}&limit=20${searchParam}`);
-    console.log(`📦 Datos recibidos del servidor (Pág ${page}):`, data);
+    console.log(`📦 Passly Debug - Usuarios en Sede:`, data.data || data);
     if (!ok) return;
 
     currentData = data.data || data;
@@ -719,14 +719,18 @@ function generateUserTable(data) {
             <th style="text-align:right;">OPERACIONES</th>
         </tr></thead>
         <tbody>
-            ${data.map(u => `<tr>
+            ${data.map(u => {
+                const nombre = u.nombre || 'Sin Nombre';
+                const apellido = u.apellido || '';
+                const inicial = nombre.charAt(0).toUpperCase();
+                return `<tr>
                 <td>
                     <div class="user-avatar" style="width:32px; height:32px; border:1px solid var(--glass-border);">
-                        ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; border-radius:50%;">` : u.nombre.charAt(0)}
+                        ${u.foto_url ? `<img src="${u.foto_url}" style="width:100%; border-radius:50%;">` : inicial}
                     </div>
                 </td>
-                <td><strong style="color:var(--text-primary)">${escapeHTML(u.nombre)} ${escapeHTML(u.apellido || '')}</strong></td>
-                <td style="font-family:monospace; opacity:0.8;">${escapeHTML(u.email)}</td>
+                <td><strong style="color:var(--text-primary)">${escapeHTML(nombre)} ${escapeHTML(apellido)}</strong></td>
+                <td style="font-family:monospace; opacity:0.8;">${escapeHTML(u.email || 'N/A')}</td>
                 <td><span class="badge ${u.rol_id === 1 ? 'badge-info' : 'badge-success'}">${u.rol_id === 1 ? 'ADMIN' : 'RESIDENT'}</span></td>
                 <td style="text-align:right;">
                     ${userData?.rol_id !== 3 ? `
@@ -738,7 +742,7 @@ function generateUserTable(data) {
                     </button>
                     ` : '<span style="opacity:0.5; font-size:12px;">Solo lectura</span>'}
                 </td>
-            </tr>`).join('')}
+            </tr>`}).join('')}
         </tbody>
     </table>`;
 }
