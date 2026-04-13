@@ -685,7 +685,8 @@ async function renderUsuarios(container, page = 1) {
             buttonText: '+ Usuario', 
             buttonColor: 'var(--accent-green)', 
             searchPlaceholder: 'Buscar nombre, email...', 
-            module: 'usuarios' 
+            module: 'usuarios',
+            hasExport: true 
         });
     }
     const div = document.createElement('div');
@@ -1028,7 +1029,8 @@ async function renderDispositivos(container, page = 1) {
             buttonText: '+ Dispositivo', 
             buttonColor: 'var(--accent-blue)', 
             searchPlaceholder: 'Buscar equipo, serial...', 
-            module: 'dispositivos' 
+            module: 'dispositivos',
+            hasExport: true 
         });
     }
     const div = document.createElement('div');
@@ -1062,7 +1064,8 @@ async function renderVehiculos(container, page = 1) {
             buttonText: '+ Vehículo', 
             buttonColor: 'var(--accent-lavender)', 
             searchPlaceholder: 'Buscar placa, marca...', 
-            module: 'vehiculos' 
+            module: 'vehiculos',
+            hasExport: true 
         });
     }
     const div = document.createElement('div');
@@ -1566,6 +1569,21 @@ function setupModuleEvents(container, type) {
                 const rows = currentData.map(l => [new Date(l.fecha_hora).toLocaleString(), l.usuario_nombre || 'Sistema', l.accion, l.modulo, l.ip_address]);
                 if (format === 'pdf') exportToPDF("Registro de Auditoría", cols, rows, "Passly_Auditoria");
                 else exportToCSV("Registro de Auditoría", cols, rows, "Passly_Auditoria");
+            } else if (type === 'usuarios') {
+                const cols = ["Nombre", "Email", "Rol"];
+                const rows = currentData.map(u => [`${u.nombre} ${u.apellido}`, u.email, u.rol_id === 1 ? 'Admin' : (u.rol_id === 3 ? 'Seguridad' : 'Residente')]);
+                if (format === 'pdf') exportToPDF("Base de Datos de Usuarios", cols, rows, "Passly_Usuarios");
+                else exportToCSV("Base de Datos de Usuarios", cols, rows, "Passly_Usuarios");
+            } else if (type === 'vehiculos') {
+                const cols = ["Vehículo", "Placa", "Propietario"];
+                const rows = currentData.map(v => [v.nombre, v.identificador_unico, v.usuario_nombre]);
+                if (format === 'pdf') exportToPDF("Inventario de Flota", cols, rows, "Passly_Vehiculos");
+                else exportToCSV("Inventario de Flota", cols, rows, "Passly_Vehiculos");
+            } else if (type === 'dispositivos') {
+                const cols = ["Equipo", "Serial", "Dueño"];
+                const rows = currentData.map(d => [d.nombre, d.identificador_unico || d.serial, d.usuario_nombre]);
+                if (format === 'pdf') exportToPDF("Equipos Tecnológicos", cols, rows, "Passly_Equipos");
+                else exportToCSV("Equipos Tecnológicos", cols, rows, "Passly_Equipos");
             }
         };
 
@@ -1711,13 +1729,12 @@ function showModal(type, item = null) {
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
     const saveBtn = document.getElementById('btnSave');
-    const modalFooter = document.getElementById('modalFooter');
 
     if (!overlay || !body) return;
 
     // Cambiar el título según la acción
     title.textContent = item ? `Actualizar Registro: ${type}` : `Nuevo Registro: ${type.slice(0, -1)}`;
-    saveBtn.style.display = 'block'; // Asegurar que sea visible si venimos de Ficha Médica
+    saveBtn.style.display = 'block';
     saveBtn.onclick = () => handleModalSave(type, item?.id);
 
     if (type === 'vehiculos' || type === 'dispositivos') {
@@ -1729,18 +1746,21 @@ function showModal(type, item = null) {
             const users = usersRes.data.data || usersRes.data;
             const trans = transRes.data.data || transRes.data;
             body.innerHTML = renderDynamicForm(type, item, users, trans);
+            if (window.lucide) window.lucide.createIcons();
         });
     } else {
         body.innerHTML = renderModalFields(type, item);
+        if (window.lucide) window.lucide.createIcons();
     }
 
-    overlay.classList.add('show');
+    // SINCRONIZACIÓN CON CSS: Usar 'active' en vez de 'show'
+    overlay.classList.add('active');
 }
 
 function closeModal() {
     const overlay = document.getElementById('modalOverlay');
     if (overlay) {
-        overlay.classList.remove('show');
+        overlay.classList.remove('active');
     }
 }
 
@@ -1854,7 +1874,7 @@ function renderDynamicForm(type, item, users, trans) {
  */
 async function handleModalSave(type, id) {
     let payload = {};
-    let url = type === 'vehiculos' ? '/dispositivos' : `/${type}`;
+    let url = `/${type}`;
     let method = id ? 'PUT' : 'POST'; // Si hay ID, estamos editando
     if (id) url += `/${id}`;
 
@@ -1866,9 +1886,15 @@ async function handleModalSave(type, id) {
             email: document.getElementById('m_email').value.trim().toLowerCase(),
             rol_id: parseInt(document.getElementById('m_rol').value)
         };
+        const pass = document.getElementById('m_pass').value;
+        if (pass) payload.password = pass; // Solo enviar si se escribió una clave
+
         if (!payload.nombre || !payload.email) return showToast("Nombre y Email son requeridos", "warning");
         if (!validarEmail(payload.email)) return showToast("Email inválido", "error");
+        if (!id && !payload.password) return showToast("La contraseña es obligatoria para nuevos usuarios", "warning");
     } else if (type === 'vehiculos') {
+        url = '/dispositivos'; // Los vehículos van a la tabla DISPOSITIVOS
+        if (id) url = `/dispositivos/${id}`;
         payload = {
             usuario_id: document.getElementById('v_usuario').value,
             medio_transporte_id: document.getElementById('v_tipo').value,
@@ -1877,10 +1903,13 @@ async function handleModalSave(type, id) {
         };
         if (!payload.usuario_id || !payload.nombre || !payload.identificador_unico) return showToast("Todos los campos son obligatorios", "warning");
     } else if (type === 'dispositivos') {
+        url = '/equipos'; // Los equipos tech van a la tabla EQUIPOS
+        if (id) url = `/equipos/${id}`;
         payload = {
             usuario_id: document.getElementById('d_usuario').value,
             nombre: document.getElementById('d_nombre').value.trim(),
-            identificador_unico: document.getElementById('d_uid').value.trim() || `TECH - ${Date.now()} `
+            tipo: 'Personal Tech', // Valor por defecto
+            serial: document.getElementById('d_uid').value.trim() || `SN-${Date.now()}`
         };
         if (!payload.usuario_id || !payload.nombre) return showToast("Asigne un dueño y nombre al equipo", "warning");
     } else if (type === 'accesos') {
