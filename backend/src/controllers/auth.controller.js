@@ -277,6 +277,7 @@ exports.login = async (req, res) => {
                 apellido: user.apellido,
                 email: user.email,
                 rol_id: user.rol_id,
+                cliente_id: user.cliente_id,
                 foto_url: user.foto_url
             }
         });
@@ -509,6 +510,7 @@ exports.mfaLogin = async (req, res) => {
                     apellido: user.apellido,
                     email: user.email,
                     rol_id: user.rol_id,
+                    cliente_id: user.cliente_id,
                     foto_url: user.foto_url
                 }
             });
