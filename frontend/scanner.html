@@ -157,8 +157,15 @@
             }
 
             try {
-                if (html5QrCode) await html5QrCode.stop().catch(() => { });
-                html5QrCode = new Html5Qrcode("reader");
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
+                
+                try {
+                    if (html5QrCode.isScanning) {
+                        await html5QrCode.stop();
+                    }
+                } catch(e) {}
 
                 await html5QrCode.start(
                     { facingMode: "environment" },

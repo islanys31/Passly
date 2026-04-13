@@ -224,7 +224,7 @@ function initEventListeners() {
         btn.onclick = () => {
             const isPass = input.type === 'password';
             input.type = isPass ? 'text' : 'password';
-            const icon = btn.querySelector('i');
+            const icon = btn.tagName.toUpperCase() === 'I' ? btn : btn.querySelector('i');
             if (icon) {
                 icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
                 if (window.lucide) window.lucide.createIcons();
