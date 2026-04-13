@@ -187,7 +187,8 @@ function setupUI() {
             { section: 'AJUSTES', views: [
                 { id: 'logs', icon: 'clipboard-list', text: 'Auditoría' },
                 { id: 'perfil', icon: 'user-cog', text: 'Mi Perfil' },
-                { id: 'security', icon: 'shield-check', text: 'Escudo 2FA' }
+                { id: 'security', icon: 'shield-check', text: 'Escudo 2FA' },
+                { id: 'help', icon: 'help-circle', text: 'Ayuda' }
             ]}
         ],
         3: [ // PERFIL SEGURIDAD: Monitoreo y Escaneo
@@ -199,7 +200,8 @@ function setupUI() {
                 { id: 'vehiculos', icon: 'truck', text: 'Flota (Búsqueda)' }
             ]},
             { section: 'OPERACIONES', views: [
-                { id: 'scanner', icon: 'qr-code', text: 'Cámara Escáner', external: 'scanner.html' }
+                { id: 'scanner', icon: 'qr-code', text: 'Cámara Escáner', external: 'scanner.html' },
+                { id: 'help', icon: 'help-circle', text: 'Guía de Vigilancia' }
             ]},
             { section: 'PERSONAL', views: [
                 { id: 'perfil', icon: 'user-cog', text: 'Perfil' },
@@ -215,7 +217,8 @@ function setupUI() {
             ]},
             { section: 'IDENTIDAD', views: [
                 { id: 'perfil', icon: 'user-cog', text: 'Mi Perfil' },
-                { id: 'security', icon: 'shield-check', text: 'Seguridad' }
+                { id: 'security', icon: 'shield-check', text: 'Seguridad' },
+                { id: 'help', icon: 'help-circle', text: 'Centro de Ayuda' }
             ]}
         ]
     };
@@ -1205,28 +1208,41 @@ function generateAccessTable(data) {
  * CENTRO DE NOTIFICACIONES
  */
 async function initNotifications() {
-    const icon = document.getElementById('notifIcon');
+    // Escuchamos el clic en el contenedor principal de notificaciones
+    const container = document.querySelector('.notification-container');
     const dropdown = document.getElementById('notifDropdown');
-    const badge = document.getElementById('notifBadge');
+    
+    if (!container || !dropdown) return;
 
-    // Toggle dropdown
-    icon.onclick = (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('show');
-        if (dropdown.classList.contains('show')) fetchNotifications();
+    // Ya existe window.toggleNotifications vinculado en el HTML
+    // Solo nos aseguramos de que al abrir se busquen las notificaciones
+    const originalToggle = window.toggleNotifications;
+    window.toggleNotifications = (e) => {
+        if (originalToggle) originalToggle(e);
+        if (!dropdown.classList.contains('hidden')) {
+            fetchNotifications();
+        }
     };
 
-    document.addEventListener('click', () => dropdown.classList.remove('show'));
+    // Cerrar si se hace clic fuera
+    document.addEventListener('click', () => dropdown.classList.add('hidden'));
 
-    // Intervalo de chequeo
+    // Intervalo de chequeo automático (cada 60 segundos)
     setInterval(fetchNotifications, 60000);
     fetchNotifications();
 
-    document.getElementById('btnMarkAllRead').onclick = async (e) => {
-        e.stopPropagation();
-        // Lógica simplificada: en una app real iteraríamos o habría endpoint 'read-all'
-        showToast("Marcado como leído", "info");
-    };
+    const clearBtn = document.getElementById('btnClearNotifs');
+    if (clearBtn) {
+        clearBtn.onclick = async (e) => {
+            e.stopPropagation();
+            showToast("Notificaciones limpiadas", "info");
+            // Aquí se podría llamar a un endpoint de 'read-all'
+            const list = document.getElementById('notifList');
+            if (list) list.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">Sin notificaciones nuevas</div>`;
+            const badge = document.getElementById('notifBadge');
+            if (badge) badge.style.display = 'none';
+        };
+    }
 }
 
 async function fetchNotifications() {
@@ -1737,22 +1753,23 @@ document.addEventListener('keydown', (e) => {
 function renderModalFields(type, item) {
     if (type === 'usuarios') {
         return `
-    < div class="form-group" ><label>Nombre</label><input type="text" id="m_nombre" value="${item?.nombre || ''}"></div>
+            <div class="form-group"><label>Nombre</label><input type="text" id="m_nombre" value="${item?.nombre || ''}"></div>
             <div class="form-group"><label>Apellido</label><input type="text" id="m_apellido" value="${item?.apellido || ''}"></div>
             <div class="form-group"><label>Email</label><input type="email" id="m_email" value="${item?.email || ''}"></div>
             <div class="form-group">
                 <label>Rol</label>
                 <select id="m_rol">
+                    <option value="4" ${item?.rol_id === 4 ? 'selected' : ''}>Super Admin</option>
                     <option value="1" ${item?.rol_id === 1 ? 'selected' : ''}>Administrador</option>
                     <option value="2" ${item?.rol_id === 2 ? 'selected' : ''}>Usuario</option>
                     <option value="3" ${item?.rol_id === 3 ? 'selected' : ''}>Seguridad</option>
                 </select>
             </div>
-`;
+        `;
     }
     if (type === 'accesos') {
         return `
-    < div style = "text-align:left;" >
+            <div style="text-align:left;">
                 <p style="font-size:14px; margin-bottom:15px; color:var(--text-muted);">Crea una invitación temporal para un invitado o registra un acceso manual.</p>
                 <div class="form-group"><label>Nombre del Invitado</label><input type="text" id="guest_name" placeholder="Ej: Juan Pérez"></div>
                 <div class="form-group"><label>Email del Invitado (Opcional)</label><input type="email" id="guest_email" placeholder="Para enviarle el QR directamente"></div>
@@ -1772,39 +1789,39 @@ function renderModalFields(type, item) {
                         <i>📱</i> Abrir WhatsApp Directo
                     </button>
                 </div>
-            </div >
-    `;
+            </div>
+        `;
     }
     if (type === 'transportes') {
         return `
-    < div class="form-group" ><label>Nombre de la Categoría</label><input type="text" id="t_nombre" value="${item?.nombre || ''}" placeholder="Ej: Carro, Moto, Blindado"></div>
+            <div class="form-group"><label>Nombre de la Categoría</label><input type="text" id="t_nombre" value="${item?.nombre || ''}" placeholder="Ej: Carro, Moto, Blindado"></div>
             <div class="form-group"><label>Descripción</label><input type="text" id="t_desc" value="${item?.descripcion || ''}" placeholder="Opcional"></div>
-`;
+        `;
     }
     if (type === 'logout_confirm') {
         return `
-    < div style = "text-align:center; padding:10px;" >
+            <div style="text-align:center; padding:10px;">
                 <p style="margin-bottom:20px; color:var(--text-secondary);">¿Estás seguro de que deseas cerrar tu sesión actual?</p>
                 <div style="display:flex; gap:10px;">
                     <button id="btnConfirmLogout" class="btn-primary" style="background:var(--error-color)">Sí, Salir</button>
                     <button class="btn-secondary btn-close-modal">Cancelar</button>
                 </div>
-            </div >
-    `;
+            </div>
+        `;
     }
-    return `< p > Formulario para ${type} en desarrollo...</p > `;
+    return `<p>Formulario para ${type} en desarrollo...</p>`;
 }
 
 function renderDynamicForm(type, item, users, trans) {
     if (type === 'vehiculos') {
         return `
-    < div class="form-group" >
+            <div class="form-group">
                 <label>Propietario</label>
                 <select id="v_usuario">
                     <option value="">Seleccione dueño...</option>
                     ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
                 </select>
-            </div >
+            </div>
             <div class="form-group">
                 <label>Categoría</label>
                 <select id="v_tipo">
@@ -1814,20 +1831,20 @@ function renderDynamicForm(type, item, users, trans) {
             </div>
             <div class="form-group"><label>Marca / Modelo</label><input type="text" id="v_nombre" value="${item?.nombre || ''}" placeholder="Ej: Mazda CX-5"></div>
             <div class="form-group"><label>Placa (Matrícula)</label><input type="text" id="v_placa" value="${item?.identificador_unico || ''}" placeholder="Ej: ABC-123"></div>
-`;
+        `;
     }
     if (type === 'dispositivos') {
         return `
-    < div class="form-group" >
+            <div class="form-group">
                 <label>Asignar a Usuario</label>
                 <select id="d_usuario">
                     <option value="">Seleccione usuario...</option>
                     ${users.map(u => `<option value="${u.id}" ${item?.usuario_id === u.id ? 'selected' : ''}>${u.nombre} ${u.apellido}</option>`).join('')}
                 </select>
-            </div >
+            </div>
             <div class="form-group"><label>Nombre del Equipo</label><input type="text" id="d_nombre" value="${item?.nombre || ''}" placeholder="Ej: Laptop Dell, iPad Admin"></div>
             <div class="form-group"><label>ID Único / Serial</label><input type="text" id="d_uid" value="${item?.identificador_unico || ''}" placeholder="Opcional"></div>
-`;
+        `;
     }
 }
 

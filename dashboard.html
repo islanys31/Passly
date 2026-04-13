@@ -128,18 +128,21 @@
     </main>
   </div>
 
-  <!-- SISTEMA DE VENTANAS MODALES -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-content">
-      <div class="modal-header" style="margin-bottom:32px;">
-        <h2 id="modalTitle" style="font-size:24px; letter-spacing:-0.03em;">Acción</h2>
-      </div>
-      <div id="modalBody"></div>
-      <div class="modal-footer" style="display:flex; gap:16px; margin-top:40px;">
-        <button type="button" class="btn-primary" style="flex:1; background:hsla(0,0%,100%,0.05); color:var(--text-primary); box-shadow:none;" onclick="closeModal()">Cancelar</button>
-        <button type="button" class="btn-primary" id="btnSave" style="flex:1;">Confirmar</button>
+    <!-- SISTEMA DE VENTANAS MODALES -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-content">
+        <div class="modal-header" style="margin-bottom:32px;">
+          <h2 id="modalTitle" style="font-size:24px; letter-spacing:-0.03em;">Acción</h2>
+        </div>
+        <div id="modalBody"></div>
+        <div class="modal-footer" style="display:flex; gap:16px; margin-top:40px;">
+          <button type="button" class="btn-primary" style="flex:1; background:hsla(0,0%,100%,0.05); color:var(--text-primary); box-shadow:none;" onclick="closeModal()">Cancelar</button>
+          <button type="button" class="btn-primary" id="btnSave" style="flex:1;">Confirmar</button>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- Botón Flotante de Ayuda Rápida -->
+    <div id="supportFAB" class="support-fab" title="Centro de Ayuda">?</div>
 </body>
 </html>

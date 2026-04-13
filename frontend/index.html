@@ -89,6 +89,85 @@
         </div>
     </section>
 
+    <!-- Sección NOSOTROS -->
+    <section class="landing-section" id="nosotros">
+        <div class="section-header">
+            <h2>Nuestra Misión</h2>
+            <p style="color:var(--text-muted)">Innovación y seguridad para tu comunidad.</p>
+        </div>
+        <div class="card glass-glow" style="padding:40px; text-align:left; max-width:1000px; margin:0 auto;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center;">
+                <div>
+                    <h3 style="margin-bottom:20px; color:var(--accent-green);">Orgullosamente SENA</h3>
+                    <p style="line-height:1.8; margin-bottom:20px;">
+                        Passly es un proyecto nacido de la pasión por la tecnología y la seguridad. Desarrollado por aprendices de <strong>ADSO del SENA</strong>, buscamos transformar la manera en que las personas interactúan con sus entornos seguros.
+                    </p>
+                    <div style="background:hsla(0,0%,100%,0.05); padding:20px; border-radius:15px; border:1px solid var(--glass-border);">
+                        <h4 style="margin-bottom:10px;">Equipo de Desarrollo</h4>
+                        <ul style="list-style:none; padding:0;">
+                            <li style="margin-bottom:8px; display:flex; align-items:center; gap:10px;">
+                                <i data-lucide="user" style="color:var(--accent-blue); width:18px;"></i> Michel Martinez
+                            </li>
+                            <li style="display:flex; align-items:center; gap:10px;">
+                                <i data-lucide="user" style="color:var(--accent-blue); width:18px;"></i> Islanys Peña
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div class="logo-icon glass" style="width:120px; height:120px; font-size:60px; margin-bottom:20px;">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <p style="font-style:italic; opacity:0.7;">"Seguridad inteligente al alcance de todos."</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección CONTACTO -->
+    <section class="landing-section" id="contacto">
+        <div class="section-header">
+            <h2>Contáctanos</h2>
+            <p style="color:var(--text-muted)">Estamos aquí para ayudarte a implementar Passly.</p>
+        </div>
+        <div class="contact-card">
+            <div>
+                <h3 style="margin-bottom:24px;">Información de Contacto</h3>
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <div class="feature-icon" style="margin:0; width:44px; height:44px;"><i data-lucide="mail"></i></div>
+                        <div>
+                            <p style="font-size:12px; color:var(--text-muted);">Correo Electrónico</p>
+                            <p>soporte@passly.com</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <div class="feature-icon" style="margin:0; width:44px; height:44px;"><i data-lucide="phone"></i></div>
+                        <div>
+                            <p style="font-size:12px; color:var(--text-muted);">Teléfono</p>
+                            <p>+57 321 456 7890</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <div class="feature-icon" style="margin:0; width:44px; height:44px;"><i data-lucide="map-pin"></i></div>
+                        <div>
+                            <p style="font-size:12px; color:var(--text-muted);">Ubicación</p>
+                            <p>Medellín, Colombia (SENA ADSO)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card glass-glow" style="padding:30px;">
+                <div class="input-group"><i data-lucide="user"></i><input type="text" placeholder="Tu Nombre"></div>
+                <div class="input-group"><i data-lucide="mail"></i><input type="email" placeholder="Tu Email"></div>
+                <div class="input-group" style="margin-bottom:20px;">
+                    <textarea placeholder="¿En qué podemos ayudarte?" style="width:100%; height:120px; background:hsla(0,0%,100%,0.05); border:1px solid var(--glass-border); border-radius:15px; color:white; padding:15px; font-family:inherit;"></textarea>
+                </div>
+                <button class="btn-primary">Enviar Mensaje</button>
+            </div>
+        </div>
+    </section>
+
     <!-- MODAL DE AUTENTICACIÓN -->
     <div class="modal-overlay" id="authOverlay" style="z-index:2000;">
         <div class="auth-container" id="authContainer" style="position:relative;">
