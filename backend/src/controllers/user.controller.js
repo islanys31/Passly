@@ -259,7 +259,7 @@ exports.uploadPhoto = async (req, res) => {
         const tenantId = req.user.cliente_id;
 
         // Verificar pertenencia
-        const [target] = await db.query('SELECT cliente_id FROM usuarios WHERE id = ?', [id]);
+        const [target] = await db.query('SELECT cliente_id, foto_url FROM usuarios WHERE id = ?', [id]);
         if (target.length === 0 || target[0].cliente_id !== tenantId) {
             return res.status(403).json({ ok: false, error: 'No autorizado' });
         }
